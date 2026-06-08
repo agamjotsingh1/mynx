@@ -16,6 +16,9 @@
 `define OSLICE            [6:0]   // opcode
 `define F3SLICE           [14:12] // funct3
 `define F7SLICE           [31:25] // funct7
+`define RS1SLICE          [19:15] // rs1
+`define RS2SLICE          [24:20] // rs2
+`define RDSLICE           [11:7]  // rd
 
 // OPcodes wrt instruction format
 // to be used in case block ONLY

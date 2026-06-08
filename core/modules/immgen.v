@@ -4,9 +4,15 @@
 
 /* verilator lint_off WIDTHEXPAND */
 module immgen (
+  // global stall wire
+  output wor stall,
+
   input wire `W(`ILEN) instr,
   output reg `W(`DLEN) imm
 );
+  // immgen never stalls
+  assign stall = 0;
+
   wire `W(`OLEN)  opcode = instr`OSLICE;
 
   // WARNING! This code is standalone and isnt dependent on macros
