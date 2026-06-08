@@ -44,7 +44,7 @@
 `define BOP_SLTIU         17'b0010011_011_zzzzzzz
 `define BOP_SLLI          17'b0010011_001_zzzzzzz
 `define BOP_SRLI          17'b0010011_101_zzzzzzz 
-`define BOP_SRAI          17'b0010011_101_zzzzzzz // difference comes in imm
+`define BOP_SRAI          17'b0010011_101_zzzzzzz // same as SRLI except upper bits of imm
 `define BOP_XORI          17'b0010011_100_zzzzzzz
 `define BOP_ORI           17'b0010011_110_zzzzzzz
 `define BOP_ANDI          17'b0010011_111_zzzzzzz

@@ -1,10 +1,10 @@
 `include "defs.vh"
 
 module alu_ctl (
-  input wire `W(`ILEN) instr,
+  input wire `W(`ILEN)     instr,
   output reg `W(`ALU_OP_W) alu_op
 );
-  wire `W(`OLEN) opcode = instr[`OSTART +: `OLEN];
+  wire `W(`OLEN)  opcode = instr[`OSTART +: `OLEN];
   wire `W(`F3LEN) funct3 = instr[`F3START +: `F3LEN];
   wire `W(`F7LEN) funct7 = instr[`F7START +: `F7LEN];
 
@@ -51,13 +51,18 @@ module alu_ctl (
       `BOP_SLLI
       : alu_op = `ALU_OP_SLL;
 
-      `BOP_SRL, 
-      `BOP_SRLI
+      `BOP_SRL
       : alu_op = `ALU_OP_SRL;
 
-      `BOP_SRA, 
-      `BOP_SRAI
+      `BOP_SRA
       : alu_op = `ALU_OP_SRA;
+
+      `BOP_SRLI, // they only differ by upper immediate bits
+      `BOP_SRAI
+      : begin
+        if(instr[25:31] == 7'h20) alu_op = `ALU_OP_SRA;
+        else alu_op = `ALU_OP_SRL;
+      end
 
       default
       : alu_op = `ALU_OP_ADD;
