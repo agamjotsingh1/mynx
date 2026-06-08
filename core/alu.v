@@ -25,7 +25,6 @@ module alu (
       `ALU_OP_SRA:  out = $signed(in1) >>> in2[($clog2(`DLEN))-1:0];
       `ALU_OP_SLT:  out = $signed(in1) < $signed(in2) ? 1: 0;
       `ALU_OP_SLTU: out = $unsigned(in1) < $unsigned(in2) ? 1: 0;
-
       default:      out = 0;
     endcase
   end
