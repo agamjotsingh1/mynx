@@ -64,7 +64,11 @@ module ctl (
       end
 
       `OP_U_AUIPC: begin
-        REG_WRITE(ctl_bus)   = 1;
+        reg_write(ctl_bus)   = 1;
+      end
+
+      `OP_J: begin
+        reg_write(ctl_bus)   = 1;
       end
     endcase
   end

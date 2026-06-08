@@ -34,7 +34,7 @@
 
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
-// 'z' will be used in casez for control sigs
+// 'z' will be used in casez for alu control sigs
 `define BOP_ADD           17'b0110011_000_0000000
 `define BOP_ADDI          17'b0010011_000_zzzzzzz
 `define BOP_LB            17'b0000011_000_zzzzzzz

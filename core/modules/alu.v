@@ -5,10 +5,10 @@ module alu (
   output wor stall,
 
   input wire `W(`ALU_OPLEN) alu_op,
-  input wire `W(`DLEN)     in1,
-  input wire `W(`DLEN)     in2,
+  input wire `W(`DLEN)      in1,
+  input wire `W(`DLEN)      in2,
 
-  output reg `W(`DLEN)     out
+  output reg `W(`DLEN)      out
 );
   // never stall, alu is combinational
   assign stall = 0;

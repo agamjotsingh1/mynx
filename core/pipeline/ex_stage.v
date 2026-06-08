@@ -9,53 +9,20 @@ module ex_stage (
   input wire           rst,
   input wire `W(`ILEN) instr,
 
-  // parsing results
-  output wire `W(`RLEN) rs1,
-  output wire `W(`RLEN) rs2,
-  output wire `W(`RLEN) rd,
-  output wire `W(`DLEN) regdata1,
-  output wire `W(`DLEN) regdata2,
-  output wire `W(`DLEN) imm,
+  input wire `W(`DLEN)       regdata1,
+  input wire `W(`DLEN)       regdata2,
+  input wire `W(`DLEN)       imm,
+  input wire `W(`ALU_OPLEN)  alu_op,
+  input wire `W(`CTL_BUSLEN) ctl_bus,
 
-  // alu control outputs
-  output wire `W(`ALU_OPLEN) alu_op,
-
-  // from WB stage
-  input wire `W(`RLEN) __wb_rd,
-  input wire `W(`DLEN) __wb_write_data,
-  input wire           __wb_reg_write,
+  output wire `W(`DLEN) alu_out
 );
-  // instruction parsing
-  assign rs1 = instr`RS1SLICE;
-  assign rs2 = instr`RS2SLICE;
-  assign rd  = instr`RDSLICE;
-
-  regfile regfile_instance (
+  alu alu_instance (
     .stall(stall),
-    .clk(clk),
-    .rst(rst),
 
-    .read_addr1(rs1),
-    .read_data1(regdata1),
-
-    .read_addr2(rs2),
-    .read_data2(regdata2),
-
-    .write_en(__wb_reg_write),
-    .write_addr(__wb_rd),
-    .write_data(__wb_write_data)
+    .alu_op(alu_op),
+    .in1(regdata1),
+    .in2(ALU_SRC(ctl_bus) ? imm: regdata2),
+    .out(alu_out)
   );
-
-  immgen immgen_instance (
-    .stall(stall),
-    .instr(instr),
-    .imm(imm)
-  );
-
-  alu_ctl alu_ctl_instance (
-    .stall(stall),
-    .instr(instr),
-    .alu_op(alu_op)
-  );
-  
 endmodule
