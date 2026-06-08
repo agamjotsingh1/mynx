@@ -2,11 +2,12 @@
 
 // ref: https://www.cs.sfu.ca/~ashriram/Courses/CS295/assets/notebooks/RISCV/RISCV_CARD.pdf
 
+/* verilator lint_off WIDTHEXPAND */
 module immgen (
   input wire `W(`ILEN) instr,
   output reg `W(`DLEN) imm
 );
-  wire `W(`OLEN)  opcode = instr[`OSTART +: `OLEN];
+  wire `W(`OLEN)  opcode = instr`OSLICE;
 
   // WARNING! This code is standalone and isnt dependent on macros
   // defined in defs.vh, change this when defs.vh is edited
@@ -22,3 +23,4 @@ module immgen (
     endcase
   end
 endmodule
+/* verilator lint_on WIDTHEXPAND */

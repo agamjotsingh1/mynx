@@ -12,9 +12,10 @@
 `define F3LEN             3  // funct3 width
 `define F7LEN             7  // funct7 width
 
-`define OSTART            0  // start bit index of opcode
-`define F3START           12 // start bit index of funct3
-`define F7START           25 // start bit index of funct7
+// slices from instructions
+`define OSLICE            [6:0]   // opcode
+`define F3SLICE           [14:12] // funct3
+`define F7SLICE           [31:25] // funct7
 
 // OPcodes wrt instruction format
 // to be used in case block ONLY

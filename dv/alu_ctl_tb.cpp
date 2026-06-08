@@ -20,7 +20,7 @@
 #define OP_LOAD   0x03
 #define OP_STORE  0x23
 
-uint32_t make_instr(uint8_t opcode, uint8_t funct3, uint8_t funct7) {
+uint32_t make_instr(uint32_t opcode, uint32_t funct3, uint32_t funct7) {
     return (funct7 << 25) | (funct3 << 12) | opcode;
 }
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     Verilated::traceEverOn(true);
     VerilatedVcdC* tfp = new VerilatedVcdC;
     dut->trace(tfp, 99);
-    tfp->open("alu_ctl_trace.vcd");
+    tfp->open("vcd/alu_ctl_trace.vcd");
 
     int time = 0;
     int fails = 0;
@@ -54,8 +54,7 @@ int main(int argc, char** argv) {
 
     std::cout << "====== Starting ALU Control Tests ======\n";
 
-    // 1. R-Type Instructions
-    // Format: make_instr(OPCODE, FUNCT3, FUNCT7)
+    // R-Type Instructions
     run_test(make_instr(OP_R_TYPE, 0x0, 0x00), ALU_OP_ADD,  "ADD");
     run_test(make_instr(OP_R_TYPE, 0x0, 0x20), ALU_OP_SUB,  "SUB");
     run_test(make_instr(OP_R_TYPE, 0x1, 0x00), ALU_OP_SLL,  "SLL");
@@ -67,26 +66,30 @@ int main(int argc, char** argv) {
     run_test(make_instr(OP_R_TYPE, 0x6, 0x00), ALU_OP_OR,   "OR");
     run_test(make_instr(OP_R_TYPE, 0x7, 0x00), ALU_OP_AND,  "AND");
 
-    // 2. I-Type Arithmetic Instructions
-    // Note: For I-type, the top 7 bits of the immediate sit in the exact same 
-    // spot as funct7, so we can use the same helper function!
+    // I-Type Arithmetic Instructions
     run_test(make_instr(OP_I_TYPE, 0x0, 0x00), ALU_OP_ADD,  "ADDI (Positive Imm)");
     run_test(make_instr(OP_I_TYPE, 0x0, 0x7F), ALU_OP_ADD,  "ADDI (Negative Imm)");
+    run_test(make_instr(OP_I_TYPE, 0x2, 0x00), ALU_OP_SLT,  "SLTI");
+    run_test(make_instr(OP_I_TYPE, 0x3, 0x00), ALU_OP_SLTU, "SLTIU");
     run_test(make_instr(OP_I_TYPE, 0x4, 0x00), ALU_OP_XOR,  "XORI");
+    run_test(make_instr(OP_I_TYPE, 0x6, 0x00), ALU_OP_OR,   "ORI");
+    run_test(make_instr(OP_I_TYPE, 0x7, 0x00), ALU_OP_AND,  "ANDI");
     
-    // 3. The Tricky Shift Immediates
-    // Testing your specific `if(instr[25:31] == 7'h20)` logic
+    // Wonky Shift Immediates
+    run_test(make_instr(OP_I_TYPE, 0x1, 0x00), ALU_OP_SLL,  "SLLI");
     run_test(make_instr(OP_I_TYPE, 0x5, 0x00), ALU_OP_SRL,  "SRLI");
     run_test(make_instr(OP_I_TYPE, 0x5, 0x20), ALU_OP_SRA,  "SRAI");
 
-    // 4. Memory Instructions (Should all default to ADD for address calculation)
+    // Memory Instructions (Address calculation)
+    run_test(make_instr(OP_LOAD,  0x0, 0x00), ALU_OP_ADD, "LB  (Load Byte)");
     run_test(make_instr(OP_LOAD,  0x2, 0x00), ALU_OP_ADD, "LW  (Load Word)");
+    run_test(make_instr(OP_LOAD,  0x4, 0x00), ALU_OP_ADD, "LBU (Load Byte Unsigned)");
+    run_test(make_instr(OP_STORE, 0x0, 0x00), ALU_OP_ADD, "SB  (Store Byte)");
     run_test(make_instr(OP_STORE, 0x2, 0x00), ALU_OP_ADD, "SW  (Store Word)");
 
-    // 5. Unknown/Garbage Instruction
+    // Unknown Instruction
     run_test(make_instr(0x7F, 0x7, 0x7F), ALU_OP_ADD, "Default Case (Garbage Instruction)");
 
-    // Flush and close
     dut->eval();
     tfp->dump(time++);
     tfp->close();
