@@ -1,6 +1,6 @@
 CORE = core
 DV = dv
-OBJ = obj
+OBJ = obj_dir
 
 VERILATOR = verilator
 VFLAGS = -Wall --trace --cc --exe --build -I$(CORE)
