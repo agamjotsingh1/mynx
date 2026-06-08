@@ -5,8 +5,17 @@ module alu (
   input wire `W(`DLEN)     in1,
   input wire `W(`DLEN)     in2,
 
-  output reg `W(`DLEN)     out
+  output reg `W(`DLEN)     out,
+
+  // valid-ready handshake
+  input wire  i_valid,
+  output wire i_ready,
+  output wire o_valid,
+  input wire  o_ready
 );
+  assign o_valid = 1;
+  assign i_ready = 1;
+
   always @(*) begin
     case (alu_op)
       `ALU_OP_ADD:  out = in1 + in2;

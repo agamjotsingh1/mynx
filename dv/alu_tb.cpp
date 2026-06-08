@@ -67,20 +67,20 @@ int main(int argc, char** argv) {
 
     std::cout << "====== Starting ALU Tests ======\n";
 
-    // 1. Basic Arithmetic
+    // Basic Arithmetic
     run_test(ALU_OP_ADD, 10, 15, "ADD: 10 + 15");
     run_test(ALU_OP_SUB, 20, 5,  "SUB: 20 - 5");
     run_test(ALU_OP_ADD, 0xFFFFFFFFFFFFFFFFULL, 1, "ADD: Overflow (-1 + 1)");
     run_test(ALU_OP_SUB, 0, 1, "SUB: Underflow (0 - 1)");
 
-    // 2. Bitwise Logic
+    // Bitwise Logic
     run_test(ALU_OP_XOR, 0xFF, 0x0F, "XOR: 0xFF ^ 0x0F");
     run_test(ALU_OP_OR,  0xF0, 0x0F, "OR:  0xF0 | 0x0F");
     run_test(ALU_OP_AND, 0xFF, 0x0F, "AND: 0xFF & 0x0F");
     run_test(ALU_OP_XOR, 0xAAAAAAAAAAAAAAAAULL, 0x5555555555555555ULL, "XOR: Alternating Bits");
     run_test(ALU_OP_AND, 0xAAAAAAAAAAAAAAAAULL, 0x5555555555555555ULL, "AND: Mutually Exclusive Bits");
 
-    // 3. Shifts (Standard)
+    // Shifts (Standard)
     run_test(ALU_OP_SLL, 0x1, 4, "SLL: 1 << 4");
     run_test(ALU_OP_SRL, 0x10, 4, "SRL: 0x10 >> 4");
     
@@ -89,12 +89,12 @@ int main(int argc, char** argv) {
     run_test(ALU_OP_SRL, 0xFFFFFFFFFFFFFFFFULL, 63, "SRL: Max shift right");
     run_test(ALU_OP_SLL, 0x1, 64, "SLL: Over-shift (masked to 0)");
 
-    // SRA: Arithmetic shift right
+    // SRA
     run_test(ALU_OP_SRA, 0x8000000000000000ULL, 4, "SRA: Sign Extension (Negative)");
     run_test(ALU_OP_SRA, 0x4000000000000000ULL, 4, "SRA: Zero Extension (Positive)");
     run_test(ALU_OP_SRA, 0xFFFFFFFFFFFFFFFFULL, 63, "SRA: All 1s (Negative 1)");
 
-    // 4. Comparisons
+    // Comparisons
     run_test(ALU_OP_SLT,  0xFFFFFFFFFFFFFFFFULL, 5, "SLT:  -1 < 5 (Signed)");
     run_test(ALU_OP_SLTU, 0xFFFFFFFFFFFFFFFFULL, 5, "SLTU: MAX < 5 (Unsigned)");
     run_test(ALU_OP_SLT,  5, 0xFFFFFFFFFFFFFFFFULL, "SLT:  5 < -1 (Signed)");
