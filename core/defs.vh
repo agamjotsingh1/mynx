@@ -16,6 +16,16 @@
 `define F3START           12 // start bit index of funct3
 `define F7START           25 // start bit index of funct7
 
+// OPcodes wrt instruction format
+// to be used in case block ONLY
+`define OP_R              7'b0110011
+// normal imm instr, loads, jalr, ecall
+`define OP_I              7'b0010011, 7'b0000011, 7'b1100111, 7'b1110011
+`define OP_S              7'b0100011
+`define OP_B              7'b1100011
+`define OP_U              7'b0110111, 7'b0010111
+`define OP_J              7'b1101111
+
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
 // 'z' will be used in casez for control sigs

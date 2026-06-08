@@ -60,6 +60,7 @@ module alu_ctl (
       `BOP_SRLI, // they only differ by upper immediate bits
       `BOP_SRAI
       : begin
+        // upper immediate extraction
         if(instr[25:31] == 7'h20) alu_op = `ALU_OP_SRA;
         else alu_op = `ALU_OP_SRL;
       end
