@@ -1,9 +1,7 @@
 `include "../defs.vh"
-`include "../modules/regfile.v"
-`include "../modules/immgen.v"
-`include "../modules/alu_ctl.v"
+`include "../modules/alu.v"
 
-module id_stage (
+module ex_stage (
   // global stall wire
   output wor stall,
 

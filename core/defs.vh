@@ -21,13 +21,15 @@
 `define RDSLICE           [11:7]  // rd
 
 // OPcodes wrt instruction format
-// to be used in case block ONLY
 `define OP_R              7'b0110011
-// normal imm instr, loads, jalr, ecall
-`define OP_I              7'b0010011, 7'b0000011, 7'b1100111, 7'b1110011
+`define OP_I              7'b0010011 // standard I format
+`define OP_I_LOAD         7'b0000011
+`define OP_I_JALR         7'b1100111
+`define OP_I_ECALL        7'b1110011
 `define OP_S              7'b0100011
 `define OP_B              7'b1100011
-`define OP_U              7'b0110111, 7'b0010111
+`define OP_U_LUI          7'b0110111
+`define OP_U_AUIPC        7'b0010111
 `define OP_J              7'b1101111
 
 // Bunch opcodes (BOPcodes)
@@ -64,7 +66,7 @@
 `define BOP_ANDI          17'b0010011_111_zzzzzzz
 
 // ALU OPCodes (custom defined)
-`define ALU_OP_W          4
+`define ALU_OPLEN         4
 
 `define ALU_OP_ADD        4'h0
 `define ALU_OP_SUB        4'h1
@@ -76,5 +78,14 @@
 `define ALU_OP_SRA        4'h7
 `define ALU_OP_SLT        4'h8
 `define ALU_OP_SLTU       4'h9
+
+// Control (ctl) signals
+`define CTL_BUSLEN            5
+
+`define ALU_SRC(ctl_bus)      ctl_bus[0] // 1 for imm, 0 for reg
+`define REG_WRITE(ctl_bus)    ctl_bus[1] // 1 for reg to be written
+`define MEM_WRITE(ctl_bus)    ctl_bus[2] // 1 for mem to be written
+`define MEM_READ(ctl_bus)     ctl_bus[3] // 1 for mem to be read 
+`define MEM_TO_REG(ctl_bus)   ctl_bus[4] // 1 for mem reads to be written to reg
 
 `endif

@@ -5,8 +5,8 @@ module alu_ctl (
   // global stall wire
   output wor stall,
 
-  input wire `W(`ILEN)     instr,
-  output reg `W(`ALU_OP_W) alu_op
+  input wire `W(`ILEN)      instr,
+  output reg `W(`ALU_OPLEN) alu_op
 );
   // alu_ctl never stalls
   assign stall = 0;

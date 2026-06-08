@@ -19,13 +19,17 @@ module immgen (
   // defined in defs.vh, change this when defs.vh is edited
   always @(*) begin
     case(opcode)
-      `OP_R:   imm = 0;
-      `OP_I:   imm = $signed(instr[31:20]);
-      `OP_S:   imm = $signed({instr[31:25], instr[11:7]});
-      `OP_B:   imm = $signed({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0});
-      `OP_U:   imm = $signed({instr[31:12], 12'b0});
-      `OP_J:   imm = $signed({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0});
-      default: imm = 0; 
+      `OP_R:       imm = 0;
+      `OP_I,
+      `OP_I_LOAD,
+      `OP_I_JALR,
+      `OP_I_ECALL: imm = $signed(instr[31:20]);
+      `OP_S:       imm = $signed({instr[31:25], instr[11:7]});
+      `OP_B:       imm = $signed({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0});
+      `OP_U_LUI,
+      `OP_U_AUIPC: imm = $signed({instr[31:12], 12'b0});
+      `OP_J:       imm = $signed({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0});
+      default:     imm = 0; 
     endcase
   end
 endmodule

@@ -4,7 +4,7 @@ module alu (
   // global stall wire
   output wor stall,
 
-  input wire `W(`ALU_OP_W) alu_op,
+  input wire `W(`ALU_OPLEN) alu_op,
   input wire `W(`DLEN)     in1,
   input wire `W(`DLEN)     in2,
 
