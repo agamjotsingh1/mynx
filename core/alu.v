@@ -1,20 +1,17 @@
 `include "defs.vh"
 
 module alu (
+  // global stall wire
+  output wor stall,
+
   input wire `W(`ALU_OP_W) alu_op,
   input wire `W(`DLEN)     in1,
   input wire `W(`DLEN)     in2,
 
-  output reg `W(`DLEN)     out,
-
-  // valid-ready handshake
-  input wire  i_valid,
-  output wire i_ready,
-  output wire o_valid,
-  input wire  o_ready
+  output reg `W(`DLEN)     out
 );
-  assign o_valid = 1;
-  assign i_ready = 1;
+  // never stall, alu is combinational
+  assign stall = 0;
 
   always @(*) begin
     case (alu_op)

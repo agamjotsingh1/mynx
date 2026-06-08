@@ -4,8 +4,9 @@
 `define W(width) [(width)-1:0]
 
 // System Constants
-`define DLEN              64
-`define ILEN              32
+`define DLEN              64 // data width
+`define ILEN              32 // instruction width
+`define RLEN              5  // register index width
 
 // OPcodes
 `define OP_LUI            7'b0110111
