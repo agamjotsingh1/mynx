@@ -1,111 +1,138 @@
 // `include "../defs.vh"
 
-// WARNING! SIMULATION ONLY
+// SIMULATION ONLY
 // 2 port memory
+// dynamic interleaved design
+// supports parallel access different bit widths
 module mem (
   input wire clk,
 
   // Port A
-  input wire `W(`ADDRLEN)  addr_a,
-  input wire               mem_read_a,
-  input wire               mem_write_a,
-  input wire `W(`DLEN)     data_in_a,
+  input wire  `W(`ADDRLEN)  addr_a,
+  input wire                mem_read_a,
+  input wire                mem_write_a,
+  input wire                sign_extend_a,
+  input wire  `W(`BWLEN)    bw_a,
+  input wire  `W(`DLEN)     data_in_a,
   output reg `W(`DLEN)     data_out_a,
 
   // Port B
-  input wire `W(`ADDRLEN)  addr_b,
-  input wire               mem_read_b,
-  input wire               mem_write_b,
-  input wire `W(`DLEN)     data_in_b,
-  output reg `W(`DLEN)     data_out_b,
+  input wire  `W(`ADDRLEN)  addr_b,
+  input wire                mem_read_b,
+  input wire                mem_write_b,
+  input wire                sign_extend_b,
+  input wire  `W(`BWLEN)    bw_b,
+  input wire  `W(`DLEN)     data_in_b,
+  output reg  `W(`DLEN)     data_out_b
 );
-  reg `W(`DLEN) memory [0:(1<<`ADDRLEN)-1];
-    
-  // Port A Read
+  // --- PORT A ---
+  wire `W($clog2(`NBANKS)) start_bank_a    = addr_a[0 +: $clog2(`NBANKS)];
+  wire `W(`BANK_ADDRLEN) start_bank_addr_a = addr_a[$clog2(`NBANKS) +: `BANKADDRLEN];
+  wire `W(`NBANKS) bank_enmask_unrotated_a;
+
   always @(*) begin
-    if (mem_read_a)
-      data_out_a = memory[addr_a];
-    else
-      data_out_a = {DATA_WIDTH{1'b0}};
+    case (bw_a)
+      `BW_BYTE:     bank_enmask_unrotated_a = `BW_BYTE_ENMASK;
+      `BW_HALFWORD: bank_enmask_unrotated_a = `BW_HALFWORD_ENMASK;
+      `BW_WORD:     bank_enmask_unrotated_a = `BW_WORD_ENMASK;
+      `BW_DBLWORD:  bank_enmask_unrotated_a = `BW_DBLWORD_ENMASK;
+      default:      bank_enmask_unrotated_a = `BW_NULL_ENMASK;
+    endcase
   end
 
-  // Port B Read
+  // circular left shift to find actual enables
+  // may spill over to the next bank addr
+  wire `W(`NBANKS) bank_enmask_a =
+    (bank_enmask_unrotated_a << start_bank_a) |
+    (bank_enmask_unrotated_a >> (`NBANKS - start_bank_a));
+
+  wire `W(`DLEN) data_in_rotated_a =
+    (data_in_a << (start_bank_a << $clog2(BANKLEN))) |
+    (data_in_a >> ((`NBANKS - start_bank_a) << $clog2(BANKLEN)));
+
+  wire `W(`DLEN) data_out_rotated_a;
+  wire `W(`DLEN) data_out_unrotated_a;
+
+  // circular right shift to get unrotated (actual) data out
+  assign data_out_unrotated_a =
+    (data_out_rotated_a >> (start_bank_a << $clog2(BANKLEN))) |
+    (data_out_rotated_a << ((`NBANKS - start_bank_a) << $clog2(BANKLEN)));
+
   always @(*) begin
-    if (mem_read_b)
-      data_out_b = memory[addr_b];
-    else
-      data_out_b = {DATA_WIDTH{1'b0}};
+    case(bw_a)
+      `BW_BYTE:     data_out_a = {{(`DLEN - `BYTE){sign_extend ? data_out_unrotated_a[`BYTE]: 1'b0}}, data_out_unrotated_a[0 +: `BYTE]}
+      `BW_HALFWORD: data_out_a = {{(`DLEN - `HALFWORD){sign_extend ? data_out_unrotated_a[`HALFWORD]: 1'b0}}, data_out_unrotated_a[0 +: `HALFWORD]}
+      `BW_WORD:     data_out_a = {{(`DLEN - `WORD){sign_extend ? data_out_unrotated_a[`WORD]: 1'b0}}, data_out_unrotated_a[0 +: `WORD]}
+      `BW_DBLWORD:  data_out_a = {{(`DLEN - `DBLWORD){sign_extend ? data_out_unrotated_a[`DBLWORD]: 1'b0}}, data_out_unrotated_a[0 +: `DBLWORD]}
+      default:      data_out_a = 0;
+    endcase
+  end
+  // --------------
+
+  // --- PORT B ---
+  wire `W($clog2(`NBANKS)) start_bank_b    = addr_b[0 +: $clog2(`NBANKS)];
+  wire `W(`BANK_bDDRLEN) start_bank_bddr_b = addr_b[$clog2(`NBANKS) +: `BANKADDRLEN];
+  wire `W(`NBANKS) bank_enmask_unrotated_b;
+
+  always @(*) begin
+    case (bw_b)
+      `BW_BYTE:     bank_enmask_unrotated_b = `BW_BYTE_ENMASK;
+      `BW_HALFWORD: bank_enmask_unrotated_b = `BW_HALFWORD_ENMASK;
+      `BW_WORD:     bank_enmask_unrotated_b = `BW_WORD_ENMASK;
+      `BW_DBLWORD:  bank_enmask_unrotated_b = `BW_DBLWORD_ENMASK;
+      default:      bank_enmask_unrotated_b = `BW_NULL_ENMASK;
+    endcase
   end
 
-  always @(posedge clk) begin
-    if (mem_write_a) begin
-      memory[addr_a] <= data_in_a;
+  // circular left shift to find actual enables
+  // may spill over to the next bank addr
+  wire `W(`NBANKS) bank_enmask_b =
+    (bank_enmask_unrotated_b << start_bank_b) |
+    (bank_enmask_unrotated_b >> (`NBANKS - start_bank_b));
+
+  wire `W(`DLEN) data_in_rotated_b =
+    (data_in_b << (start_bank_b << $clog2(BANKLEN))) |
+    (data_in_b >> ((`NBANKS - start_bank_b) << $clog2(BANKLEN)));
+
+  wire `W(`DLEN) data_out_rotated_b;
+  wire `W(`DLEN) data_out_unrotated_b;
+
+  // circular right shift to get unrotated (actual) data out
+  assign data_out_unrotated_b =
+    (data_out_rotated_b >> (start_bank_b << $clog2(BANKLEN))) |
+    (data_out_rotated_b << ((`NBANKS - start_bank_b) << $clog2(BANKLEN)));
+
+  always @(*) begin
+    case(bw_b)
+      `BW_BYTE:     data_out_b = {{(`DLEN - `BYTE){sign_extend ? data_out_unrotated_b[`BYTE]: 1'b0}}, data_out_unrotated_b[0 +: `BYTE]}
+      `BW_HALFWORD: data_out_b = {{(`DLEN - `HALFWORD){sign_extend ? data_out_unrotated_b[`HALFWORD]: 1'b0}}, data_out_unrotated_b[0 +: `HALFWORD]}
+      `BW_WORD:     data_out_b = {{(`DLEN - `WORD){sign_extend ? data_out_unrotated_b[`WORD]: 1'b0}}, data_out_unrotated_b[0 +: `WORD]}
+      `BW_DBLWORD:  data_out_b = {{(`DLEN - `DBLWORD){sign_extend ? data_out_unrotated_b[`DBLWORD]: 1'b0}}, data_out_unrotated_b[0 +: `DBLWORD]}
+      default:      data_out_b = 0;
+    endcase
+  end
+  // --------------
+
+  genvar i;
+  generate
+    for(i = 0; i < `NBANKS; i = i + 1) begin: mem_banks
+      mem_bank mem_bank_instance (
+        .clk(clk),
+
+        // PORT A
+        .addr_a(start_bank_addr_a + (i < start_bank)),
+        .mem_read_a(bank_enmask_a[i] & mem_read_a),
+        .mem_write_a(bank_enmask_a[i] & mem_write_a),
+        .data_in_a(data_in_rotated_a[(i << $clog2(BANKLEN)) +: BANKLEN]),
+        .data_out_a(data_out_rotated_a[(i << $clog2(BANKLEN)) +: BANKLEN]),
+
+        // PORT B
+        .addr_b(start_bank_bddr_b + (i < start_bank)),
+        .mem_read_b(bank_enmask_b[i] & mem_read_b),
+        .mem_write_b(bank_enmask_b[i] & mem_write_b),
+        .data_in_b(data_in_rotated_b[(i << $clog2(BANKLEN)) +: BANKLEN]),
+        .data_out_b(data_out_rotated_b[(i << $clog2(BANKLEN)) +: BANKLEN])
+      );
     end
-    
-    if (mem_write_b) begin
-      memory[addr_b] <= data_in_b;
-    end
-  end
-
-  initial begin
-    $readmemh("../../dv/sim_instrs.hex", memory);
-  end
-
+  endgenerate
 endmodule
-
-// // WARNING! SIMULATION ONLY
-// // true dual port ram
-// // two simultaneous (read/write) ops can happen parallely
-// module tdp_ram_sim (
-//     input  wire                     clk_a,
-//     input  wire                     en_a,   // Port A Enable
-//     input  wire `W(NCOL)            we_a,   // Port A Write Strobe (Byte Enable)
-//     input  wire [$clogz(DEPTH)-1:0] addr_a, // Port A Address (Doubleword aligned)
-//     input  wire [NCOL*WCOL-1:0]     din_a,  // Port A Data In (64-bit)
-//     output reg  [NCOL*WCOL-1:0]     dout_a, // Port A Data Out (64-bit)
-
-
-
-//     input  wire                     clk_b,
-//     input  wire                     en_b,   // Port B Enable
-//     input  wire [NCOL-1:0]        we_b,   // Port B Write Strobe (Byte Enable)
-//     input  wire [$clogz(DEPTH)-1:0] addr_b, // Port B Address (Doubleword aligned)
-//     input  wire [NCOL*WCOL-1:0] din_b,  // Port B Data In (64-bit)
-//     output reg  [NCOL*WCOL-1:0] dout_b  // Port B Data Out (64-bit)
-// );
-
-//     // The actual memory array: 1024 rows of 64 bits
-//     reg [NCOL*WCOL-1:0] ram_block [0:DEPTH-1];
-
-//     integer i;
-
-//     // port a
-//     always @(posedge clk_a) begin
-//       if (en_a) begin
-//         // Write Logic: Loop through each byte lane.
-//         // If the corresponding bit in the write strobe (we_a) is high, write that byte.
-//         for (i = 0; i < NCOL; i = i + 1) begin
-//           if (we_a[i]) begin
-//             ram_block[addr_a][(i*WCOL) +: WCOL] <= din_a[(i*WCOL) +: WCOL];
-//           end
-//         end
-//         // Read Logic: Always output the current data at the address
-//         dout_a <= ram_block[addr_a];
-//       end
-//     end
-
-//     // -------------------------------------------------------------------------
-//     // PORT B
-//     // -------------------------------------------------------------------------
-//     always @(posedge clk_b) begin
-//         if (en_b) begin
-//             for (i = 0; i < NCOL; i = i + 1) begin
-//                 if (we_b[i]) begin
-//                     ram_block[addr_b][(i*WCOL) +: WCOL] <= din_b[(i*WCOL) +: WCOL];
-//                 end
-//             end
-//             dout_b <= ram_block[addr_b];
-//         end
-//     end
-
-// endmodule

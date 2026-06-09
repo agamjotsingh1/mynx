@@ -1,24 +1,24 @@
 `include "../defs.vh"
 
 // SIMULATION ONLY
-// one cycle delay
+// one cycle delay, true dual port
 // results in no pipeline stalls
 module mem_bank (
   input wire clk,
 
   // Port A
-  input wire `W(`ADDRLEN)  addr_a,
-  input wire               mem_read_a,
-  input wire               mem_write_a,
-  input wire `W(`BANKLEN)  data_in_a,
-  output reg `W(`BANKLEN)  data_out_a,
+  input wire `W(`BANK_ADDRLEN)  addr_a,
+  input wire                    mem_read_a,
+  input wire                    mem_write_a,
+  input wire `W(`BANKLEN)       data_in_a,
+  output reg `W(`BANKLEN)       data_out_a,
 
   // Port B
-  input wire `W(`ADDRLEN)  addr_b,
-  input wire               mem_read_b,
-  input wire               mem_write_b,
-  input wire `W(`BANKLEN)  data_in_b,
-  output reg `W(`BANKLEN)  data_out_b,
+  input wire `W(`BANK_ADDRLEN)  addr_b,
+  input wire                    mem_read_b,
+  input wire                    mem_write_b,
+  input wire `W(`BANKLEN)       data_in_b,
+  output reg `W(`BANKLEN)       data_out_b
 );
   reg `W(`BANKLEN) bank [0:`DEPTH-1];
     
@@ -39,12 +39,12 @@ module mem_bank (
   always @(posedge clk) begin
     // Port A Write
     if (mem_write_a) begin
-      memory[addr_a] <= data_in_a;
+      bank[addr_a] <= data_in_a;
     end
     
     // Port B Write
     if (mem_write_b) begin
-      memory[addr_b] <= data_in_b;
+      bank[addr_b] <= data_in_b;
     end
   end
 endmodule

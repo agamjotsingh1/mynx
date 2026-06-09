@@ -8,6 +8,22 @@
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
 `define DEPTH             1024 // number of 64 bit doublewords
+`define BYTE              8
+`define HALFWORD          16
+`define WORD              32
+`define DBLWORD           64
+
+// BitWidth Codes for memory access
+`define BWLEN               2
+`define BW_BYTE             2'h0 // 8 bits (byte)
+`define BW_HALFWORD         2'h1 // 16 bits (half word)
+`define BW_WORD             2'h2 // 32 bits (word)
+`define BW_DBLWORD          2'h3 // 64 bits (double word)
+`define BW_NULL_ENMASK      8'b00000000
+`define BW_BYTE_ENMASK      8'b00000001
+`define BW_HALFWORD_ENMASK  8'b00000011
+`define BW_WORD_ENMASK      8'b00001111
+`define BW_DBLWORD_ENMASK   8'b11111111
 
 // Utility definitions
 `define W(width) [(width)-1:0]
@@ -20,7 +36,8 @@
 `define F3LEN             3  // funct3 width
 `define F7LEN             7  // funct7 width
 `define MLEN              8  // byte addressable mem => 8 bits = 1 byte
-`define ADDRLEN           $clog2(DEPTH*NBANKS*BANKLEN)    // mem addr width
+`define ADDRLEN           $clog2(`DEPTH*`NBANKS)    // mem addr width
+`define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
 
 `define RSTPC             0  // pc when processor resets
 
