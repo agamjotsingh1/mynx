@@ -1,6 +1,14 @@
 `ifndef DEFS_VH
 `define DEFS_VH
 
+// WARNING! comment while generating bitstream
+`define SIM
+
+// Memory definitions
+`define NCOL              8    // number of columns (bytes per word)
+`define WCOL              8    // width of each column (8 bits <=> 1 Byte)
+`define DEPTH             1024 // number of 64-bit doublewords
+
 // Utility definitions
 `define W(width) [(width)-1:0]
 
@@ -11,6 +19,10 @@
 `define OLEN              7  // opcode width
 `define F3LEN             3  // funct3 width
 `define F7LEN             7  // funct7 width
+`define ADDRLEN           8  // mem addr width
+`define MLEN              8  // byte addressable mem => 8 bits = 1 byte
+
+`define RSTPC             0  // pc when processor resets
 
 // slices from instructions
 `define OSLICE            [6:0]   // opcode
