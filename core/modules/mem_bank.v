@@ -20,16 +20,16 @@ module mem_bank (
   input wire `W(`BANKLEN)       data_in_b,
   output reg `W(`BANKLEN)       data_out_b
 );
-  reg `W(`BANKLEN) bank [0:`DEPTH-1];
+  reg `W(`BANKLEN) bank [0:`DEPTH-1] /* verilator public */;
     
   always @(*) begin
-    // Port A Read
+    // port a read
     if (mem_read_a)
       data_out_a = bank[addr_a];
     else
       data_out_a = 0;
       
-    // Port B Read
+    // port b read
     if (mem_read_b)
       data_out_b = bank[addr_b];
     else
@@ -37,12 +37,12 @@ module mem_bank (
   end
 
   always @(posedge clk) begin
-    // Port A Write
+    // port a write
     if (mem_write_a) begin
       bank[addr_a] <= data_in_a;
     end
     
-    // Port B Write
+    // port b write
     if (mem_write_b) begin
       bank[addr_b] <= data_in_b;
     end
