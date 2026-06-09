@@ -6,23 +6,23 @@ module id_ex_reg (
   input wire rst,
 
   input wire `W(`DLEN)       in_pc,
-  input wire `W(`DLEN)       in_rs1,
-  input wire `W(`DLEN)       in_rs2,
-  input wire `W(`DLEN)       in_rd,
+  input wire `W(`RLEN)       in_rs1,
+  input wire `W(`RLEN)       in_rs2,
+  input wire `W(`RLEN)       in_rd,
   input wire `W(`DLEN)       in_regdata1,
   input wire `W(`DLEN)       in_regdata2,
   input wire `W(`DLEN)       in_imm,
-  input wire `W(`DLEN)       in_alu_op,
+  input wire `W(`ALU_OPLEN)  in_alu_op,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
 
   output reg `W(`DLEN)       out_pc,
-  output reg `W(`DLEN)       out_rs1,
-  output reg `W(`DLEN)       out_rs2,
-  output reg `W(`DLEN)       out_rd,
+  output reg `W(`RLEN)       out_rs1,
+  output reg `W(`RLEN)       out_rs2,
+  output reg `W(`RLEN)       out_rd,
   output reg `W(`DLEN)       out_regdata1,
   output reg `W(`DLEN)       out_regdata2,
   output reg `W(`DLEN)       out_imm,
-  output reg `W(`DLEN)       out_alu_op,
+  output reg `W(`ALU_OPLEN)  out_alu_op,
   output reg `W(`CTL_BUSLEN) out_ctl_bus
 );
   always @(posedge clk) begin

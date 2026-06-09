@@ -5,12 +5,12 @@ module mem_wb_reg (
   input wire clk,
   input wire rst,
 
-  input wire `W(`DLEN)       in_rd,
+  input wire `W(`RLEN)       in_rd,
   input wire `W(`DLEN)       in_mem_res,
   input wire `W(`DLEN)       in_regw_data,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
 
-  output wire `W(`DLEN)       out_rd,
+  output wire `W(`RLEN)       out_rd,
   output wire `W(`DLEN)       out_mem_res,
   output wire `W(`DLEN)       out_regw_data,
   output wire `W(`CTL_BUSLEN) out_ctl_bus

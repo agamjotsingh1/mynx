@@ -15,8 +15,11 @@ module ex_stage (
   input wire `W(`ALU_OPLEN)  alu_op,
   input wire `W(`CTL_BUSLEN) ctl_bus,
 
+  output wire `W(`DLEN) mem_data,
   output wire `W(`DLEN) alu_res
 );
+  assign mem_data = regdata2;
+
   alu alu_instance (
     .stall(stall),
 

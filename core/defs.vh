@@ -1,8 +1,8 @@
 `ifndef DEFS_VH
 `define DEFS_VH
 
-// WARNING! uncomment while generating bitstream
-// `define SYNTH
+// WARNING! comment while generating bitstream
+`define SIM
 
 // Memory defs
 `define NBANKS            8    // number of banks (bytes per word)

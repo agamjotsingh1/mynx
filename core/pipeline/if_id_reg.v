@@ -6,10 +6,10 @@ module if_id_reg (
   input wire rst,
 
   input wire `W(`DLEN) in_pc,
-  input wire `W(`DLEN) in_instr,
+  input wire `W(`ILEN) in_instr,
 
   output reg `W(`DLEN) out_pc,
-  output reg `W(`DLEN) out_instr,
+  output reg `W(`ILEN) out_instr,
 );
   always @(posedge clk) begin
     if(rst) begin
