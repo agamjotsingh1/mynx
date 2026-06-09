@@ -10,10 +10,10 @@ module mem_wb_reg (
   input wire `W(`DLEN)       in_regw_data,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
 
-  output wire `W(`RLEN)       out_rd,
-  output wire `W(`DLEN)       out_mem_res,
-  output wire `W(`DLEN)       out_regw_data,
-  output wire `W(`CTL_BUSLEN) out_ctl_bus
+  output reg `W(`RLEN)       out_rd,
+  output reg `W(`DLEN)       out_mem_res,
+  output reg `W(`DLEN)       out_regw_data,
+  output reg `W(`CTL_BUSLEN) out_ctl_bus
 );
   always @(posedge clk) begin
     if(rst) begin

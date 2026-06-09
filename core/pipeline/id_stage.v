@@ -29,7 +29,7 @@ module id_stage (
   // from WB stage
   input wire `W(`RLEN) __wb_rd,
   input wire `W(`DLEN) __wb_write_data,
-  input wire           __wb_reg_write,
+  input wire           __wb_reg_write
 );
   // instruction parsing
   assign rs1 = instr`RS1SLICE;

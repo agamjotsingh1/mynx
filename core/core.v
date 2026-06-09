@@ -1,4 +1,5 @@
 `include "defs.vh"
+`include "modules/mem.v"
 `include "pipeline/if_stage.v"
 `include "pipeline/if_id_reg.v"
 `include "pipeline/id_stage.v"
@@ -40,12 +41,15 @@ module core (
   wire `W(`DLEN)       __ex_alu_res;
   wire `W(`DLEN)       __ex_mem_data;
 
+  // TODO! remove lint violations
+  /* verilator lint_off UNUSEDSIGNAL */
   wire `W(`DLEN)       __mem_pc;
   wire `W(`RLEN)       __mem_rs1;
   wire `W(`RLEN)       __mem_rs2;
   wire `W(`RLEN)       __mem_rd;
   wire `W(`DLEN)       __mem_imm;
   wire `W(`DLEN)       __mem_alu_res;
+  /* verilator lint_on UNUSEDSIGNAL */
   wire `W(`DLEN)       __mem_mem_data;
   wire `W(`CTL_BUSLEN) __mem_ctl_bus;
   wire `W(`DLEN)       __mem_mem_res;
@@ -69,16 +73,19 @@ module core (
     .sign_extend_a(0),
     .bw_a(`BW_WORD),
     .data_in_a(0),
+
+    /* verilator lint_off WIDTHEXPAND */
     .data_out_a(__if_instr),
+    /* verilator lint_on WIDTHEXPAND */
 
     // port b for mem stage access
     .addr_b(__mem_alu_res[0 +: `ADDRLEN]),
-    .mem_read_b(MEM_READ(__mem_ctl_bus)),
-    .mem_write_b(MEM_WRITE(__mem_ctl_bus)),
-    .sign_extend_b(SIGN_EXTEND(__mem_ctl_bus)),
-    .bw_b(BW(__mem_ctl_bus)),
+    .mem_read_b(`MEM_READ(__mem_ctl_bus)),
+    .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
+    .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
+    .bw_b(`BW(__mem_ctl_bus)),
     .data_in_b(__mem_mem_data),
-    .data_out_b(__mem_mem_res),
+    .data_out_b(__mem_mem_res)
   );
 
   `endif
@@ -119,7 +126,7 @@ module core (
     .ctl_bus(__id_ctl_bus),
     .__wb_rd(__wb_rd),
     .__wb_write_data(__wb_write_data),
-    .__wb_reg_write(REG_WRITE(__wb_ctl_bus))
+    .__wb_reg_write(`REG_WRITE(__wb_ctl_bus))
   );
   /* -------------------- */
 
@@ -184,11 +191,12 @@ module core (
     .out_imm(__mem_imm),
     .out_alu_res(__mem_alu_res),
     .out_mem_data(__mem_mem_data),
-    .out_ctl_bus(__mem_ctl_bus),
+    .out_ctl_bus(__mem_ctl_bus)
   );
 
   /* ----- MEM STAGE ------ */
   // TODO!
+  assign __mem_regw_data = __mem_alu_res;
   /* -------------------- */
 
   mem_wb_reg mem_wb_reg_instance (
@@ -210,6 +218,7 @@ module core (
   wb_stage wb_stage_instance (
     .stall(stall),
     .regw_data(__wb_regw_data),
+    .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
     .wb_write_data(__wb_write_data)
   );

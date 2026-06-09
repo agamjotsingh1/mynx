@@ -9,7 +9,7 @@ module if_id_reg (
   input wire `W(`ILEN) in_instr,
 
   output reg `W(`DLEN) out_pc,
-  output reg `W(`ILEN) out_instr,
+  output reg `W(`ILEN) out_instr
 );
   always @(posedge clk) begin
     if(rst) begin
