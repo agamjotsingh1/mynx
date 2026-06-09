@@ -1,6 +1,5 @@
-`include "../defs.vh"
+`include "defs.vh"
 
-// just a placeholder mostly
 // memory lies outside this stage
 module if_stage (
   // global stall wire

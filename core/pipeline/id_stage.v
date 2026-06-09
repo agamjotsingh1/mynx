@@ -1,7 +1,8 @@
-`include "../defs.vh"
-`include "../modules/regfile.v"
-`include "../modules/immgen.v"
-`include "../modules/alu_ctl.v"
+`include "defs.vh"
+`include "modules/regfile.v"
+`include "modules/immgen.v"
+`include "modules/alu_ctl.v"
+`include "modules/ctl.v"
 
 module id_stage (
   // global stall wire
@@ -21,6 +22,9 @@ module id_stage (
 
   // alu control outputs
   output wire `W(`ALU_OPLEN) alu_op,
+
+  // control outputs
+  output wire `W(`CTL_BUSLEN) ctl_bus,
 
   // from WB stage
   input wire `W(`RLEN) __wb_rd,
@@ -58,6 +62,12 @@ module id_stage (
     .stall(stall),
     .instr(instr),
     .alu_op(alu_op)
+  );
+
+  ctl ctl_instance (
+    .stall(stall),
+    .instr(instr),
+    .ctl_bus(ctl_bus)
   );
   
 endmodule

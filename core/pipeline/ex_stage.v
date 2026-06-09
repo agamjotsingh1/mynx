@@ -1,5 +1,5 @@
-`include "../defs.vh"
-`include "../modules/alu.v"
+`include "defs.vh"
+`include "modules/alu.v"
 
 module ex_stage (
   // global stall wire
@@ -15,7 +15,7 @@ module ex_stage (
   input wire `W(`ALU_OPLEN)  alu_op,
   input wire `W(`CTL_BUSLEN) ctl_bus,
 
-  output wire `W(`DLEN) alu_out
+  output wire `W(`DLEN) alu_res
 );
   alu alu_instance (
     .stall(stall),
@@ -23,6 +23,6 @@ module ex_stage (
     .alu_op(alu_op),
     .in1(regdata1),
     .in2(ALU_SRC(ctl_bus) ? imm: regdata2),
-    .out(alu_out)
+    .out(alu_res)
   );
 endmodule

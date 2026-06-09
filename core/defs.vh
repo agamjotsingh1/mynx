@@ -40,6 +40,7 @@
 `define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
 
 `define RSTPC             0  // pc when processor resets
+`define RSTINSTR          0  // instr when processor resets
 
 // slices from instructions
 `define OSLICE            [6:0]   // opcode
@@ -60,6 +61,19 @@
 `define OP_U_LUI          7'b0110111
 `define OP_U_AUIPC        7'b0010111
 `define OP_J              7'b1101111
+
+// Some useful funct3 defs
+`define F3LB              3'h0
+`define F3LH              3'h1
+`define F3LW              3'h2
+`define F3LD              3'h3
+`define F3LBU             3'h4
+`define F3LHU             3'h5
+`define F3LWU             3'h6
+`define F3SB              3'h0
+`define F3SH              3'h1
+`define F3SW              3'h2
+`define F3SD              3'h3
 
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
@@ -109,12 +123,14 @@
 `define ALU_OP_SLTU       4'h9
 
 // Control (ctl) signals
-`define CTL_BUSLEN            5
+`define CTL_BUSLEN            8
 
-`define ALU_SRC(ctl_bus)      ctl_bus[0] // 1 for imm, 0 for reg
-`define REG_WRITE(ctl_bus)    ctl_bus[1] // 1 for reg to be written
-`define MEM_WRITE(ctl_bus)    ctl_bus[2] // 1 for mem to be written
-`define MEM_READ(ctl_bus)     ctl_bus[3] // 1 for mem to be read 
-`define MEM_TO_REG(ctl_bus)   ctl_bus[4] // 1 for mem reads to be written to reg
+`define ALU_SRC(ctl_bus)      ctl_bus[0]   // 1 for imm, 0 for reg
+`define REG_WRITE(ctl_bus)    ctl_bus[1]   // 1 for reg to be written
+`define MEM_WRITE(ctl_bus)    ctl_bus[2]   // 1 for mem to be written
+`define MEM_READ(ctl_bus)     ctl_bus[3]   // 1 for mem to be read 
+`define MEM_TO_REG(ctl_bus)   ctl_bus[4]   // 1 for mem reads to be written to reg
+`define BW(ctl_bus)           ctl_bus[6:5] // bitwidth for memory ops
+`define SIGN_EXTEND(ctl_bus)  ctl_bus[7]   // sign_extend for memory ops
 
 `endif
