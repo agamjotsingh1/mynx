@@ -1,7 +1,7 @@
-`include "../defs.vh"
+`include "defs.vh"
 
 // SIMULATION ONLY
-// one cycle delay, true dual port
+// zero cycle delay, true dual port
 // results in no pipeline stalls
 module mem_bank (
   input wire clk,

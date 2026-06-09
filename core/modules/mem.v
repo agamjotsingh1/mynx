@@ -1,4 +1,5 @@
-// `include "../defs.vh"
+`include "defs.vh"
+`include "modules/mem_bank.v"
 
 // SIMULATION ONLY
 // 2 port memory
@@ -14,7 +15,7 @@ module mem (
   input wire                sign_extend_a,
   input wire  `W(`BWLEN)    bw_a,
   input wire  `W(`DLEN)     data_in_a,
-  output reg `W(`DLEN)     data_out_a,
+  output reg  `W(`DLEN)     data_out_a,
 
   // Port B
   input wire  `W(`ADDRLEN)  addr_b,
@@ -27,8 +28,9 @@ module mem (
 );
   // --- PORT A ---
   wire `W($clog2(`NBANKS)) start_bank_a    = addr_a[0 +: $clog2(`NBANKS)];
-  wire `W(`BANK_ADDRLEN) start_bank_addr_a = addr_a[$clog2(`NBANKS) +: `BANKADDRLEN];
-  wire `W(`NBANKS) bank_enmask_unrotated_a;
+  wire `W(`BANK_ADDRLEN) start_bank_addr_a = addr_a[$clog2(`NBANKS) +: `BANK_ADDRLEN];
+
+  reg `W(`NBANKS) bank_enmask_unrotated_a;
 
   always @(*) begin
     case (bw_a)
@@ -46,24 +48,25 @@ module mem (
     (bank_enmask_unrotated_a << start_bank_a) |
     (bank_enmask_unrotated_a >> (`NBANKS - start_bank_a));
 
+  // pad to integer to avoid length infers
   wire `W(`DLEN) data_in_rotated_a =
-    (data_in_a << (start_bank_a << $clog2(BANKLEN))) |
-    (data_in_a >> ((`NBANKS - start_bank_a) << $clog2(BANKLEN)));
+    (data_in_a << ({32'd0, start_bank_a} << $clog2(`BANKLEN))) |
+    (data_in_a >> ((`NBANKS - {32'd0, start_bank_a}) << $clog2(`BANKLEN)));
 
   wire `W(`DLEN) data_out_rotated_a;
   wire `W(`DLEN) data_out_unrotated_a;
 
   // circular right shift to get unrotated (actual) data out
   assign data_out_unrotated_a =
-    (data_out_rotated_a >> (start_bank_a << $clog2(BANKLEN))) |
-    (data_out_rotated_a << ((`NBANKS - start_bank_a) << $clog2(BANKLEN)));
+    (data_out_rotated_a >> ({32'd0, start_bank_a} << $clog2(`BANKLEN))) |
+    (data_out_rotated_a << ((`NBANKS - {32'd0, start_bank_a}) << $clog2(`BANKLEN)));
 
   always @(*) begin
     case(bw_a)
-      `BW_BYTE:     data_out_a = {{(`DLEN - `BYTE){sign_extend ? data_out_unrotated_a[`BYTE]: 1'b0}}, data_out_unrotated_a[0 +: `BYTE]}
-      `BW_HALFWORD: data_out_a = {{(`DLEN - `HALFWORD){sign_extend ? data_out_unrotated_a[`HALFWORD]: 1'b0}}, data_out_unrotated_a[0 +: `HALFWORD]}
-      `BW_WORD:     data_out_a = {{(`DLEN - `WORD){sign_extend ? data_out_unrotated_a[`WORD]: 1'b0}}, data_out_unrotated_a[0 +: `WORD]}
-      `BW_DBLWORD:  data_out_a = {{(`DLEN - `DBLWORD){sign_extend ? data_out_unrotated_a[`DBLWORD]: 1'b0}}, data_out_unrotated_a[0 +: `DBLWORD]}
+      `BW_BYTE:     data_out_a = {{(`DLEN - `BYTE){sign_extend_a ? data_out_unrotated_a[`BYTE-1]: 1'b0}}, data_out_unrotated_a[0 +: `BYTE]};
+      `BW_HALFWORD: data_out_a = {{(`DLEN - `HALFWORD){sign_extend_a ? data_out_unrotated_a[`HALFWORD-1]: 1'b0}}, data_out_unrotated_a[0 +: `HALFWORD]};
+      `BW_WORD:     data_out_a = {{(`DLEN - `WORD){sign_extend_a ? data_out_unrotated_a[`WORD-1]: 1'b0}}, data_out_unrotated_a[0 +: `WORD]};
+      `BW_DBLWORD:  data_out_a = {{(`DLEN - `DBLWORD){sign_extend_a ? data_out_unrotated_a[`DBLWORD-1]: 1'b0}}, data_out_unrotated_a[0 +: `DBLWORD]};
       default:      data_out_a = 0;
     endcase
   end
@@ -71,8 +74,9 @@ module mem (
 
   // --- PORT B ---
   wire `W($clog2(`NBANKS)) start_bank_b    = addr_b[0 +: $clog2(`NBANKS)];
-  wire `W(`BANK_bDDRLEN) start_bank_bddr_b = addr_b[$clog2(`NBANKS) +: `BANKADDRLEN];
-  wire `W(`NBANKS) bank_enmask_unrotated_b;
+  wire `W(`BANK_ADDRLEN) start_bank_addr_b = addr_b[$clog2(`NBANKS) +: `BANK_ADDRLEN];
+
+  reg `W(`NBANKS) bank_enmask_unrotated_b;
 
   always @(*) begin
     case (bw_b)
@@ -90,24 +94,25 @@ module mem (
     (bank_enmask_unrotated_b << start_bank_b) |
     (bank_enmask_unrotated_b >> (`NBANKS - start_bank_b));
 
+  // pad to integer to avoid length infers
   wire `W(`DLEN) data_in_rotated_b =
-    (data_in_b << (start_bank_b << $clog2(BANKLEN))) |
-    (data_in_b >> ((`NBANKS - start_bank_b) << $clog2(BANKLEN)));
+    (data_in_b << ({32'd0, start_bank_b} << $clog2(`BANKLEN))) |
+    (data_in_b >> ((`NBANKS - {32'd0, start_bank_b}) << $clog2(`BANKLEN)));
 
   wire `W(`DLEN) data_out_rotated_b;
   wire `W(`DLEN) data_out_unrotated_b;
 
   // circular right shift to get unrotated (actual) data out
   assign data_out_unrotated_b =
-    (data_out_rotated_b >> (start_bank_b << $clog2(BANKLEN))) |
-    (data_out_rotated_b << ((`NBANKS - start_bank_b) << $clog2(BANKLEN)));
+    (data_out_rotated_b >> ({32'd0, start_bank_b} << $clog2(`BANKLEN))) |
+    (data_out_rotated_b << ((`NBANKS - {32'd0, start_bank_b}) << $clog2(`BANKLEN)));
 
   always @(*) begin
     case(bw_b)
-      `BW_BYTE:     data_out_b = {{(`DLEN - `BYTE){sign_extend ? data_out_unrotated_b[`BYTE]: 1'b0}}, data_out_unrotated_b[0 +: `BYTE]}
-      `BW_HALFWORD: data_out_b = {{(`DLEN - `HALFWORD){sign_extend ? data_out_unrotated_b[`HALFWORD]: 1'b0}}, data_out_unrotated_b[0 +: `HALFWORD]}
-      `BW_WORD:     data_out_b = {{(`DLEN - `WORD){sign_extend ? data_out_unrotated_b[`WORD]: 1'b0}}, data_out_unrotated_b[0 +: `WORD]}
-      `BW_DBLWORD:  data_out_b = {{(`DLEN - `DBLWORD){sign_extend ? data_out_unrotated_b[`DBLWORD]: 1'b0}}, data_out_unrotated_b[0 +: `DBLWORD]}
+      `BW_BYTE:     data_out_b = {{(`DLEN - `BYTE){sign_extend_b ? data_out_unrotated_b[`BYTE-1]: 1'b0}}, data_out_unrotated_b[0 +: `BYTE]};
+      `BW_HALFWORD: data_out_b = {{(`DLEN - `HALFWORD){sign_extend_b ? data_out_unrotated_b[`HALFWORD-1]: 1'b0}}, data_out_unrotated_b[0 +: `HALFWORD]};
+      `BW_WORD:     data_out_b = {{(`DLEN - `WORD){sign_extend_b ? data_out_unrotated_b[`WORD-1]: 1'b0}}, data_out_unrotated_b[0 +: `WORD]};
+      `BW_DBLWORD:  data_out_b = {{(`DLEN - `DBLWORD){sign_extend_b ? data_out_unrotated_b[`DBLWORD-1]: 1'b0}}, data_out_unrotated_b[0 +: `DBLWORD]};
       default:      data_out_b = 0;
     endcase
   end
@@ -120,18 +125,18 @@ module mem (
         .clk(clk),
 
         // PORT A
-        .addr_a(start_bank_addr_a + (i < start_bank)),
+        .addr_a(start_bank_addr_a + (i < start_bank_a)),
         .mem_read_a(bank_enmask_a[i] & mem_read_a),
         .mem_write_a(bank_enmask_a[i] & mem_write_a),
-        .data_in_a(data_in_rotated_a[(i << $clog2(BANKLEN)) +: BANKLEN]),
-        .data_out_a(data_out_rotated_a[(i << $clog2(BANKLEN)) +: BANKLEN]),
+        .data_in_a(data_in_rotated_a[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
+        .data_out_a(data_out_rotated_a[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
 
         // PORT B
-        .addr_b(start_bank_bddr_b + (i < start_bank)),
+        .addr_b(start_bank_addr_b + (i < start_bank_b)),
         .mem_read_b(bank_enmask_b[i] & mem_read_b),
         .mem_write_b(bank_enmask_b[i] & mem_write_b),
-        .data_in_b(data_in_rotated_b[(i << $clog2(BANKLEN)) +: BANKLEN]),
-        .data_out_b(data_out_rotated_b[(i << $clog2(BANKLEN)) +: BANKLEN])
+        .data_in_b(data_in_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
+        .data_out_b(data_out_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN])
       );
     end
   endgenerate

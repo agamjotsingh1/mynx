@@ -4,19 +4,6 @@
 #include <iostream>
 #include <cstdint>
 
-// simulates one full clock cycle
-// drops the clock, evaluates, raises the clock, evaluates, and dumps waveforms
-void tick(Vregfile *dut, VerilatedVcdC *tfp, int &time)
-{
-  dut->clk = 0;
-  dut->eval();
-  tfp->dump(time++);
-
-  dut->clk = 1;
-  dut->eval();
-  tfp->dump(time++);
-}
-
 int main(int argc, char **argv)
 {
   Verilated::commandArgs(argc, argv);
@@ -30,6 +17,18 @@ int main(int argc, char **argv)
 
   int time = 0;
   int fails = 0;
+
+  // simulates one full clock cycle
+  // drops the clock, evaluates, raises the clock, evaluates, and dumps waveforms
+  auto tick = [&]() {
+    dut->clk = 0;
+    dut->eval();
+    tfp->dump(time++);
+    
+    dut->clk = 1;
+    dut->eval();
+    tfp->dump(time++);
+  };
 
   auto run_test = [&](uint64_t got, uint64_t expected, const char *name)
   {
@@ -51,10 +50,10 @@ int main(int argc, char **argv)
   // System Reset
   dut->rst = 1;
   dut->write_en = 0;
-  tick(dut, tfp, time);
+  tick();
 
   dut->rst = 0;
-  tick(dut, tfp, time);
+  tick();
 
   // read an arbitrary reg to ensure it cleared to 0
   dut->read_addr1 = 5;
@@ -65,7 +64,7 @@ int main(int argc, char **argv)
   dut->write_en = 1;
   dut->write_addr = 10;
   dut->write_data = 0xDEADBEEF12345678ULL;
-  tick(dut, tfp, time); // data is saved on this clock edge
+  tick(); // data is saved on this clock edge
   dut->write_en = 0;    // turn off write enable
 
   dut->read_addr1 = 10;
@@ -76,7 +75,7 @@ int main(int argc, char **argv)
   dut->write_en = 1;
   dut->write_addr = 0;
   dut->write_data = 0xFFFFFFFFFFFFFFFFULL;
-  tick(dut, tfp, time); // attempt to write to x0
+  tick(); // attempt to write to x0
   dut->write_en = 0;
 
   dut->read_addr1 = 0;
@@ -87,7 +86,7 @@ int main(int argc, char **argv)
   dut->write_en = 0; // try to write without setting write_en = 1
   dut->write_addr = 15;
   dut->write_data = 0xCAFEBABEULL;
-  tick(dut, tfp, time);
+  tick();
 
   dut->read_addr1 = 15;
   dut->eval();
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
   dut->write_en = 1;
   dut->write_addr = 11;
   dut->write_data = 0x1111111111111111ULL;
-  tick(dut, tfp, time);
+  tick();
   dut->write_en = 0;
 
   // read x10 and x11 at the exact same time
@@ -109,7 +108,7 @@ int main(int argc, char **argv)
   run_test(dut->read_data2, 0x1111111111111111ULL, "Dual Read Port 2 (x11)");
 
   // Flush and close waveforms
-  tick(dut, tfp, time);
+  tick();
   tfp->dump(time++);
   tfp->close();
 
