@@ -139,7 +139,7 @@
 `define BR_BGEU           3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            12
+`define CTL_BUSLEN            13
 
 `define ALU_SRC(ctl_bus)      ctl_bus[0]    // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]    // 1 for reg to be written
@@ -149,7 +149,8 @@
 `define BW(ctl_bus)           ctl_bus[6:5]  // bitwidth for memory ops
 `define SIGN_EXTEND(ctl_bus)  ctl_bus[7]    // 1 if sign extend for memory ops
 `define BR(ctl_bus)           ctl_bus[10:8] // branching ctl sigs
-`define JAL(ctl_bus)          ctl_bus[11]   // 1 if the instruction jal
+`define JAL(ctl_bus)          ctl_bus[11]   // 1 if the instruction is jal
+`define JALR(ctl_bus)         ctl_bus[12]   // 1 if the instruction is jalr
 
 // Pipeline stalling signals
 // "stall" is wor type bus

@@ -38,5 +38,5 @@ module ex_stage (
     .out(alu_res)
   );
 
-  assign ex_res = `JAL(ctl_bus) ? pc + 4: alu_res;
+  assign ex_res = (`JAL(ctl_bus) | `JALR(ctl_bus)) ? pc + 4: alu_res;
 endmodule

@@ -94,12 +94,11 @@ module id_stage (
       default:  branch_taken = 0;
     endcase
 
-    branch_taken |= `JAL(ctl_bus);
-    if(`JAL(ctl_bus)) begin
-      $display("hehe found jal\n");
-    end
+    branch_taken |= (`JAL(ctl_bus) | `JALR(ctl_bus));
   end
 
   // shift is implicitly added in the immgen block
-  assign next_pc = pc + imm;
+  // TODO!
+  // optimize this to take the alu output instead of an extra adder here
+  assign next_pc = (`JALR(ctl_bus) ? regdata1: pc) + imm;
 endmodule

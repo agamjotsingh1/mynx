@@ -54,6 +54,7 @@ module ctl (
       `OP_I_JALR: begin
         `ALU_SRC(ctl_bus)     = 1;
         `REG_WRITE(ctl_bus)   = 1;
+        `JALR(ctl_bus)        = 1;
       end
 
       // TODO!
