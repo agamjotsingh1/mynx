@@ -7,13 +7,15 @@ VCD = vcd
 VERILATOR = verilator
 VFLAGS = -Wall --trace --cc --exe --build -I$(CORE)
 
+PROG ?= tests/program.hex
+
 .PHONY: clean
 
 core: $(CORE)/core.v $(DV)/core_tb.cpp
 	@echo "Building and Running $@..."
 	mkdir -p $(OBJ) $(VCD)
 	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/$@_tb.cpp --Mdir $(OBJ)/$@
-	./$(OBJ)/$@/V$@
+	./$(OBJ)/$@/V$@ $(PROG)
 
 # typing "make alu" automatically pairs "core/alu.v" with "dv/alu_tb.cpp"
 %: $(CORE)/$(MODULES)/%.v $(DV)/%_tb.cpp
