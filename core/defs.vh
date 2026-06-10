@@ -166,7 +166,8 @@
 // forwarding defs
 `define FWDLEN                2
 `define FWD_NONE              2'h0
-`define FWD_EX_MEM            2'h1
-`define FWD_MEM_WB            2'h2
+`define FWD_ID_EX             2'h1
+`define FWD_EX_MEM            2'h2
+`define FWD_MEM_WB            2'h3
 
 `endif
