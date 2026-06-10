@@ -3,19 +3,32 @@ MODULES = modules
 DV = dv
 OBJ = obj_dir
 VCD = vcd
+AS = riscv64-elf-as
+OBJCOPY = riscv64-elf-objcopy
+ASFLAGS = -march=rv64i -mabi=lp64
 
 VERILATOR = verilator
 VFLAGS = -Wall --trace --cc --exe --build -I$(CORE)
 
-PROG ?= tests/program.hex
+PROG ?= program
+
+HEX_FILE = tests/hex/$(PROG).hex
 
 .PHONY: clean
 
-core: $(CORE)/core.v $(DV)/core_tb.cpp
-	@echo "Building and Running $@..."
+tests/hex/%.hex: tests/asm/%.s
+	@echo "Assembling $< into $@..."
+	mkdir -p tests/hex
+	$(AS) $(ASFLAGS) $< -o tests/hex/$*.o
+	$(OBJCOPY) -O binary tests/hex/$*.o tests/hex/$*.bin
+	hexdump -v -e '/4 "%08x\n"' tests/hex/$*.bin > $@
+	rm -f tests/hex/$*.o tests/hex/$*.bin
+
+core: $(HEX_FILE) $(CORE)/core.v $(DV)/core_tb.cpp
+	@echo "Building and Running $@ with $(HEX_FILE)..."
 	mkdir -p $(OBJ) $(VCD)
 	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/$@_tb.cpp --Mdir $(OBJ)/$@
-	./$(OBJ)/$@/V$@ $(PROG)
+	./$(OBJ)/$@/V$@ $(HEX_FILE)
 
 # typing "make alu" automatically pairs "core/alu.v" with "dv/alu_tb.cpp"
 %: $(CORE)/$(MODULES)/%.v $(DV)/%_tb.cpp
@@ -28,3 +41,4 @@ clean:
 	@echo "Cleaning up..."
 	rm -rf $(OBJ)
 	rm -rf $(VCD)
+	rm -rf tests/hex/
