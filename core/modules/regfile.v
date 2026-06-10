@@ -1,8 +1,6 @@
 `include "defs.vh"
 
 module regfile (
-  output wor `W(`STLEN) stall,
-
 	input wire clk,
   input wire rst,
 
@@ -19,8 +17,6 @@ module regfile (
 	input wire `W(`RLEN)  write_addr,
 	input wire `W(`DLEN)  write_data
 );
-  assign stall = `STALL_NONE;
-
 	// 32 registers are x0, x1, x2 ... x31
   integer i;
 	reg `W(`DLEN) reg_array [(2**(`RLEN)- 1):0];

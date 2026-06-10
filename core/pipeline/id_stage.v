@@ -5,8 +5,6 @@
 `include "modules/ctl.v"
 
 module id_stage (
-  output wor `W(`STLEN) stall,
-
   input wire           clk,
   input wire           rst,
   input wire `W(`DLEN) pc,
@@ -50,7 +48,6 @@ module id_stage (
   assign rd  = instr`RDSLICE;
 
   regfile regfile_instance (
-    .stall(stall),
     .clk(clk),
     .rst(rst),
 
@@ -66,19 +63,16 @@ module id_stage (
   );
 
   immgen immgen_instance (
-    .stall(stall),
     .instr(instr),
     .imm(imm)
   );
 
   alu_ctl alu_ctl_instance (
-    .stall(stall),
     .instr(instr),
     .alu_op(alu_op)
   );
 
   ctl ctl_instance (
-    .stall(stall),
     .instr(instr),
     .ctl_bus(ctl_bus)
   );

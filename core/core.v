@@ -1,6 +1,7 @@
 `include "defs.vh"
 `include "modules/mem.v"
 `include "modules/fwd_unit.v"
+`include "modules/hdu.v"
 `include "pipeline/if_stage.v"
 `include "pipeline/if_id_reg.v"
 `include "pipeline/id_stage.v"
@@ -33,6 +34,7 @@ module core (
   wire `W(`DLEN)       __id_next_pc;
   wire `W(`FWDLEN)     __id_fwd1;
   wire `W(`FWDLEN)     __id_fwd2;
+  wire                 __id_stall_nop;
 
   wire `W(`DLEN)       __ex_pc;
   wire `W(`RLEN)       __ex_rs1;
@@ -111,6 +113,8 @@ module core (
   if_id_reg if_id_reg_instance (
     .stall(stall),
     .clk(clk),
+    // TODO!
+    // this might be slightly wrong
     .rst(rst | __id_branch_taken),
     .in_pc(__if_pc),
     .in_instr(__if_instr),
@@ -121,7 +125,6 @@ module core (
 
   /* ----- ID STAGE ------ */
   id_stage id_stage_instance (
-    .stall(stall),
     .clk(clk),
     .rst(rst),
     .pc(__id_pc),
@@ -144,12 +147,21 @@ module core (
     .__mem_ex_res(__mem_ex_res),
     .__wb_write_data(__wb_write_data)
   );
+
+  hdu hdu_instance (
+    .stall(stall),
+    .__id_rs1(__id_rs1),
+    .__id_rs2(__id_rs2),
+    .__ex_rd(__ex_rd),
+    .__ex_ctl_bus(__ex_ctl_bus),
+    .__id_stall_nop(__id_stall_nop)
+  );
   /* -------------------- */
 
   id_ex_reg id_ex_reg_instance (
     .stall(stall),
     .clk(clk),
-    .rst(rst),
+    .rst(rst | __id_stall_nop),
     .in_pc(__id_pc),
     .in_rs1(__id_rs1),
     .in_rs2(__id_rs2),
@@ -173,7 +185,6 @@ module core (
 
   /* ----- EX STAGE ------ */
   ex_stage ex_stage_instance (
-    .stall(stall),
     .clk(clk),
     .rst(rst),
 
@@ -238,7 +249,6 @@ module core (
 
   /* ----- WB STAGE ------ */
   wb_stage wb_stage_instance (
-    .stall(stall),
     .regw_data(__wb_regw_data),
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),

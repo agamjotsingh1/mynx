@@ -1,17 +1,12 @@
 `include "defs.vh"
 
 module alu (
-  // global stall wire
-  output wor `W(`STLEN) stall,
-
   input wire `W(`ALU_OPLEN) alu_op,
   input wire `W(`DLEN)      in1,
   input wire `W(`DLEN)      in2,
 
   output reg `W(`DLEN)      out
 );
-  assign stall = `STALL_NONE;
-
   always @(*) begin
     case (alu_op)
       `ALU_OP_ADD:  out = in1 + in2;
