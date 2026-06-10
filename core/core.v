@@ -1,5 +1,6 @@
 `include "defs.vh"
 `include "modules/mem.v"
+`include "modules/fwd_unit.v"
 `include "pipeline/if_stage.v"
 `include "pipeline/if_id_reg.v"
 `include "pipeline/id_stage.v"
@@ -42,6 +43,8 @@ module core (
   wire `W(`CTL_BUSLEN) __ex_ctl_bus;
   wire `W(`DLEN)       __ex_ex_res;
   wire `W(`DLEN)       __ex_mem_data;
+  wire `W(`FWDLEN)     __ex_fwd1;
+  wire `W(`FWDLEN)     __ex_fwd2;
 
   // TODO! remove lint violations
   /* verilator lint_off UNUSEDSIGNAL */
@@ -175,7 +178,12 @@ module core (
     .mem_data(__ex_mem_data),
     .alu_op(__ex_alu_op),
     .ctl_bus(__ex_ctl_bus),
-    .ex_res(__ex_ex_res)
+    .ex_res(__ex_ex_res),
+
+    .fwd1(__ex_fwd1),
+    .fwd2(__ex_fwd2),
+    .__mem_ex_res(__mem_ex_res),
+    .__wb_write_data(__wb_write_data)
   );
   /* -------------------- */
 
@@ -229,6 +237,19 @@ module core (
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
     .wb_write_data(__wb_write_data)
+  );
+  /* -------------------- */
+
+  /* ----- FWD UNIT ------ */
+  fwd_unit fwd_unit_instance (
+    .__ex_rs1(__ex_rs1),
+    .__ex_rs2(__ex_rs2),
+    .__mem_rd(__mem_rd),
+    .__mem_ctl_bus(__mem_ctl_bus),
+    .__wb_rd(__wb_rd),
+    .__wb_ctl_bus(__wb_ctl_bus),
+    .__ex_fwd1(__ex_fwd1),
+    .__ex_fwd2(__ex_fwd2)
   );
   /* -------------------- */
 endmodule

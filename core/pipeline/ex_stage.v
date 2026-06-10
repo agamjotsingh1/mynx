@@ -24,17 +24,33 @@ module ex_stage (
   /* verilator lint_on UNUSEDSIGNAL */
 
   output wire `W(`DLEN) mem_data,
-  output wire `W(`DLEN) ex_res
+  output wire `W(`DLEN) ex_res,
+
+  // fwd controls
+  input wire `W(`FWDLEN)     fwd1,
+  input wire `W(`FWDLEN)     fwd2,
+
+  // fwd inputs
+  input wire `W(`DLEN)       __mem_ex_res,
+  input wire `W(`DLEN)       __wb_write_data
 );
   assign stall = `STALL_NONE;
   assign mem_data = regdata2;
   wire `W(`DLEN) alu_res;
 
+  wire `W(`DLEN) alu_in1 = 
+    (fwd1 == `FWD_EX_MEM) ? __mem_ex_res:
+    ((fwd1 == `FWD_MEM_WB) ? __wb_write_data: regdata1);
+
+  wire `W(`DLEN) alu_in2 = 
+    (fwd2 == `FWD_EX_MEM) ? __mem_ex_res:
+    ((fwd2 == `FWD_MEM_WB) ? __wb_write_data: regdata2);
+
   alu alu_instance (
     .stall(stall),
     .alu_op(alu_op),
-    .in1(regdata1),
-    .in2(`ALU_SRC(ctl_bus) ? imm: regdata2),
+    .in1(alu_in1),
+    .in2(`ALU_SRC(ctl_bus) ? imm: alu_in2),
     .out(alu_res)
   );
 

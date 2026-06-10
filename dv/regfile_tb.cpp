@@ -19,13 +19,13 @@ int main(int argc, char **argv)
   int fails = 0;
 
   // simulates one full clock cycle
-  // drops the clock, evaluates, raises the clock, evaluates, and dumps waveforms
+  // raises the clock, evaluates, drops the clock, evaluates, and dumps waveforms
   auto tick = [&]() {
-    dut->clk = 0;
+    dut->clk = 1;
     dut->eval();
     tfp->dump(time++);
     
-    dut->clk = 1;
+    dut->clk = 0;
     dut->eval();
     tfp->dump(time++);
   };

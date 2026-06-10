@@ -25,7 +25,7 @@ module regfile (
   integer i;
 	reg `W(`DLEN) reg_array [(2**(`RLEN)- 1):0];
 	
-	always @(posedge clk) begin
+	always @(negedge clk) begin
     if(rst) begin
       for(i = 0; i < 2**(`RLEN); i = i + 1) begin
         reg_array[i] <= 0;

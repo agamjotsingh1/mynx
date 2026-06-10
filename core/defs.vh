@@ -163,4 +163,10 @@
 `define STALL_ALL             5'b11111
 `define STALL_NONE            5'b00000
 
+// forwarding defs
+`define FWDLEN                2
+`define FWD_NONE              2'h0
+`define FWD_EX_MEM            2'h1
+`define FWD_MEM_WB            2'h2
+
 `endif
