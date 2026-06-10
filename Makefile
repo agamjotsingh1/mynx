@@ -30,13 +30,6 @@ core: $(HEX_FILE) $(CORE)/core.v $(DV)/core_tb.cpp
 	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/$@_tb.cpp --Mdir $(OBJ)/$@
 	./$(OBJ)/$@/V$@ $(HEX_FILE)
 
-verify: core
-	@echo "Generating trace with spike..."
-	# -m0x0:0x2000 maps 8192 bytes of memory starting at 0x0 (1024 doublewords)
-	# timeout is used because your ASM files contain infinite loops
-	-timeout 1s spike --isa=rv64i -m0x0:0x2000 --log-commits $(ELF_FILE) 2> spike_trace.log
-	@echo "Trace saved to spike_trace.log"
-
 # typing "make alu" automatically pairs "core/alu.v" with "dv/alu_tb.cpp"
 %: $(CORE)/$(MODULES)/%.v $(DV)/%_tb.cpp
 	@echo "Building and Running $@..."
