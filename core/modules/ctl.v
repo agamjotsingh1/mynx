@@ -46,8 +46,8 @@ module ctl (
         case(funct3)
           `F3LBU,
           `F3LHU,
-          `F3LWU:  `SIGN_EXTEND(ctl_bus) = 1;
-          default: `SIGN_EXTEND(ctl_bus) = 0;
+          `F3LWU:  `SIGN_EXTEND(ctl_bus) = 0;
+          default: `SIGN_EXTEND(ctl_bus) = 1;
         endcase
       end
 
@@ -97,6 +97,7 @@ module ctl (
 
       `OP_J: begin
         `REG_WRITE(ctl_bus)   = 1;
+        `JAL(ctl_bus)         = 1;
       end
 
       default: ctl_bus = 1;

@@ -11,6 +11,7 @@ module ex_stage (
   input wire rst,
   /* verilator lint_on UNUSEDSIGNAL */
 
+  input wire `W(`DLEN)       pc,
   input wire `W(`DLEN)       regdata1,
   input wire `W(`DLEN)       regdata2,
   input wire `W(`DLEN)       imm,
@@ -23,10 +24,11 @@ module ex_stage (
   /* verilator lint_on UNUSEDSIGNAL */
 
   output wire `W(`DLEN) mem_data,
-  output wire `W(`DLEN) alu_res
+  output wire `W(`DLEN) ex_res
 );
   assign stall = `STALL_NONE;
   assign mem_data = regdata2;
+  wire `W(`DLEN) alu_res;
 
   alu alu_instance (
     .stall(stall),
@@ -35,4 +37,6 @@ module ex_stage (
     .in2(`ALU_SRC(ctl_bus) ? imm: regdata2),
     .out(alu_res)
   );
+
+  assign ex_res = `JAL(ctl_bus) ? pc + 4: alu_res;
 endmodule

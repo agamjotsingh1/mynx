@@ -40,7 +40,7 @@ module core (
   wire `W(`DLEN)       __ex_imm;
   wire `W(`ALU_OPLEN)  __ex_alu_op;
   wire `W(`CTL_BUSLEN) __ex_ctl_bus;
-  wire `W(`DLEN)       __ex_alu_res;
+  wire `W(`DLEN)       __ex_ex_res;
   wire `W(`DLEN)       __ex_mem_data;
 
   // TODO! remove lint violations
@@ -50,7 +50,7 @@ module core (
   wire `W(`RLEN)       __mem_rs2;
   wire `W(`RLEN)       __mem_rd;
   wire `W(`DLEN)       __mem_imm;
-  wire `W(`DLEN)       __mem_alu_res;
+  wire `W(`DLEN)       __mem_ex_res;
   /* verilator lint_on UNUSEDSIGNAL */
   wire `W(`DLEN)       __mem_mem_data;
   wire `W(`CTL_BUSLEN) __mem_ctl_bus;
@@ -81,7 +81,7 @@ module core (
     /* verilator lint_on WIDTHEXPAND */
 
     // port b for mem stage access
-    .addr_b(__mem_alu_res[0 +: `ADDRLEN]),
+    .addr_b(__mem_ex_res[0 +: `ADDRLEN]),
     .mem_read_b(`MEM_READ(__mem_ctl_bus)),
     .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
     .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
@@ -168,13 +168,14 @@ module core (
     .clk(clk),
     .rst(rst),
 
+    .pc(__ex_pc),
     .regdata1(__ex_regdata1),
     .regdata2(__ex_regdata2),
     .imm(__ex_imm),
     .mem_data(__ex_mem_data),
     .alu_op(__ex_alu_op),
     .ctl_bus(__ex_ctl_bus),
-    .alu_res(__ex_alu_res)
+    .ex_res(__ex_ex_res)
   );
   /* -------------------- */
 
@@ -187,7 +188,7 @@ module core (
     .in_rs2(__ex_rs2),
     .in_rd(__ex_rd),
     .in_imm(__ex_imm),
-    .in_alu_res(__ex_alu_res),
+    .in_ex_res(__ex_ex_res),
     .in_mem_data(__ex_mem_data),
     .in_ctl_bus(__ex_ctl_bus),
 
@@ -196,14 +197,14 @@ module core (
     .out_rs2(__mem_rs2),
     .out_rd(__mem_rd),
     .out_imm(__mem_imm),
-    .out_alu_res(__mem_alu_res),
+    .out_ex_res(__mem_ex_res),
     .out_mem_data(__mem_mem_data),
     .out_ctl_bus(__mem_ctl_bus)
   );
 
   /* ----- MEM STAGE ------ */
   // TODO!
-  assign __mem_regw_data = __mem_alu_res;
+  assign __mem_regw_data = __mem_ex_res;
   /* -------------------- */
 
   mem_wb_reg mem_wb_reg_instance (

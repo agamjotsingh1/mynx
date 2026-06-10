@@ -26,10 +26,10 @@ module id_stage (
   // control outputs
   output wire `W(`CTL_BUSLEN) ctl_bus,
 
-  // branch taken or not
+  // branch taken or not (for both branch and jal instr)
   output reg branch_taken,
 
-  // next pc (for branching)
+  // next pc (for branching/jal)
   output reg `W(`DLEN) next_pc,
 
   // from WB stage
@@ -93,7 +93,13 @@ module id_stage (
       `BR_BGEU: branch_taken = ~ltu;
       default:  branch_taken = 0;
     endcase
+
+    branch_taken |= `JAL(ctl_bus);
+    if(`JAL(ctl_bus)) begin
+      $display("hehe found jal\n");
+    end
   end
 
-  assign next_pc = pc + (imm << `PC_OFF_SHIFT);
+  // shift is implicitly added in the immgen block
+  assign next_pc = pc + imm;
 endmodule

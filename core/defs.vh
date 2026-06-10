@@ -138,11 +138,8 @@
 `define BR_BLTU           3'h5
 `define BR_BGEU           3'h6
 
-// PC offset shift
-`define PC_OFF_SHIFT      1
-
 // Control (ctl) signals
-`define CTL_BUSLEN            11
+`define CTL_BUSLEN            12
 
 `define ALU_SRC(ctl_bus)      ctl_bus[0]    // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]    // 1 for reg to be written
@@ -150,8 +147,9 @@
 `define MEM_READ(ctl_bus)     ctl_bus[3]    // 1 for mem to be read 
 `define MEM_TO_REG(ctl_bus)   ctl_bus[4]    // 1 for mem reads to be written to reg
 `define BW(ctl_bus)           ctl_bus[6:5]  // bitwidth for memory ops
-`define SIGN_EXTEND(ctl_bus)  ctl_bus[7]    // sign_extend for memory ops
+`define SIGN_EXTEND(ctl_bus)  ctl_bus[7]    // 1 if sign extend for memory ops
 `define BR(ctl_bus)           ctl_bus[10:8] // branching ctl sigs
+`define JAL(ctl_bus)          ctl_bus[11]   // 1 if the instruction jal
 
 // Pipeline stalling signals
 // "stall" is wor type bus
