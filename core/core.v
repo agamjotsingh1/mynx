@@ -31,6 +31,8 @@ module core (
   wire `W(`CTL_BUSLEN) __id_ctl_bus;
   wire                 __id_branch_taken;
   wire `W(`DLEN)       __id_next_pc;
+  wire `W(`FWDLEN)     __id_fwd1;
+  wire `W(`FWDLEN)     __id_fwd2;
 
   wire `W(`DLEN)       __ex_pc;
   wire `W(`RLEN)       __ex_rs1;
@@ -135,8 +137,12 @@ module core (
     .branch_taken(__id_branch_taken),
     .next_pc(__id_next_pc),
     .__wb_rd(__wb_rd),
-    .__wb_write_data(__wb_write_data),
-    .__wb_reg_write(`REG_WRITE(__wb_ctl_bus))
+    .__wb_reg_write(`REG_WRITE(__wb_ctl_bus)),
+
+    .fwd1(__id_fwd1),
+    .fwd2(__id_fwd2),
+    .__mem_ex_res(__mem_ex_res),
+    .__wb_write_data(__wb_write_data)
   );
   /* -------------------- */
 
@@ -242,12 +248,16 @@ module core (
 
   /* ----- FWD UNIT ------ */
   fwd_unit fwd_unit_instance (
+    .__id_rs1(__id_rs1),
+    .__id_rs2(__id_rs2),
     .__ex_rs1(__ex_rs1),
     .__ex_rs2(__ex_rs2),
     .__mem_rd(__mem_rd),
     .__mem_ctl_bus(__mem_ctl_bus),
     .__wb_rd(__wb_rd),
     .__wb_ctl_bus(__wb_ctl_bus),
+    .__id_fwd1(__id_fwd1),
+    .__id_fwd2(__id_fwd2),
     .__ex_fwd1(__ex_fwd1),
     .__ex_fwd2(__ex_fwd2)
   );

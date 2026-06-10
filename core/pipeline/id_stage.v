@@ -32,10 +32,17 @@ module id_stage (
   // next pc (for branching/jal)
   output reg `W(`DLEN) next_pc,
 
-  // from WB stage
+  // regwrites from wb stage
   input wire `W(`RLEN) __wb_rd,
-  input wire `W(`DLEN) __wb_write_data,
-  input wire           __wb_reg_write
+  input wire           __wb_reg_write,
+
+  // fwd controls
+  input wire `W(`FWDLEN)  fwd1,
+  input wire `W(`FWDLEN)  fwd2,
+
+  // fwd inputs
+  input wire `W(`DLEN)    __mem_ex_res,
+  input wire `W(`DLEN)    __wb_write_data
 );
   // instruction parsing
   assign rs1 = instr`RS1SLICE;
@@ -76,10 +83,18 @@ module id_stage (
     .ctl_bus(ctl_bus)
   );
 
+  wire `W(`DLEN) regdata1_fwded = 
+    (fwd1 == `FWD_EX_MEM) ? __mem_ex_res:
+    ((fwd1 == `FWD_MEM_WB) ? __wb_write_data: regdata1);
+
+  wire `W(`DLEN) regdata2_fwded = 
+    (fwd2 == `FWD_EX_MEM) ? __mem_ex_res:
+    ((fwd2 == `FWD_MEM_WB) ? __wb_write_data: regdata2);
+
   // branching logic comparator
-  wire zero = (regdata1 == regdata2);
-  wire lt   = ($signed(regdata1) < $signed(regdata2));
-  wire ltu  = ($unsigned(regdata1) < $unsigned(regdata2));
+  wire zero = (regdata1_fwded == regdata2_fwded);
+  wire lt   = ($signed(regdata1_fwded) < $signed(regdata2_fwded));
+  wire ltu  = ($unsigned(regdata1_fwded) < $unsigned(regdata2_fwded));
 
   // branching logic
   always @(*) begin
@@ -100,5 +115,5 @@ module id_stage (
   // shift is implicitly added in the immgen block
   // TODO!
   // optimize this to take the alu output instead of an extra adder here
-  assign next_pc = (`JALR(ctl_bus) ? regdata1: pc) + imm;
+  assign next_pc = (`JALR(ctl_bus) ? regdata1_fwded: pc) + imm;
 endmodule
