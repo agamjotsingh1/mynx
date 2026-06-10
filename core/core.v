@@ -13,7 +13,7 @@ module core (
   input wire clk,
   input wire rst
 );
-  wor stall;
+  wor `W(`STLEN) stall;
 
   wire `W(`DLEN)       __if_pc;
   wire `W(`ILEN)       __if_instr;

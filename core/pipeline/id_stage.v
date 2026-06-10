@@ -5,8 +5,7 @@
 `include "modules/ctl.v"
 
 module id_stage (
-  // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
   input wire           clk,
   input wire           rst,

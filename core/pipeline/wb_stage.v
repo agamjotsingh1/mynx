@@ -1,8 +1,7 @@
 `include "defs.vh"
 
 module wb_stage (
-  // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
   input wire `W(`DLEN)       regw_data,
   input wire `W(`DLEN)       mem_res,
@@ -13,8 +12,7 @@ module wb_stage (
 
   output wire `W(`DLEN)      wb_write_data
 );
-  // no stalls in wb stage
-  assign stall = 0;
+  assign stall = `STALL_NONE;
 
   assign wb_write_data =
     `MEM_TO_REG(ctl_bus) ? mem_res: regw_data;

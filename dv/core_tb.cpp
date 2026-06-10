@@ -15,6 +15,9 @@
 #include <iomanip>
 #include <cassert>
 
+// TODO!
+// figure out a way to do automatic checking
+
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vcore* dut = new Vcore;
@@ -117,6 +120,7 @@ int main(int argc, char** argv) {
         "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
     };
 
+    // TODO! enable ABI mappings
     for (int i = 0; i < 32; i++) {
         uint64_t val = dut->core->__PVT__id_stage_instance__DOT__regfile_instance__DOT__reg_array[i];
         

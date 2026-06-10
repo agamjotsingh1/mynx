@@ -3,13 +3,12 @@
 /* verilator lint_off UNUSEDSIGNAL */
 module alu_ctl (
   // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
   input wire `W(`ILEN)      instr,
   output reg `W(`ALU_OPLEN) alu_op
 );
-  // alu_ctl never stalls
-  assign stall = 0;
+  assign stall = `STALL_NONE;
 
   wire `W(`OLEN)  opcode = instr`OSLICE;
   wire `W(`F3LEN) funct3 = instr`F3SLICE;

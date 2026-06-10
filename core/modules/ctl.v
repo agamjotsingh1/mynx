@@ -2,20 +2,18 @@
 
 /* verilator lint_off UNUSEDSIGNAL */
 module ctl (
-  // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
-  input wire `W(`ILEN)      instr,
+  input wire `W(`ILEN)       instr,
   output reg `W(`CTL_BUSLEN) ctl_bus
 );
-  // ctl never stalls
-  assign stall = 0;
+  assign stall = `STALL_NONE;
 
   wire `W(`OLEN)  opcode = instr`OSLICE;
   wire `W(`F3LEN) funct3 = instr`F3SLICE;
 
   // TODO!
-  // add jalr and branching controls
+  // add jalr and branching support 
 
   always @(*) begin
     // defaults

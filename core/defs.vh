@@ -133,4 +133,15 @@
 `define BW(ctl_bus)           ctl_bus[6:5] // bitwidth for memory ops
 `define SIGN_EXTEND(ctl_bus)  ctl_bus[7]   // sign_extend for memory ops
 
+// Pipeline stalling signals
+// "stall" is wor type bus
+`define STLEN                 5
+`define STALL_PC              5'b00001
+`define STALL_IF_ID           5'b00010
+`define STALL_ID_EX           5'b00100
+`define STALL_EX_MEM          5'b01000
+`define STALL_MEM_WB          5'b10000
+`define STALL_ALL             5'b11111
+`define STALL_NONE            5'b00000
+
 `endif

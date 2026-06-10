@@ -1,7 +1,7 @@
 `include "defs.vh"
 
 module mem_wb_reg (
-  input wor stall,
+  input wor `W(`STLEN) stall,
   input wire clk,
   input wire rst,
 
@@ -22,7 +22,9 @@ module mem_wb_reg (
       out_regw_data <= 0;
       out_ctl_bus   <= 0;
     end
-    else if (!stall) begin
+    /* verilator lint_off WIDTHTRUNC */
+    else if (!(stall & `STALL_MEM_WB)) begin
+    /* verilator lint_on WIDTHTRUNC */
       out_rd        <= in_rd;
       out_mem_res   <= in_mem_res;
       out_regw_data <= in_regw_data;

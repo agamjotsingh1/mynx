@@ -1,7 +1,7 @@
 `include "defs.vh"
 
 module ex_mem_reg (
-  input wor stall,
+  input wor `W(`STLEN) stall,
   input wire clk,
   input wire rst,
 
@@ -34,7 +34,9 @@ module ex_mem_reg (
       out_mem_data <= 0;
       out_ctl_bus <= 0;
     end
-    else if (!stall) begin
+    /* verilator lint_off WIDTHTRUNC */
+    else if (!(stall & `STALL_EX_MEM)) begin
+    /* verilator lint_on WIDTHTRUNC */
       out_pc <= in_pc;
       out_rs1 <= in_rs1;
       out_rs2 <= in_rs2;

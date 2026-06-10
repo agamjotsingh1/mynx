@@ -2,8 +2,7 @@
 
 // memory lies outside this stage
 module if_stage (
-  // global stall wire
-  input wor stall,
+  input wor `W(`STLEN) stall,
 
   input wire clk,
   input wire rst,
@@ -14,7 +13,9 @@ module if_stage (
     if(rst) begin
       pc <= `RSTPC;
     end
-    else if(!stall) begin
+    /* verilator lint_off WIDTHTRUNC */
+    else if(!(stall & `STALL_PC)) begin
+    /* verilator lint_on WIDTHTRUNC */
       pc <= pc + 4;
     end
   end

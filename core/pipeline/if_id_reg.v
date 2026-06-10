@@ -1,7 +1,8 @@
 `include "defs.vh"
 
 module if_id_reg (
-  input wor stall,
+  input wor `W(`STLEN) stall,
+
   input wire clk,
   input wire rst,
 
@@ -16,7 +17,9 @@ module if_id_reg (
       out_pc <= `RSTPC;
       out_instr <= `RSTINSTR;
     end
-    else if (!stall) begin
+    /* verilator lint_off WIDTHTRUNC */
+    else if (!(stall & `STALL_IF_ID)) begin
+    /* verilator lint_on WIDTHTRUNC */
       out_pc <= in_pc;
       out_instr <= in_instr;
     end

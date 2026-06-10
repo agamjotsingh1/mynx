@@ -2,7 +2,7 @@
 
 module alu (
   // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
   input wire `W(`ALU_OPLEN) alu_op,
   input wire `W(`DLEN)      in1,
@@ -10,8 +10,7 @@ module alu (
 
   output reg `W(`DLEN)      out
 );
-  // never stall, alu is combinational
-  assign stall = 0;
+  assign stall = `STALL_NONE;
 
   always @(*) begin
     case (alu_op)

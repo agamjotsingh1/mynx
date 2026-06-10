@@ -3,12 +3,12 @@
 
 module ex_stage (
   // global stall wire
-  output wor stall,
+  output wor `W(`STLEN) stall,
 
   // TODO! remove lint violations
   /* verilator lint_off UNUSEDSIGNAL */
-  input wire           clk,
-  input wire           rst,
+  input wire clk,
+  input wire rst,
   /* verilator lint_on UNUSEDSIGNAL */
 
   input wire `W(`DLEN)       regdata1,
@@ -25,11 +25,11 @@ module ex_stage (
   output wire `W(`DLEN) mem_data,
   output wire `W(`DLEN) alu_res
 );
+  assign stall = `STALL_NONE;
   assign mem_data = regdata2;
 
   alu alu_instance (
     .stall(stall),
-
     .alu_op(alu_op),
     .in1(regdata1),
     .in2(`ALU_SRC(ctl_bus) ? imm: regdata2),
