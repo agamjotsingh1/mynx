@@ -120,6 +120,10 @@ int main(int argc, char** argv) {
         "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
     };
 
+
+    uint64_t pc = dut->core->___05Fif_pc;
+    std::cout << "PC : 0x" << std::hex << std::setw(16) << std::setfill('0') << pc << "\n";
+
     // TODO! enable ABI mappings
     for (int i = 0; i < 32; i++) {
         uint64_t val = dut->core->__PVT__id_stage_instance__DOT__regfile_instance__DOT__reg_array[i];

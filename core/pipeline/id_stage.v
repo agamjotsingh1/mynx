@@ -9,6 +9,7 @@ module id_stage (
 
   input wire           clk,
   input wire           rst,
+  input wire `W(`DLEN) pc,
   input wire `W(`ILEN) instr,
 
   // parsing results
@@ -24,6 +25,12 @@ module id_stage (
 
   // control outputs
   output wire `W(`CTL_BUSLEN) ctl_bus,
+
+  // branch taken or not
+  output reg branch_taken,
+
+  // next pc (for branching)
+  output reg `W(`DLEN) next_pc,
 
   // from WB stage
   input wire `W(`RLEN) __wb_rd,
@@ -68,5 +75,25 @@ module id_stage (
     .instr(instr),
     .ctl_bus(ctl_bus)
   );
-  
+
+  // branching logic comparator
+  wire zero = (regdata1 == regdata2);
+  wire lt   = ($signed(regdata1) < $signed(regdata2));
+  wire ltu  = ($unsigned(regdata1) < $unsigned(regdata2));
+
+  // branching logic
+  always @(*) begin
+    case (`BR(ctl_bus))
+      `BR_NONE: branch_taken = 0;
+      `BR_BEQ:  branch_taken = zero;
+      `BR_BNE:  branch_taken = ~zero;
+      `BR_BLT:  branch_taken = lt;
+      `BR_BGE:  branch_taken = ~lt;
+      `BR_BLTU: branch_taken = ltu;
+      `BR_BGEU: branch_taken = ~ltu;
+      default:  branch_taken = 0;
+    endcase
+  end
+
+  assign next_pc = pc + (imm << `PC_OFF_SHIFT);
 endmodule

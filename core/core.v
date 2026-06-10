@@ -15,7 +15,7 @@ module core (
 );
   wor `W(`STLEN) stall;
 
-  wire `W(`DLEN)       __if_pc;
+  wire `W(`DLEN)       __if_pc /* verilator public*/;
   wire `W(`ILEN)       __if_instr;
 
   wire `W(`DLEN)       __id_pc;
@@ -28,6 +28,8 @@ module core (
   wire `W(`DLEN)       __id_imm;
   wire `W(`ALU_OPLEN)  __id_alu_op;
   wire `W(`CTL_BUSLEN) __id_ctl_bus;
+  wire                 __id_branch_taken;
+  wire `W(`DLEN)       __id_next_pc;
 
   wire `W(`DLEN)       __ex_pc;
   wire `W(`RLEN)       __ex_rs1;
@@ -95,6 +97,8 @@ module core (
     .stall(stall),
     .clk(clk),
     .rst(rst),
+    .__id_branch_taken(__id_branch_taken),
+    .__id_next_pc(__id_next_pc),
     .pc(__if_pc)
   );
   /* -------------------- */
@@ -102,7 +106,7 @@ module core (
   if_id_reg if_id_reg_instance (
     .stall(stall),
     .clk(clk),
-    .rst(rst),
+    .rst(rst | __id_branch_taken),
     .in_pc(__if_pc),
     .in_instr(__if_instr),
 
@@ -115,6 +119,7 @@ module core (
     .stall(stall),
     .clk(clk),
     .rst(rst),
+    .pc(__id_pc),
     .instr(__id_instr),
     .rs1(__id_rs1),
     .rs2(__id_rs2),
@@ -124,6 +129,8 @@ module core (
     .imm(__id_imm),
     .alu_op(__id_alu_op),
     .ctl_bus(__id_ctl_bus),
+    .branch_taken(__id_branch_taken),
+    .next_pc(__id_next_pc),
     .__wb_rd(__wb_rd),
     .__wb_write_data(__wb_write_data),
     .__wb_reg_write(`REG_WRITE(__wb_ctl_bus))

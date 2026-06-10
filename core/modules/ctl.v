@@ -75,11 +75,17 @@ module ctl (
         endcase
       end
 
-      // TODO!
-      // `OP_B: begin
-      //   ALU_SRC(ctl_bus)     = 1;
-      //   MEM_WRITE(ctl_bus)   = 1;
-      // end
+      `OP_B: begin
+        case(funct3)
+          `F3BEQ:  `BR(ctl_bus) = `BR_BEQ;
+          `F3BNE:  `BR(ctl_bus) = `BR_BNE;
+          `F3BLT:  `BR(ctl_bus) = `BR_BLT;
+          `F3BGE:  `BR(ctl_bus) = `BR_BGE;
+          `F3BLTU: `BR(ctl_bus) = `BR_BLTU;
+          `F3BGEU: `BR(ctl_bus) = `BR_BGEU;
+          default: `BR(ctl_bus) = `BR_NONE;
+        endcase
+      end
 
       `OP_U_LUI: begin
         `REG_WRITE(ctl_bus)   = 1;
