@@ -163,6 +163,17 @@
 `define STALL_ALL             5'b11111
 `define STALL_NONE            5'b00000
 
+// Pipeline nop inserting signals
+// "nopi" is wor type bus
+`define NOPILEN               5
+`define NOPI_PC               5'b00001
+`define NOPI_IF_ID            5'b00010
+`define NOPI_ID_EX            5'b00100
+`define NOPI_EX_MEM           5'b01000
+`define NOPI_MEM_WB           5'b10000
+`define NOPI_ALL              5'b11111
+`define NOPI_NONE             5'b00000
+
 // forwarding defs
 `define FWDLEN                2
 `define FWD_NONE              2'h0

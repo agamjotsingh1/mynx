@@ -15,7 +15,8 @@ module core (
   input wire clk,
   input wire rst
 );
-  wor `W(`STLEN) stall;
+  wor `W(`STLEN)   stall;
+  wor `W(`NOPILEN) nopi;
 
   wire `W(`DLEN)       __if_pc /* verilator public*/;
   wire `W(`ILEN)       __if_instr;
@@ -34,7 +35,6 @@ module core (
   wire `W(`DLEN)       __id_next_pc;
   wire `W(`FWDLEN)     __id_fwd1;
   wire `W(`FWDLEN)     __id_fwd2;
-  wire                 __id_stall_nop;
 
   wire `W(`DLEN)       __ex_pc;
   wire `W(`RLEN)       __ex_rs1;
@@ -102,6 +102,7 @@ module core (
   /* ----- IF STAGE ------ */
   if_stage if_stage_instance (
     .stall(stall),
+    .nopi(nopi),
     .clk(clk),
     .rst(rst),
     .__id_branch_taken(__id_branch_taken),
@@ -112,10 +113,9 @@ module core (
 
   if_id_reg if_id_reg_instance (
     .stall(stall),
+    .nopi(nopi),
     .clk(clk),
-    // TODO!
-    // this might be slightly wrong
-    .rst(rst | __id_branch_taken),
+    .rst(rst),
     .in_pc(__if_pc),
     .in_instr(__if_instr),
 
@@ -148,20 +148,14 @@ module core (
     .__wb_write_data(__wb_write_data)
   );
 
-  hdu hdu_instance (
-    .stall(stall),
-    .__id_rs1(__id_rs1),
-    .__id_rs2(__id_rs2),
-    .__ex_rd(__ex_rd),
-    .__ex_ctl_bus(__ex_ctl_bus),
-    .__id_stall_nop(__id_stall_nop)
-  );
+  
   /* -------------------- */
 
   id_ex_reg id_ex_reg_instance (
     .stall(stall),
+    .nopi(nopi),
     .clk(clk),
-    .rst(rst | __id_stall_nop),
+    .rst(rst),
     .in_pc(__id_pc),
     .in_rs1(__id_rs1),
     .in_rs2(__id_rs2),
@@ -206,6 +200,7 @@ module core (
 
   ex_mem_reg ex_mem_reg_instance (
     .stall(stall),
+    .nopi(nopi),
     .clk(clk),
     .rst(rst),
     .in_pc(__ex_pc),
@@ -234,6 +229,7 @@ module core (
 
   mem_wb_reg mem_wb_reg_instance (
     .stall(stall),
+    .nopi(nopi),
     .clk(clk),
     .rst(rst),
     .in_rd(__mem_rd),
@@ -272,4 +268,16 @@ module core (
     .__ex_fwd2(__ex_fwd2)
   );
   /* -------------------- */
+
+  /* ----- HAZARD DETECTION UNIT ------ */
+  hdu hdu_instance (
+    .stall(stall),
+    .nopi(nopi),
+    .__id_rs1(__id_rs1),
+    .__id_rs2(__id_rs2),
+    .__id_branch_taken(__id_branch_taken),
+    .__ex_rd(__ex_rd),
+    .__ex_ctl_bus(__ex_ctl_bus)
+  );
+  /* ---------------------------------- */
 endmodule

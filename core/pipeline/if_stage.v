@@ -2,7 +2,8 @@
 
 // memory lies outside this stage
 module if_stage (
-  input wor `W(`STLEN) stall,
+  input wor `W(`STLEN)   stall,
+  input wor `W(`NOPILEN) nopi,
 
   input wire clk,
   input wire rst,
@@ -11,13 +12,12 @@ module if_stage (
 
   output reg `W(`DLEN)  pc
 );
+  /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(rst) begin
+    if(rst || (nopi & `NOPI_PC)) begin
       pc <= `RSTPC;
     end
-    /* verilator lint_off WIDTHTRUNC */
     else if(!(stall & `STALL_PC)) begin
-    /* verilator lint_on WIDTHTRUNC */
       if(__id_branch_taken) begin
         pc <= __id_next_pc;
       end
@@ -26,4 +26,5 @@ module if_stage (
       end
     end
   end
+  /* verilator lint_on WIDTHTRUNC */
 endmodule

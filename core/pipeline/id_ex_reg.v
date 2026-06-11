@@ -1,7 +1,9 @@
 `include "defs.vh"
 
 module id_ex_reg (
-  input wor `W(`STLEN) stall,
+  input wor `W(`STLEN)   stall,
+  input wor `W(`NOPILEN) nopi,
+
   input wire clk,
   input wire rst,
 
@@ -25,8 +27,9 @@ module id_ex_reg (
   output reg `W(`ALU_OPLEN)  out_alu_op,
   output reg `W(`CTL_BUSLEN) out_ctl_bus
 );
+  /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(rst) begin
+    if(rst || (nopi & `NOPI_ID_EX)) begin
       out_pc <= `RSTPC;
       out_rs1 <= 0;
       out_rs2 <= 0;
@@ -37,9 +40,7 @@ module id_ex_reg (
       out_alu_op <= 0;
       out_ctl_bus <= 0;
     end
-    /* verilator lint_off WIDTHTRUNC */
     else if (!(stall & `STALL_ID_EX)) begin
-    /* verilator lint_on WIDTHTRUNC */
       out_pc <= in_pc;
       out_rs1 <= in_rs1;
       out_rs2 <= in_rs2;
@@ -51,4 +52,5 @@ module id_ex_reg (
       out_ctl_bus <= in_ctl_bus;
     end
   end
+  /* verilator lint_on WIDTHTRUNC */
 endmodule

@@ -1,7 +1,8 @@
 `include "defs.vh"
 
 module if_id_reg (
-  input wor `W(`STLEN) stall,
+  input wor `W(`STLEN)   stall,
+  input wor `W(`NOPILEN) nopi,
 
   input wire clk,
   input wire rst,
@@ -12,16 +13,16 @@ module if_id_reg (
   output reg `W(`DLEN) out_pc,
   output reg `W(`ILEN) out_instr
 );
+  /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(rst) begin
+    if(rst || (nopi & `NOPI_IF_ID)) begin
       out_pc <= `RSTPC;
       out_instr <= `RSTINSTR;
     end
-    /* verilator lint_off WIDTHTRUNC */
     else if (!(stall & `STALL_IF_ID)) begin
-    /* verilator lint_on WIDTHTRUNC */
       out_pc <= in_pc;
       out_instr <= in_instr;
     end
   end
+  /* verilator lint_on WIDTHTRUNC */
 endmodule

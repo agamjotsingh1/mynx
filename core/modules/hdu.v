@@ -1,29 +1,33 @@
 // hazard detection unit
-// only stalls for loads, for now
 module hdu (
-  output wor `W(`STLEN) stall,
+  output wor `W(`STLEN)   stall,
+  output wor `W(`NOPILEN) nopi,
 
   input wire `W(`RLEN)       __id_rs1,
   input wire `W(`RLEN)       __id_rs2,
+  input wire                 __id_branch_taken,
   input wire `W(`RLEN)       __ex_rd,
   /* verilator lint_off UNUSEDSIGNAL */
-  input wire `W(`CTL_BUSLEN) __ex_ctl_bus,
+  input wire `W(`CTL_BUSLEN) __ex_ctl_bus
   /* verilator lint_on UNUSEDSIGNAL */
-
-  // stalls the id/ex reg
-  output wire                __id_stall_nop
 );
-  assign __id_stall_nop =
+  // simple load hazard
+  wire load_hazard =
     `MEM_READ(__ex_ctl_bus) &&
     (__ex_rd != 0) &&
     ((__ex_rd == __id_rs1) || (__ex_rd == __id_rs2));
 
-  assign stall =
-    __id_stall_nop ? (`STALL_PC | `STALL_IF_ID): `STALL_NONE;
+  assign nopi =
+    load_hazard ? `NOPI_ID_EX: `NOPI_NONE;
 
-  always @(*) begin
-    if(__id_stall_nop) begin
-      $display("i inserted a nop\n");
-    end
-  end
+  assign stall =
+    load_hazard ? (`STALL_PC | `STALL_IF_ID): `STALL_NONE;
+
+  // control nop insert
+
+  // TODO!
+  // this might be slightly wrong
+  // taking into account load hazards
+  assign nopi = 
+    __id_branch_taken ? `NOPI_IF_ID: `NOPI_NONE;
 endmodule
