@@ -86,10 +86,12 @@ module ctl (
 
       `OP_U_LUI: begin
         `REG_WRITE(ctl_bus)   = 1;
+        `LUI(ctl_bus)         = 1;
       end
 
       `OP_U_AUIPC: begin
         `REG_WRITE(ctl_bus)   = 1;
+        `AUIPC(ctl_bus)       = 1;
       end
 
       `OP_J: begin

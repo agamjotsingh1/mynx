@@ -179,9 +179,6 @@ module core (
 
   /* ----- EX STAGE ------ */
   ex_stage ex_stage_instance (
-    .clk(clk),
-    .rst(rst),
-
     .pc(__ex_pc),
     .regdata1(__ex_regdata1),
     .regdata2(__ex_regdata2),

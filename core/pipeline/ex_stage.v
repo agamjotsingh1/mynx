@@ -2,12 +2,6 @@
 `include "modules/alu.v"
 
 module ex_stage (
-  // TODO! remove lint violations
-  /* verilator lint_off UNUSEDSIGNAL */
-  input wire clk,
-  input wire rst,
-  /* verilator lint_on UNUSEDSIGNAL */
-
   input wire `W(`DLEN)       pc,
   input wire `W(`DLEN)       regdata1,
   input wire `W(`DLEN)       regdata2,
@@ -50,5 +44,8 @@ module ex_stage (
     .out(alu_res)
   );
 
-  assign ex_res = (`JAL(ctl_bus) | `JALR(ctl_bus)) ? pc + 4: alu_res;
+  assign ex_res =
+    (`JAL(ctl_bus) | `JALR(ctl_bus)) ? pc + 4: 
+    (`LUI(ctl_bus) ? imm:
+    (`AUIPC(ctl_bus) ? pc + imm: alu_res));
 endmodule
