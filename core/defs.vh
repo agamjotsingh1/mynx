@@ -5,6 +5,7 @@
 `define SIM
 
 // Memory defs
+`define MEMBASE           64'h0000_0000_8000_0000 // memory base 
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
 `define DEPTH             1024 // number of 64 bit doublewords
@@ -39,7 +40,8 @@
 `define ADDRLEN           $clog2(`DEPTH*`NBANKS)    // mem addr width
 `define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
 
-`define RSTPC             0  // pc when processor resets
+// `define RSTPC          0  // pc when processor resets
+`define RSTPC             `MEMBASE
 `define RSTINSTR          0  // instr when processor resets
 
 // slices from instructions

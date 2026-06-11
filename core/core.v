@@ -71,12 +71,16 @@ module core (
   wire `W(`DLEN)       __wb_write_data;
 
   `ifdef SIM
+  /* verilator lint_off UNUSEDSIGNAL */
+  wire `W(`DLEN) __mem_data_addr = __mem_ex_res - `MEMBASE;
+  wire `W(`DLEN) __mem_instr_addr = __if_pc - `MEMBASE;
+  /* verilator lint_on UNUSEDSIGNAL */
 
   mem mem_instance (
     .clk(clk),
 
     // port a for instr fetch
-    .addr_a(__if_pc[0 +: `ADDRLEN]),
+    .addr_a(__mem_instr_addr[0 +: `ADDRLEN]),
     .mem_read_a(1),
     .mem_write_a(0),
     .sign_extend_a(0),
@@ -88,7 +92,7 @@ module core (
     /* verilator lint_on WIDTHEXPAND */
 
     // port b for mem stage access
-    .addr_b(__mem_ex_res[0 +: `ADDRLEN]),
+    .addr_b(__mem_data_addr[0 +: `ADDRLEN]),
     .mem_read_b(`MEM_READ(__mem_ctl_bus)),
     .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
     .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
