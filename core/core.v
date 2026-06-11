@@ -276,8 +276,11 @@ module core (
     .__id_rs1(__id_rs1),
     .__id_rs2(__id_rs2),
     .__id_branch_taken(__id_branch_taken),
+    .__id_ctl_bus(__id_ctl_bus),
     .__ex_rd(__ex_rd),
-    .__ex_ctl_bus(__ex_ctl_bus)
+    .__ex_ctl_bus(__ex_ctl_bus),
+    .__mem_rd(__mem_rd),
+    .__mem_ctl_bus(__mem_ctl_bus)
   );
   /* ---------------------------------- */
 endmodule

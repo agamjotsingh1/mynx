@@ -1,5 +1,6 @@
-addi x1, x0, 5
-addi x2, x0, 5
+addi x1, x0, 0x300
+sw x1, 0(x1)
+ld x2, 0(x1)
 beq  x1, x2, success 
 
 fail:
