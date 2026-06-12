@@ -47,7 +47,7 @@ module fwd_unit (
   /* Fwding to EX stage */
 
   // EX Hazard
-  wire __ex_fwd1_ex_mem = is_write_ex_mem && (__mem_rd == __ex_rs1); 
+  wire __ex_fwd1_ex_mem = is_write_ex_mem && (__mem_rd == __ex_rs1) && 1'b1; 
   wire __ex_fwd2_ex_mem = is_write_ex_mem && (__mem_rd == __ex_rs2); 
 
   // MEM Hazard
