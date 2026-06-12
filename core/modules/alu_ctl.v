@@ -12,20 +12,24 @@ module alu_ctl (
   always @(*) begin
     casez ({opcode, funct3, funct7})
       `BOP_ADD,
+      `BOP_ADDW,
       `BOP_ADDI,
+      `BOP_ADDIW,
       `BOP_LB,
       `BOP_LH, 
       `BOP_LW, 
       `BOP_LD, 
       `BOP_LBU,
       `BOP_LHU,
+      `BOP_LWU,
       `BOP_SB, 
       `BOP_SH, 
       `BOP_SW, 
       `BOP_SD 
       : alu_op = `ALU_OP_ADD;
 
-      `BOP_SUB
+      `BOP_SUB,
+      `BOP_SUBW
       : alu_op = `ALU_OP_SUB;
 
       `BOP_SLT, 
@@ -49,19 +53,24 @@ module alu_ctl (
       : alu_op = `ALU_OP_AND;
 
       `BOP_SLL, 
-      `BOP_SLLI
+      `BOP_SLLW, 
+      `BOP_SLLI,
+      `BOP_SLLIW
       : alu_op = `ALU_OP_SLL;
 
-      `BOP_SRL
+      `BOP_SRL,
+      `BOP_SRLW
       : alu_op = `ALU_OP_SRL;
 
-      `BOP_SRA
+      `BOP_SRA,
+      `BOP_SRAW
       : alu_op = `ALU_OP_SRA;
 
-      `BOP_SRLI // SRAI only differ by upper immediate bits, BOP is same
+      `BOP_SRLI,
+      `BOP_SRLIW // SRAI(W) only differ by upper immediate bits, BOP is same
       : begin
         // upper immediate extraction
-        if(instr[31:25] == 7'h20) alu_op = `ALU_OP_SRA;
+        if(instr[30]) alu_op = `ALU_OP_SRA;
         else alu_op = `ALU_OP_SRL;
       end
 

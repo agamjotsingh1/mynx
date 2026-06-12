@@ -104,13 +104,37 @@ int main(int argc, char** argv) {
         }
     }
 
-    // execute the core for max_cycles (with some buffer)
-    int max_cycles = (instructions.size() * 5) + 50; 
-    std::cout << "Executing pipeline for " << max_cycles << " cycles...\n";
+    /* EXECUTION START */
+    std::cout << "Executing pipeline till infinite loop is detected ...\n";
     
-    for (int cycle = 0; cycle < max_cycles; cycle++) {
+    uint64_t prev_pc1 = -1;
+    uint64_t prev_pc2 = -1;
+    int loop_counter = 0;
+    #define LOOP_THRESHOLD 20
+
+    while(1){
         tick();
+
+        uint64_t current_pc = dut->core->___05Fif_pc;
+
+        // check if PC is stuck on the same instruction (e.g., j .) 
+        // or alternating between two instructions
+        if (current_pc == prev_pc1 || current_pc == prev_pc2) {
+            loop_counter++;
+            if (loop_counter > LOOP_THRESHOLD) {
+                std::cout << "\n[INFO] Infinite loop detected at PC 0x" 
+                          << std::hex << current_pc << std::dec 
+                          << ".\n";
+                break;
+            }
+        } else {
+            loop_counter = 0;
+        }
+
+        prev_pc2 = prev_pc1;
+        prev_pc1 = current_pc;
     }
+    /* EXECUTION FINISH */
 
     // riscv abi names mapping
     const char* abi[] = {

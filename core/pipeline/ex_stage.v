@@ -47,5 +47,7 @@ module ex_stage (
   assign ex_res =
     (`JAL(ctl_bus) | `JALR(ctl_bus)) ? pc + 4: 
     (`LUI(ctl_bus) ? imm:
-    (`AUIPC(ctl_bus) ? pc + imm: alu_res));
+    (`AUIPC(ctl_bus) ? pc + imm:
+    (`WORDTRUNC(ctl_bus) ? {{32{alu_res[31]}}, alu_res[31:0]}:
+    alu_res)));
 endmodule

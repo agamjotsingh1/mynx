@@ -13,8 +13,9 @@ module immgen (
   // defined in defs.vh, change this when defs.vh is edited
   always @(*) begin
     case(opcode)
-      `OP_R:       imm = 0;
+      `OP_RW:       imm = 0;
       `OP_I,
+      `OP_IW,
       `OP_I_LOAD,
       `OP_I_JALR,
       `OP_I_ECALL: imm = $signed(instr[31:20]);

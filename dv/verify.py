@@ -17,8 +17,8 @@ def green(str):
 elf_file = sys.argv[1]
 hex_file = sys.argv[2]
 vcore_bin = sys.argv[3]
-max_instructions = 150
-timeout = 5
+max_instructions = 15000000
+timeout = 100
 
 def get_spike_state():
     cmds = f"r {max_instructions}\nreg 0\n"

@@ -7,15 +7,13 @@ AS = riscv64-elf-as
 OBJCOPY = riscv64-elf-objcopy
 LD = riscv64-elf-ld
 ASFLAGS = -march=rv64i -mabi=lp64
-
 VERILATOR = verilator
 VFLAGS = -Wall --trace --cc --exe --build -I$(CORE)
 
-PROG ?= program
-
+PROG ?= deadbeef
 HEX_FILE = tests/hex/$(PROG).hex
 
-.PHONY: clean build-tests-all run-all test test-all
+.PHONY: clean build-tests-all run-all test test-all build-riscv-tests-all test-riscv-all
 
 tests/hex/%.hex: tests/asm/%.s
 	@echo "Assembling and Dual Linking $<..."
@@ -48,6 +46,7 @@ clean:
 	rm -rf $(OBJ)
 	rm -rf $(VCD)
 	rm -rf tests/hex/
+	rm -rf tests/riscv/hex/
 
 build-tests-all:
 	@for file in tests/asm/*.s; do \
@@ -55,7 +54,7 @@ build-tests-all:
 		$(MAKE) tests/hex/$$prog.hex > /dev/null 2>&1; \
 	done
 
-run-all: hex-all $(CORE)/core.v $(DV)/core_tb.cpp
+run-all: build-tests-all $(CORE)/core.v $(DV)/core_tb.cpp
 	@echo "Building hardware for basic run..."
 	@mkdir -p $(OBJ) $(VCD)
 	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/core_tb.cpp --Mdir $(OBJ)/core
@@ -81,6 +80,29 @@ test-all: build-tests-all $(CORE)/core.v $(DV)/core_tb.cpp
 		prog=$$(basename $$file .s); \
 		echo "------------------------------------------"; \
 		python3 dv/verify.py tests/hex/$${prog}_spike.elf tests/hex/$${prog}.hex ./$(OBJ)/core/Vcore || exit 1; \
+	done
+	@echo "------------------------------------------";
+	@echo "All tests fully verified against Spike!"
+
+# TODO! change .s to .S in before tests
+build-riscv-tests-all:
+	@mkdir -p ./tests/riscv/hex
+	@for file in tests/riscv/asm/*.S; do \
+		prog=$$(basename $$file .S); \
+		riscv64-elf-gcc -march=rv64i -mabi=lp64 -nostdlib -nostartfiles -I./tests/riscv/env -I./tests/riscv/macros/ -T./tests/riscv/env/link.ld ./tests/riscv/asm/$$prog.S -o ./tests/riscv/hex/$$prog.elf; \
+		riscv64-elf-objcopy -O binary ./tests/riscv/hex/$$prog.elf ./tests/riscv/hex/$$prog.bin; \
+		hexdump -v -e '1/4 "%08x\n"' ./tests/riscv/hex/$$prog.bin > ./tests/riscv/hex/$$prog.hex; \
+	done
+
+test-riscv-all: build-riscv-tests-all $(CORE)/core.v $(DV)/core_tb.cpp
+	@echo "Building Hardware..."
+	@mkdir -p $(OBJ) $(VCD)
+	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/core_tb.cpp --Mdir $(OBJ)/core
+	@echo "Running RISCV verification suite..."
+	@for file in tests/riscv/asm/*.S; do \
+		prog=$$(basename $$file .S); \
+		echo "------------------------------------------"; \
+		python3 dv/verify.py tests/riscv/hex/$${prog}.elf tests/riscv/hex/$${prog}.hex ./$(OBJ)/core/Vcore || exit 1; \
 	done
 	@echo "------------------------------------------";
 	@echo "All tests fully verified against Spike!"

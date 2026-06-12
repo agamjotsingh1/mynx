@@ -51,10 +51,13 @@
 `define RS1SLICE          [19:15] // rs1
 `define RS2SLICE          [24:20] // rs2
 `define RDSLICE           [11:7]  // rd
+`define WSLICE            [31:0]  // word
 
 // OPcodes wrt instruction format
 `define OP_R              7'b0110011
+`define OP_RW             7'b0111011 // word instrs (like addw)
 `define OP_I              7'b0010011 // standard I format
+`define OP_IW             7'b0011011 // word instrs (like addiw)
 `define OP_I_LOAD         7'b0000011
 `define OP_I_JALR         7'b1100111
 `define OP_I_ECALL        7'b1110011
@@ -87,23 +90,30 @@
 // bunch is defined as {opcode, funct3, funct7}
 // 'z' will be used in casez for alu control sigs
 `define BOP_ADD           17'b0110011_000_0000000
+`define BOP_ADDW          17'b0111011_000_0000000
 `define BOP_ADDI          17'b0010011_000_zzzzzzz
+`define BOP_ADDIW         17'b0011011_000_zzzzzzz
 `define BOP_LB            17'b0000011_000_zzzzzzz
 `define BOP_LH            17'b0000011_001_zzzzzzz
 `define BOP_LW            17'b0000011_010_zzzzzzz
 `define BOP_LD            17'b0000011_011_zzzzzzz
 `define BOP_LBU           17'b0000011_100_zzzzzzz
 `define BOP_LHU           17'b0000011_101_zzzzzzz
+`define BOP_LWU           17'b0000011_110_zzzzzzz
 `define BOP_SB            17'b0100011_000_zzzzzzz
 `define BOP_SH            17'b0100011_001_zzzzzzz
 `define BOP_SW            17'b0100011_010_zzzzzzz
 `define BOP_SD            17'b0100011_011_zzzzzzz
 `define BOP_SUB           17'b0110011_000_0100000
+`define BOP_SUBW          17'b0111011_000_0100000
 `define BOP_SLT           17'b0110011_010_0000000
 `define BOP_SLTU          17'b0110011_011_0000000
 `define BOP_SLL           17'b0110011_001_0000000
 `define BOP_SRL           17'b0110011_101_0000000
 `define BOP_SRA           17'b0110011_101_0100000
+`define BOP_SLLW          17'b0111011_001_0000000
+`define BOP_SRLW          17'b0111011_101_0000000
+`define BOP_SRAW          17'b0111011_101_0100000
 `define BOP_XOR           17'b0110011_100_0000000
 `define BOP_OR            17'b0110011_110_0000000
 `define BOP_AND           17'b0110011_111_0000000
@@ -112,6 +122,9 @@
 `define BOP_SLLI          17'b0010011_001_zzzzzzz
 `define BOP_SRLI          17'b0010011_101_zzzzzzz 
 `define BOP_SRAI          17'b0010011_101_zzzzzzz // same as SRLI except upper bits of imm
+`define BOP_SLLIW         17'b0011011_001_zzzzzzz
+`define BOP_SRLIW         17'b0011011_101_zzzzzzz 
+`define BOP_SRAIW         17'b0011011_101_zzzzzzz // same as SRLIW except upper bits of imm
 `define BOP_XORI          17'b0010011_100_zzzzzzz
 `define BOP_ORI           17'b0010011_110_zzzzzzz
 `define BOP_ANDI          17'b0010011_111_zzzzzzz
@@ -141,7 +154,7 @@
 `define BR_BGEU           3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            15
+`define CTL_BUSLEN            16
 
 `define ALU_SRC(ctl_bus)      ctl_bus[0]    // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]    // 1 for reg to be written
@@ -151,10 +164,11 @@
 `define BW(ctl_bus)           ctl_bus[6:5]  // bitwidth for memory ops
 `define SIGN_EXTEND(ctl_bus)  ctl_bus[7]    // 1 if sign extend for memory ops
 `define BR(ctl_bus)           ctl_bus[10:8] // branching ctl sigs
-`define JAL(ctl_bus)          ctl_bus[11]   // 1 if the instruction is jal
-`define JALR(ctl_bus)         ctl_bus[12]   // 1 if the instruction is jalr
-`define LUI(ctl_bus)          ctl_bus[13]   // 1 if the instruction is lui
-`define AUIPC(ctl_bus)        ctl_bus[14]   // 1 if the instruction is auipc 
+`define JAL(ctl_bus)          ctl_bus[11]   // 1 if instr is jal
+`define JALR(ctl_bus)         ctl_bus[12]   // 1 if instr is jalr
+`define LUI(ctl_bus)          ctl_bus[13]   // 1 if instr is lui
+`define AUIPC(ctl_bus)        ctl_bus[14]   // 1 if instr is auipc 
+`define WORDTRUNC(ctl_bus)    ctl_bus[15]   // 1 if instr does word trunc ops (like addiw)
 
 // Pipeline stalling signals
 // "stall" is wor type bus

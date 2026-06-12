@@ -20,9 +20,20 @@ module ctl (
         `REG_WRITE(ctl_bus)   = 1;
       end
 
+      `OP_RW: begin
+        `REG_WRITE(ctl_bus)   = 1;
+        `WORDTRUNC(ctl_bus)   = 1;
+      end
+
       `OP_I: begin
         `ALU_SRC(ctl_bus)     = 1;
         `REG_WRITE(ctl_bus)   = 1;
+      end
+
+      `OP_IW: begin
+        `ALU_SRC(ctl_bus)     = 1;
+        `REG_WRITE(ctl_bus)   = 1;
+        `WORDTRUNC(ctl_bus)   = 1;
       end
 
       `OP_I_LOAD: begin
