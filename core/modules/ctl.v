@@ -8,9 +8,6 @@ module ctl (
   wire `W(`OLEN)  opcode = instr`OSLICE;
   wire `W(`F3LEN) funct3 = instr`F3SLICE;
 
-  // TODO!
-  // add jalr and branching support 
-
   always @(*) begin
     // defaults
     ctl_bus = 0;

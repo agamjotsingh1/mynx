@@ -3,7 +3,6 @@
 module wb_stage (
   input wire `W(`DLEN)       regw_data,
   input wire `W(`DLEN)       mem_res,
-  // TODO! remove lint violations
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`CTL_BUSLEN) ctl_bus,
   /* verilator lint_on UNUSEDSIGNAL */

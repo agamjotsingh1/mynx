@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-# please note that this *particular* file
-# is mostly AI generated with some personal tweaking
+# please note that the spinner part is completely AI generated
 import sys
 import subprocess
 import re

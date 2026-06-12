@@ -50,15 +50,8 @@ module core (
   wire `W(`FWDLEN)     __ex_fwd1;
   wire `W(`FWDLEN)     __ex_fwd2;
 
-  // TODO! remove lint violations
-  /* verilator lint_off UNUSEDSIGNAL */
-  wire `W(`DLEN)       __mem_pc;
-  wire `W(`RLEN)       __mem_rs1;
-  wire `W(`RLEN)       __mem_rs2;
   wire `W(`RLEN)       __mem_rd;
-  wire `W(`DLEN)       __mem_imm;
   wire `W(`DLEN)       __mem_ex_res;
-  /* verilator lint_on UNUSEDSIGNAL */
   wire `W(`DLEN)       __mem_mem_data;
   wire `W(`CTL_BUSLEN) __mem_ctl_bus;
   wire `W(`DLEN)       __mem_mem_res;
@@ -204,20 +197,12 @@ module core (
     .nopi(nopi),
     .clk(clk),
     .rst(rst),
-    .in_pc(__ex_pc),
-    .in_rs1(__ex_rs1),
-    .in_rs2(__ex_rs2),
     .in_rd(__ex_rd),
-    .in_imm(__ex_imm),
     .in_ex_res(__ex_ex_res),
     .in_mem_data(__ex_mem_data),
     .in_ctl_bus(__ex_ctl_bus),
 
-    .out_pc(__mem_pc),
-    .out_rs1(__mem_rs1),
-    .out_rs2(__mem_rs2),
     .out_rd(__mem_rd),
-    .out_imm(__mem_imm),
     .out_ex_res(__mem_ex_res),
     .out_mem_data(__mem_mem_data),
     .out_ctl_bus(__mem_ctl_bus)
