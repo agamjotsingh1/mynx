@@ -13,7 +13,7 @@
 
 #define RVTEST_CODE_END
 
-// both are same as spike will do the major work
+// both are same as spike will do the major checking work
 #define RVTEST_PASS \
   1: j 1b;
 

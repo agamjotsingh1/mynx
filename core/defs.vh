@@ -143,8 +143,7 @@
 `define ALU_OP_SLT        4'h8
 `define ALU_OP_SLTU       4'h9
 // these 3 have different alu opcodes
-// because this truncs at [4:0] instead of
-// [5:0] which is for normal SLL, SRL, SRA
+// for support of word truncated ops
 `define ALU_OP_SLLW       4'ha
 `define ALU_OP_SRLW       4'hb
 `define ALU_OP_SRAW       4'hc
