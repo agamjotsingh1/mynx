@@ -53,25 +53,37 @@ module alu_ctl (
       : alu_op = `ALU_OP_AND;
 
       `BOP_SLL, 
-      `BOP_SLLW, 
-      `BOP_SLLI,
-      `BOP_SLLIW
+      `BOP_SLLI
       : alu_op = `ALU_OP_SLL;
 
-      `BOP_SRL,
-      `BOP_SRLW
+      `BOP_SLLW, 
+      `BOP_SLLIW
+      : alu_op = `ALU_OP_SLLW;
+
+      `BOP_SRL
       : alu_op = `ALU_OP_SRL;
 
-      `BOP_SRA,
-      `BOP_SRAW
+      `BOP_SRLW
+      : alu_op = `ALU_OP_SRLW;
+
+      `BOP_SRA
       : alu_op = `ALU_OP_SRA;
 
-      `BOP_SRLI,
-      `BOP_SRLIW // SRAI(W) only differ by upper immediate bits, BOP is same
+      `BOP_SRAW
+      : alu_op = `ALU_OP_SRAW;
+
+      `BOP_SRLI  // SRAI only differ by upper immediate bits, BOP is same
       : begin
         // upper immediate extraction
         if(instr[30]) alu_op = `ALU_OP_SRA;
         else alu_op = `ALU_OP_SRL;
+      end
+
+      `BOP_SRLIW  // SRAIW only differ by upper immediate bits, BOP is same
+      : begin
+        // upper immediate extraction
+        if(instr[30]) alu_op = `ALU_OP_SRAW;
+        else alu_op = `ALU_OP_SRLW;
       end
 
       default
