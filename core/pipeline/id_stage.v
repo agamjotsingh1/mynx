@@ -16,7 +16,8 @@ module id_stage (
   output wire `W(`RLEN)   rs1,
   output wire `W(`RLEN)   rs2,
   output wire `W(`RLEN)   rd,
-  output reg  `W(`DLEN)   csr_past_data,  // data to pass to EX-stage to update rd
+  output reg  `W(`DLEN)   csr_data,  // data to pass to EX-stage to update rd
+  output wire `W(`DLEN)   satp,
   output wire `W(`DLEN)   regdata1,
   output wire `W(`DLEN)   regdata2,
   output wire `W(`DLEN)   imm,
@@ -116,7 +117,7 @@ module id_stage (
 
   // finish the csr reading/writing task in ID stage only
   wire `W(`CSRLEN) csr;
-  wire `W(`DLEN) csr_data;
+  wire `W(`DLEN) csr_read_data;
   // TODO! move away ZICSR_OP from ctl module to optimize ctl_bus passthroughs
   /* verilator lint_off WIDTHTRUNC */
   wire csr_write_en = (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE) && (!(stall & `STALL_CSRFILE));
@@ -127,11 +128,11 @@ module id_stage (
     case(`ZICSR_OP(ctl_bus)) 
       `ZICSR_OP_NONE  : csr_write_data = 0;
       `ZICSR_OP_CSRRW : csr_write_data = regdata1_fwded;
-      `ZICSR_OP_CSRRS : csr_write_data = csr_data | regdata1_fwded;
-      `ZICSR_OP_CSRRC : csr_write_data = csr_data & (~regdata1_fwded);
+      `ZICSR_OP_CSRRS : csr_write_data = csr_read_data | regdata1_fwded;
+      `ZICSR_OP_CSRRC : csr_write_data = csr_read_data & (~regdata1_fwded);
       `ZICSR_OP_CSRRWI: csr_write_data = imm;
-      `ZICSR_OP_CSRRSI: csr_write_data = csr_data | imm;
-      `ZICSR_OP_CSRRCI: csr_write_data = csr_data & (~imm);
+      `ZICSR_OP_CSRRSI: csr_write_data = csr_read_data | imm;
+      `ZICSR_OP_CSRRCI: csr_write_data = csr_read_data & (~imm);
       default:          csr_write_data = 0;
     endcase
   end
@@ -141,11 +142,12 @@ module id_stage (
     .clk(clk),
     .rst(rst),
     .read_csr(csr),
-    .read_data(csr_data),
+    .read_data(csr_read_data),
+    .satp(satp),
     .write_en(csr_write_en),
     .write_csr(csr),
     .write_data(csr_write_data)
   );
 
-  always @(negedge clk) csr_past_data <= csr_data;
+  always @(negedge clk) csr_data <= csr_read_data;
 endmodule

@@ -9,6 +9,9 @@ module csrfile (
 	input wire `W(`CSRLEN)  read_csr,
 	output wire `W(`DLEN)   read_data,
 
+  // satp read port (mmu -> pagetable ppn fetching)
+  output wire `W(`DLEN)   satp,
+
 	// write port
 	input wire              write_en,
 	input wire `W(`CSRLEN)  write_csr,
@@ -41,4 +44,5 @@ module csrfile (
 	end
 
 	assign read_data = csr_array[read_csrmap];
+  assign satp = csr_array[`CSRMAP_SATP];
 endmodule
