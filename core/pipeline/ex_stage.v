@@ -5,6 +5,7 @@ module ex_stage (
   input wire `W(`DLEN)       pc,
   input wire `W(`DLEN)       regdata1,
   input wire `W(`DLEN)       regdata2,
+  input wire `W(`DLEN)       csr_past_data,
   input wire `W(`DLEN)       imm,
   input wire `W(`ALU_OPLEN)  alu_op,
 
@@ -47,5 +48,6 @@ module ex_stage (
     (`LUI(ctl_bus) ? imm:
     (`AUIPC(ctl_bus) ? pc + imm:
     (`WORDTRUNC(ctl_bus) ? {{32{alu_res[31]}}, alu_res[31:0]}:
-    alu_res)));
+    (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE ? csr_past_data:
+    alu_res))));
 endmodule

@@ -4,7 +4,7 @@ AS      = $(TARGET)as
 LD      = $(TARGET)ld
 OBJCOPY = $(TARGET)objcopy
 
-ARCH    = -march=rv64i -mabi=lp64
+ARCH    = -march=rv64i_zicsr -mabi=lp64
 ASFLAGS = $(ARCH)
 CFLAGS  = $(ARCH) -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
 

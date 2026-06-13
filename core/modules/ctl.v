@@ -15,7 +15,15 @@ module ctl (
     case(opcode)
       `OP_SYS: begin
         `REG_WRITE(ctl_bus)   = 1;
-        `CSR_WRITE(ctl_bus)   = 1;
+        case(funct3)
+          `F3CSRRW : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRW;
+          `F3CSRRS : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRS;
+          `F3CSRRC : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRC;
+          `F3CSRRWI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRWI;
+          `F3CSRRSI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRSI;
+          `F3CSRRCI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRCI;
+          default:   `ZICSR_OP(ctl_bus) = `ZICSR_OP_NONE;
+        endcase
       end
 
       `OP_R: begin

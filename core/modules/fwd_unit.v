@@ -1,5 +1,6 @@
 `include "defs.vh"
 
+// TODO! optimize by eliminating some forwards to ID stage
 // forwarding unit
 module fwd_unit (
   input wire `W(`RLEN)       __id_rs1,
@@ -25,6 +26,7 @@ module fwd_unit (
 
   /* Fwding to ID stage (for branching/jal) */
 
+  // FIXME! mem/wb forward not needed but cant confirm
   // EX Hazard
   wire __id_fwd1_ex_mem = is_write_ex_mem && (__mem_rd == __id_rs1); 
   wire __id_fwd2_ex_mem = is_write_ex_mem && (__mem_rd == __id_rs2); 

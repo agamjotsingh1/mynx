@@ -17,13 +17,13 @@ module immgen (
       `OP_I,
       `OP_IW,
       `OP_I_LOAD,
-      `OP_I_JALR,
-      `OP_I_ECALL: imm = $signed(instr[31:20]);
+      `OP_I_JALR:  imm = $signed(instr[31:20]);
       `OP_S:       imm = $signed({instr[31:25], instr[11:7]});
       `OP_B:       imm = $signed({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0});
       `OP_U_LUI,
       `OP_U_AUIPC: imm = $signed({instr[31:12], 12'b0});
       `OP_J:       imm = $signed({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0});
+      `OP_SYS:     imm = $unsigned({instr[19:15]});
       default:     imm = 0; 
     endcase
   end

@@ -51,6 +51,7 @@
 `define RS1SLICE          [19:15] // rs1
 `define RS2SLICE          [24:20] // rs2
 `define RDSLICE           [11:7]  // rd
+`define CSRSLICE          [31:20]  // csr
 `define WSLICE            [31:0]  // word
 
 // OPcodes wrt instruction format
@@ -168,23 +169,32 @@
 `define BR_BLTU           3'h5
 `define BR_BGEU           3'h6
 
-// Control (ctl) signals
-`define CTL_BUSLEN            17
+// ZICSR based ctl signals
+`define ZICSR_OPLEN       3
+`define ZICSR_OP_NONE     3'h0
+`define ZICSR_OP_CSRRW    3'h1
+`define ZICSR_OP_CSRRS    3'h2
+`define ZICSR_OP_CSRRC    3'h3
+`define ZICSR_OP_CSRRWI   3'h4
+`define ZICSR_OP_CSRRSI   3'h5
+`define ZICSR_OP_CSRRCI   3'h6
 
-`define ALU_SRC(ctl_bus)      ctl_bus[0]    // 1 for imm, 0 for reg
-`define REG_WRITE(ctl_bus)    ctl_bus[1]    // 1 for reg to be written
-`define MEM_WRITE(ctl_bus)    ctl_bus[2]    // 1 for mem to be written
-`define MEM_READ(ctl_bus)     ctl_bus[3]    // 1 for mem to be read 
-`define MEM_TO_REG(ctl_bus)   ctl_bus[4]    // 1 for mem reads to be written to reg
-`define BW(ctl_bus)           ctl_bus[6:5]  // bitwidth for memory ops
-`define SIGN_EXTEND(ctl_bus)  ctl_bus[7]    // 1 if sign extend for memory ops
-`define BR(ctl_bus)           ctl_bus[10:8] // branching ctl sigs
-`define JAL(ctl_bus)          ctl_bus[11]   // 1 if instr is jal
-`define JALR(ctl_bus)         ctl_bus[12]   // 1 if instr is jalr
-`define LUI(ctl_bus)          ctl_bus[13]   // 1 if instr is lui
-`define AUIPC(ctl_bus)        ctl_bus[14]   // 1 if instr is auipc 
-`define WORDTRUNC(ctl_bus)    ctl_bus[15]   // 1 if instr does word trunc ops (like addiw)
-`define CSR_WRITE(ctl_bus)    ctl_bus[16]    // 1 for reg to be written
+// Control (ctl) signals
+`define CTL_BUSLEN            19
+`define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
+`define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
+`define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
+`define MEM_READ(ctl_bus)     ctl_bus[3]     // 1 for mem to be read 
+`define MEM_TO_REG(ctl_bus)   ctl_bus[4]     // 1 for mem reads to be written to reg
+`define BW(ctl_bus)           ctl_bus[6:5]   // bitwidth for memory ops
+`define SIGN_EXTEND(ctl_bus)  ctl_bus[7]     // 1 if sign extend for memory ops
+`define BR(ctl_bus)           ctl_bus[10:8]  // branching ctl sigs
+`define JAL(ctl_bus)          ctl_bus[11]    // 1 if instr is jal
+`define JALR(ctl_bus)         ctl_bus[12]    // 1 if instr is jalr
+`define LUI(ctl_bus)          ctl_bus[13]    // 1 if instr is lui
+`define AUIPC(ctl_bus)        ctl_bus[14]    // 1 if instr is auipc 
+`define WORDTRUNC(ctl_bus)    ctl_bus[15]    // 1 if instr does word trunc ops (like addiw)
+`define ZICSR_OP(ctl_bus)     ctl_bus[18:16] // Zicsr op signals
 
 // Pipeline stalling signals
 // "stall" is wor type bus

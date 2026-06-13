@@ -45,6 +45,7 @@ module core (
   wire `W(`RLEN)       __id_rd;
   wire `W(`DLEN)       __id_regdata1;
   wire `W(`DLEN)       __id_regdata2;
+  wire `W(`DLEN)       __id_csr_past_data;
   wire `W(`DLEN)       __id_imm;
   wire `W(`ALU_OPLEN)  __id_alu_op;
   wire `W(`CTL_BUSLEN) __id_ctl_bus;
@@ -59,6 +60,7 @@ module core (
   wire `W(`RLEN)       __ex_rd;
   wire `W(`DLEN)       __ex_regdata1;
   wire `W(`DLEN)       __ex_regdata2;
+  wire `W(`DLEN)       __ex_csr_past_data;
   wire `W(`DLEN)       __ex_imm;
   wire `W(`ALU_OPLEN)  __ex_alu_op;
   wire `W(`CTL_BUSLEN) __ex_ctl_bus;
@@ -151,6 +153,7 @@ module core (
     .rd(__id_rd),
     .regdata1(__id_regdata1),
     .regdata2(__id_regdata2),
+    .csr_past_data(__id_csr_past_data),
     .imm(__id_imm),
     .alu_op(__id_alu_op),
     .ctl_bus(__id_ctl_bus),
@@ -179,6 +182,7 @@ module core (
     .in_rd(__id_rd),
     .in_regdata1(__id_regdata1),
     .in_regdata2(__id_regdata2),
+    .in_csr_past_data(__id_csr_past_data),
     .in_imm(__id_imm),
     .in_alu_op(__id_alu_op),
     .in_ctl_bus(__id_ctl_bus),
@@ -189,6 +193,7 @@ module core (
     .out_rd(__ex_rd),
     .out_regdata1(__ex_regdata1),
     .out_regdata2(__ex_regdata2),
+    .out_csr_past_data(__ex_csr_past_data),
     .out_imm(__ex_imm),
     .out_alu_op(__ex_alu_op),
     .out_ctl_bus(__ex_ctl_bus)
@@ -200,6 +205,7 @@ module core (
     .regdata1(__ex_regdata1),
     .regdata2(__ex_regdata2),
     .imm(__ex_imm),
+    .csr_past_data(__ex_csr_past_data),
     .mem_data(__ex_mem_data),
     .alu_op(__ex_alu_op),
     .ctl_bus(__ex_ctl_bus),

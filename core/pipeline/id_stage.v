@@ -3,6 +3,7 @@
 `include "modules/immgen.v"
 `include "modules/alu_ctl.v"
 `include "modules/ctl.v"
+`include "modules/csrfile.v"
 
 module id_stage (
   input wire           clk,
@@ -11,12 +12,13 @@ module id_stage (
   input wire `W(`ILEN) instr,
 
   // parsing results
-  output wire `W(`RLEN) rs1,
-  output wire `W(`RLEN) rs2,
-  output wire `W(`RLEN) rd,
-  output wire `W(`DLEN) regdata1,
-  output wire `W(`DLEN) regdata2,
-  output wire `W(`DLEN) imm,
+  output wire `W(`RLEN)   rs1,
+  output wire `W(`RLEN)   rs2,
+  output wire `W(`RLEN)   rd,
+  output reg  `W(`DLEN)   csr_past_data,  // data to pass to EX-stage to update rd
+  output wire `W(`DLEN)   regdata1,
+  output wire `W(`DLEN)   regdata2,
+  output wire `W(`DLEN)   imm,
 
   // alu control outputs
   output wire `W(`ALU_OPLEN) alu_op,
@@ -46,6 +48,7 @@ module id_stage (
   assign rs1 = instr`RS1SLICE;
   assign rs2 = instr`RS2SLICE;
   assign rd  = instr`RDSLICE;
+  assign csr = instr`CSRSLICE;
 
   regfile regfile_instance (
     .clk(clk),
@@ -107,7 +110,39 @@ module id_stage (
   end
 
   // shift is implicitly added in the immgen block
-  // TODO!
-  // optimize this to take the alu output instead of an extra adder here
+  // TODO! optimize this to take the alu output instead of an extra adder here
   assign next_pc = (`JALR(ctl_bus) ? regdata1_fwded: pc) + imm;
+
+  // finish the csr reading/writing task in ID stage only
+  wire `W(`CSRLEN) csr;
+  wire `W(`DLEN) csr_data;
+  // TODO! move away ZICSR_OP from ctl module to optimize ctl_bus passthroughs
+  wire csr_write_en = (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE);
+  reg `W(`DLEN) csr_write_data;
+
+  always @(*) begin
+    case(`ZICSR_OP(ctl_bus)) 
+      `ZICSR_OP_NONE  : csr_write_data = 0;
+      `ZICSR_OP_CSRRW : csr_write_data = regdata1_fwded;
+      `ZICSR_OP_CSRRS : csr_write_data = csr_data | regdata1_fwded;
+      `ZICSR_OP_CSRRC : csr_write_data = csr_data & (~regdata1_fwded);
+      `ZICSR_OP_CSRRWI: csr_write_data = imm;
+      `ZICSR_OP_CSRRSI: csr_write_data = csr_data | imm;
+      `ZICSR_OP_CSRRCI: csr_write_data = csr_data & (~imm);
+      default:          csr_write_data = 0;
+    endcase
+  end
+
+  // csrfile is negedge so this same stage writing works out
+  csrfile csrfile_instance (
+    .clk(clk),
+    .rst(rst),
+    .read_csr(csr),
+    .read_data(csr_data),
+    .write_en(csr_write_en),
+    .write_csr(csr),
+    .write_data(csr_write_data)
+  );
+
+  always @(negedge clk) csr_past_data <= csr_data;
 endmodule
