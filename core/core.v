@@ -146,6 +146,7 @@ module core (
   id_stage id_stage_instance (
     .clk(clk),
     .rst(rst),
+    .stall(stall),
     .pc(__id_pc),
     .instr(__id_instr),
     .rs1(__id_rs1),

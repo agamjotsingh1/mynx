@@ -10,6 +10,7 @@ module id_stage (
   input wire           rst,
   input wire `W(`DLEN) pc,
   input wire `W(`ILEN) instr,
+  input wor `W(`STLEN) stall, // for csr
 
   // parsing results
   output wire `W(`RLEN)   rs1,
@@ -117,7 +118,9 @@ module id_stage (
   wire `W(`CSRLEN) csr;
   wire `W(`DLEN) csr_data;
   // TODO! move away ZICSR_OP from ctl module to optimize ctl_bus passthroughs
-  wire csr_write_en = (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE);
+  /* verilator lint_off WIDTHTRUNC */
+  wire csr_write_en = (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE) && (!(stall & `STALL_CSRFILE));
+  /* verilator lint_on WIDTHTRUNC */
   reg `W(`DLEN) csr_write_data;
 
   always @(*) begin
