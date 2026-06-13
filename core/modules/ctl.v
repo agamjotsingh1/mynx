@@ -13,6 +13,11 @@ module ctl (
     ctl_bus = 0;
 
     case(opcode)
+      `OP_SYS: begin
+        `REG_WRITE(ctl_bus)   = 1;
+        `CSR_WRITE(ctl_bus)   = 1;
+      end
+
       `OP_R: begin
         `REG_WRITE(ctl_bus)   = 1;
       end

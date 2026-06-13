@@ -20,9 +20,9 @@ module alu (
 
       /* word truncs, so trunc input at max shift for a word (one less than dblword) */
       /* verilator lint_off WIDTHEXPAND */
-      `ALU_OP_SLLW:  out = $signed(in1[`DLEN/2-1:0] << in2[($clog2(`DLEN/2))-1:0]);
-      `ALU_OP_SRLW:  out = $signed(in1[`DLEN/2-1:0] >> in2[($clog2(`DLEN/2))-1:0]);
-      `ALU_OP_SRAW:  out = $signed($signed(in1[`DLEN/2-1:0]) >>> in2[($clog2(`DLEN/2))-1:0]);
+      `ALU_OP_SLLW:  out = $signed(in1[`WORD-1:0] << in2[($clog2(`WORD))-1:0]);
+      `ALU_OP_SRLW:  out = $signed(in1[`WORD-1:0] >> in2[($clog2(`WORD))-1:0]);
+      `ALU_OP_SRAW:  out = $signed($signed(in1[`WORD-1:0]) >>> in2[($clog2(`WORD))-1:0]);
       /* verilator lint_on WIDTHEXPAND */
 
       `ALU_OP_SLT:  out = $signed(in1) < $signed(in2) ? 1: 0;

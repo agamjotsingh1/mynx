@@ -2,6 +2,7 @@
 #include "Vcore_core.h"
 
 // for access of internal mem_banks (display)
+#include "Vcore_mmu.h"
 #include "Vcore_mem.h"
 #include "Vcore_mem_bank.h"
 
@@ -92,14 +93,14 @@ int main(int argc, char** argv) {
             }
 
             switch(bank_idx) {
-                case 0: dut->core->mem_instance->mem_banks__BRA__0__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 1: dut->core->mem_instance->mem_banks__BRA__1__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 2: dut->core->mem_instance->mem_banks__BRA__2__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 3: dut->core->mem_instance->mem_banks__BRA__3__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 4: dut->core->mem_instance->mem_banks__BRA__4__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 5: dut->core->mem_instance->mem_banks__BRA__5__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 6: dut->core->mem_instance->mem_banks__BRA__6__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
-                case 7: dut->core->mem_instance->mem_banks__BRA__7__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 0: dut->core->mmu_instance->mem_instance->mem_banks__BRA__0__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 1: dut->core->mmu_instance->mem_instance->mem_banks__BRA__1__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 2: dut->core->mmu_instance->mem_instance->mem_banks__BRA__2__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 3: dut->core->mmu_instance->mem_instance->mem_banks__BRA__3__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 4: dut->core->mmu_instance->mem_instance->mem_banks__BRA__4__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 5: dut->core->mmu_instance->mem_instance->mem_banks__BRA__5__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 6: dut->core->mmu_instance->mem_instance->mem_banks__BRA__6__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
+                case 7: dut->core->mmu_instance->mem_instance->mem_banks__BRA__7__KET____DOT__mem_bank_instance->bank[mem_idx] = byte_val; break;
             }
         }
     }
@@ -175,14 +176,14 @@ int main(int argc, char** argv) {
             uint8_t byte_val = 0;
             
             switch(bank_idx) {
-                case 0: byte_val = dut->core->mem_instance->mem_banks__BRA__0__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 1: byte_val = dut->core->mem_instance->mem_banks__BRA__1__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 2: byte_val = dut->core->mem_instance->mem_banks__BRA__2__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 3: byte_val = dut->core->mem_instance->mem_banks__BRA__3__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 4: byte_val = dut->core->mem_instance->mem_banks__BRA__4__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 5: byte_val = dut->core->mem_instance->mem_banks__BRA__5__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 6: byte_val = dut->core->mem_instance->mem_banks__BRA__6__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
-                case 7: byte_val = dut->core->mem_instance->mem_banks__BRA__7__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 0: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__0__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 1: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__1__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 2: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__2__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 3: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__3__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 4: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__4__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 5: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__5__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 6: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__6__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
+                case 7: byte_val = dut->core->mmu_instance->mem_instance->mem_banks__BRA__7__KET____DOT__mem_bank_instance->bank[mem_idx]; break;
             }
             line_bytes[j] = byte_val;
             if (byte_val != 0) line_has_data = true;

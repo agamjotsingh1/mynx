@@ -1,5 +1,5 @@
 `include "defs.vh"
-`include "modules/mem.v"
+`include "modules/mmu.v"
 `include "modules/fwd_unit.v"
 `include "modules/hdu.v"
 `include "pipeline/if_stage.v"
@@ -15,6 +15,23 @@ module core (
   input wire clk,
   input wire rst
 );
+  // reg `W(PRIVLEN)  priv;
+  /* verilator lint_off UNUSEDSIGNAL */
+  reg `W(`DLEN) satp;
+  /* verilator lint_on UNUSEDSIGNAL */
+  always @(posedge clk) begin
+    if(rst) begin
+      satp <= 0;
+    end
+  end
+
+  // TODO! put the hard stall in pipeline regs
+  // disable nops when hard stall is active
+  // TODO! remove linter violations by actually using this
+  /* verilator lint_off UNUSEDSIGNAL */
+  wor hard_stall; // stall the entire pipeline
+  /* verilator lint_on UNUSEDSIGNAL */
+
   wor `W(`STLEN)   stall;
   wor `W(`NOPILEN) nopi;
 
@@ -65,15 +82,18 @@ module core (
 
   `ifdef SIM
   /* verilator lint_off UNUSEDSIGNAL */
-  wire `W(`DLEN) __mem_data_addr = __mem_ex_res - `MEMBASE;
-  wire `W(`DLEN) __mem_instr_addr = __if_pc - `MEMBASE;
+  wire `W(`DLEN) __mem_instr_addr = __if_pc;
+  wire `W(`DLEN) __mem_data_addr = __mem_ex_res;
   /* verilator lint_on UNUSEDSIGNAL */
 
-  mem mem_instance (
+  mmu mmu_instance (
     .clk(clk),
+    .rst(rst),
+    .hard_stall(hard_stall),
+    .satp(satp),
 
     // port a for instr fetch
-    .addr_a(__mem_instr_addr[0 +: `ADDRLEN]),
+    .addr_a(__mem_instr_addr),
     .mem_read_a(1),
     .mem_write_a(0),
     .sign_extend_a(0),
@@ -85,7 +105,7 @@ module core (
     /* verilator lint_on WIDTHEXPAND */
 
     // port b for mem stage access
-    .addr_b(__mem_data_addr[0 +: `ADDRLEN]),
+    .addr_b(__mem_data_addr),
     .mem_read_b(`MEM_READ(__mem_ctl_bus)),
     .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
     .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),

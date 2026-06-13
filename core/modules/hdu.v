@@ -14,6 +14,11 @@ module hdu (
   input wire `W(`CTL_BUSLEN) __mem_ctl_bus
   /* verilator lint_on UNUSEDSIGNAL */
 );
+  // TODO!
+  // this is conservative when it need not be
+  // this stalls on instructions like lui, auipc etc.
+  // add more checks
+
   // simple load hazard
   wire load_hazard =
     `MEM_READ(__ex_ctl_bus) &&

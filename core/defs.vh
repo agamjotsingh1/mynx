@@ -39,10 +39,10 @@
 `define MLEN              8  // byte addressable mem => 8 bits = 1 byte
 `define ADDRLEN           $clog2(`DEPTH*`NBANKS)    // mem addr width
 `define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
+`define RLEN              5  // register index width
 
-// `define RSTPC          0  // pc when processor resets
-`define RSTPC             `MEMBASE
-`define RSTINSTR          0  // instr when processor resets
+`define RSTPC             `MEMBASE // pc when processor resets
+`define RSTINSTR          0        // instr when processor resets
 
 // slices from instructions
 `define OSLICE            [6:0]   // opcode
@@ -54,6 +54,7 @@
 `define WSLICE            [31:0]  // word
 
 // OPcodes wrt instruction format
+`define OP_SYS            7'b1110011
 `define OP_R              7'b0110011
 `define OP_RW             7'b0111011 // word instrs (like addw)
 `define OP_I              7'b0010011 // standard I format
@@ -67,6 +68,7 @@
 `define OP_U_AUIPC        7'b0010111
 `define OP_J              7'b1101111
 
+// TODO! add underscore as im kinda getting triggered
 // Some useful funct3 defs
 `define F3LB              3'h0
 `define F3LH              3'h1
@@ -85,10 +87,18 @@
 `define F3BGE             3'h5
 `define F3BLTU            3'h6
 `define F3BGEU            3'h7
+`define F3CSRRW           3'h1
+`define F3CSRRS           3'h2
+`define F3CSRRC           3'h3
+`define F3CSRRWI          3'h5
+`define F3CSRRSI          3'h6
+`define F3CSRRCI          3'h7
 
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
 // 'z' will be used in casez for alu control sigs
+
+// TODO! merge opcode and bopcode defs
 `define BOP_ADD           17'b0110011_000_0000000
 `define BOP_ADDW          17'b0111011_000_0000000
 `define BOP_ADDI          17'b0010011_000_zzzzzzz
@@ -159,7 +169,7 @@
 `define BR_BGEU           3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            16
+`define CTL_BUSLEN            17
 
 `define ALU_SRC(ctl_bus)      ctl_bus[0]    // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]    // 1 for reg to be written
@@ -174,6 +184,7 @@
 `define LUI(ctl_bus)          ctl_bus[13]   // 1 if instr is lui
 `define AUIPC(ctl_bus)        ctl_bus[14]   // 1 if instr is auipc 
 `define WORDTRUNC(ctl_bus)    ctl_bus[15]   // 1 if instr does word trunc ops (like addiw)
+`define CSR_WRITE(ctl_bus)    ctl_bus[16]    // 1 for reg to be written
 
 // Pipeline stalling signals
 // "stall" is wor type bus
@@ -203,5 +214,95 @@
 `define FWD_ID_EX             2'h1
 `define FWD_EX_MEM            2'h2
 `define FWD_MEM_WB            2'h3
+
+// Pgtbl defs (Sv39 format)
+`define PGTBL_LVLS            3
+`define PALEN                 56
+`define OFFLEN                12
+`define VA2VPN(va, lvl)      {((lvl == 3) ? va[38:30]: ((lvl == 2) ? va[29:21]: va[20:12])), 3'b0}
+`define VA2OFF(va)           va[11:0]
+
+// SATP defs
+`define SATP_MODE(satp)       satp[63:60]
+`define SATP_MODE_BAREMETAL   4'h0
+`define SATP_MODE_SV39        4'h8
+`define SATP_PPN(satp)        satp[43:0]
+
+// PTE defs
+`define PTELEN                64
+`define PTE2PA(pte, off)      {pte[53:10], off}
+
+// PTEF (Page table entry flags)
+`define PTEFLEN               10
+`define PTEF_V                10'b0000000001
+`define PTEF_R                10'b0000000010
+`define PTEF_W                10'b0000000100
+`define PTEF_X                10'b0000001000
+`define PTEF_U                10'b0000010000
+`define PTEF_G                10'b0000100000
+`define PTEF_A                10'b0001000000
+`define PTEF_D                10'b0010000000
+`define PTEF_RSW              10'b1100000000
+
+// Priviledge levels
+`define PRIVLEN               2
+`define PRIVU                 2'b00
+`define PRIVS                 2'b01
+`define PRIVM                 2'b11
+
+// CSR read/write perms
+`define CSR_PERMLEN           2
+`define CSR_PERM_RO           2'b11
+`define CSR_PERM_RW           2'b00, 2'b01, 2'b10
+
+// CSR addresses
+`define CSRLEN                12
+`define CSR_MSTATUS           12'h300
+`define CSR_MEPC              12'h341
+`define CSR_MHARTID           12'hf14
+`define CSR_MEDELEG           12'h302
+`define CSR_MIDELEG           12'h303
+`define CSR_MIE               12'h304
+`define CSR_MIP               12'h344
+`define CSR_MTVEC             12'h305
+`define CSR_MSCRATCH          12'h340
+`define CSR_MCAUSE            12'h342
+`define CSR_MTVAL             12'h343
+`define CSR_SSTATUS           12'h100
+`define CSR_SEPC              12'h141
+`define CSR_SATP              12'h180
+`define CSR_STVEC             12'h105
+`define CSR_SSCRATCH          12'h140
+`define CSR_SCAUSE            12'h142
+`define CSR_STVAL             12'h143
+`define CSR_SIE               12'h104
+`define CSR_SIP               12'h144
+`define CSR_PMPCFG0           12'h3a0
+`define CSR_PMPADDR0          12'h3b0
+
+// CSR Maps
+`define CSRMAPLEN             5 // change this len whenever adding more CSRs
+`define CSRMAP_MSTATUS        5'd0
+`define CSRMAP_MEPC           5'd1
+`define CSRMAP_MHARTID        5'd2
+`define CSRMAP_MEDELEG        5'd3
+`define CSRMAP_MIDELEG        5'd4
+`define CSRMAP_MIE            5'd5
+`define CSRMAP_MIP            5'd6
+`define CSRMAP_MTVEC          5'd7
+`define CSRMAP_MSCRATCH       5'd8
+`define CSRMAP_MCAUSE         5'd9
+`define CSRMAP_MTVAL          5'd10
+`define CSRMAP_SSTATUS        5'd11
+`define CSRMAP_SEPC           5'd12
+`define CSRMAP_SATP           5'd13
+`define CSRMAP_STVEC          5'd14
+`define CSRMAP_SSCRATCH       5'd15
+`define CSRMAP_SCAUSE         5'd16
+`define CSRMAP_STVAL          5'd17
+`define CSRMAP_SIE            5'd18
+`define CSRMAP_SIP            5'd19
+`define CSRMAP_PMPCFG0        5'd20
+`define CSRMAP_PMPADDR0       5'd21
 
 `endif
