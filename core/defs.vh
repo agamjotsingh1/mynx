@@ -226,6 +226,22 @@
 `define FWD_EX_MEM            2'h2
 `define FWD_MEM_WB            2'h3
 
+// trap mode defs
+`define TRAPMODELEN           3
+`define TRAPMODE_NONE         3'b000
+`define TRAPMODE_SINTR        3'b001
+`define TRAPMODE_MINTR        3'b010
+`define TRAPMODE_SXCEP        3'b101
+`define TRAPMODE_MXCEP        3'b110
+
+// S/M interrupt causes
+`define MICAUSE_EXT            64'd11
+`define MICAUSE_TIMER          64'd7
+`define MICAUSE_SOFT           64'd3
+`define SICAUSE_EXT            64'd9
+`define SICAUSE_TIMER          64'd5
+`define SICAUSE_SOFT           64'd1
+
 // Pgtbl defs (Sv39 format)
 `define PGTBL_LVLS            3
 `define PALEN                 56
@@ -315,5 +331,56 @@
 `define CSRMAP_SIP            5'd19
 `define CSRMAP_PMPCFG0        5'd20
 `define CSRMAP_PMPADDR0       5'd21
+
+// MSTATUS fields
+`define MSTATUS_RST           64'h0000_000A_0000_0000
+`define MSTATUS_MASK          64'h0000_0000_007E_19AA
+`define MSTATUS_SD(val)       val[63]
+`define MSTATUS_WPRI_5(val)   val[62:43] // Reserved (WPRI)
+`define MSTATUS_MDT(val)      val[42]
+`define MSTATUS_MPELP(val)    val[41]
+`define MSTATUS_WPRI_4(val)   val[40]    // Reserved (WPRI)
+`define MSTATUS_MPV(val)      val[39]
+`define MSTATUS_GVA(val)      val[38]
+`define MSTATUS_MBE(val)      val[37]
+`define MSTATUS_SBE(val)      val[36]
+`define MSTATUS_SXL(val)      val[35:34]
+`define MSTATUS_UXL(val)      val[33:32]
+`define MSTATUS_WPRI_3(val)   val[31:25] // Reserved (WPRI)
+`define MSTATUS_SDT(val)      val[24]
+`define MSTATUS_SPELP(val)    val[23]
+`define MSTATUS_TSR(val)      val[22]
+`define MSTATUS_TW(val)       val[21]
+`define MSTATUS_TVM(val)      val[20]
+`define MSTATUS_MXR(val)      val[19]
+`define MSTATUS_SUM(val)      val[18]
+`define MSTATUS_MPRV(val)     val[17]
+`define MSTATUS_XS(val)       val[16:15]
+`define MSTATUS_FS(val)       val[14:13]
+`define MSTATUS_MPP(val)      val[12:11]
+`define MSTATUS_VS(val)       val[10:9]
+`define MSTATUS_SPP(val)      val[8]
+`define MSTATUS_MPIE(val)     val[7]
+`define MSTATUS_UBE(val)      val[6]
+`define MSTATUS_SPIE(val)     val[5]
+`define MSTATUS_WPRI_2(val)   val[4]     // Reserved (WPRI)
+`define MSTATUS_MIE(val)      val[3]
+`define MSTATUS_WPRI_1(val)   val[2]     // Reserved (WPRI)
+`define MSTATUS_SIE(val)      val[1]
+`define MSTATUS_WPRI_0(val)   val[0]     // Reserved (WPRI)
+
+// SSTATUS (same fields as MSTATUS but restricted view)
+`define SSTATUS_MASK          64'h0000_0000_000C_0122
+
+// MIP defs
+`define MIP_MMASK             64'h0x0000_0000_0000_0888
+`define MIP_SMASK             64'h0x0000_0000_0000_0222
+// get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
+`define MIP_GET_MICAUSE(mip) (mip[11] ? `MICAUSE_EXT: (mip[3]? `MICAUSE_TIMER: `MICAUSE_SOFT))
+`define MIP_GET_SICAUSE(mip) (mip[9]  ? `SICAUSE_EXT: (mip[5]? `SICAUSE_TIMER: `SICAUSE_SOFT))
+
+// MIE defs
+`define MIE_MMASK             64'h0x0000_0000_0000_0888
+`define MIE_SMASK             64'h0x0000_0000_0000_0222
 
 `endif

@@ -1,6 +1,7 @@
 `include "defs.vh"
 
 module mem_wb_reg (
+  input wor hard_stall,
   input wor `W(`STLEN)   stall,
   input wor `W(`NOPILEN) nopi,
   input wire clk,
@@ -18,18 +19,20 @@ module mem_wb_reg (
 );
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(rst || (nopi & `NOPI_MEM_WB)) begin
-      out_rd        <= 0;
-      out_mem_res   <= 0;
-      out_regw_data <= 0;
-      out_ctl_bus   <= 0;
+    if(!hard_stall) begin
+      if(rst || (nopi & `NOPI_MEM_WB)) begin
+        out_rd        <= 0;
+        out_mem_res   <= 0;
+        out_regw_data <= 0;
+        out_ctl_bus   <= 0;
+      end
+      else if (!(stall & `STALL_MEM_WB)) begin
+        out_rd        <= in_rd;
+        out_mem_res   <= in_mem_res;
+        out_regw_data <= in_regw_data;
+        out_ctl_bus   <= in_ctl_bus;
+      end
     end
-    else if (!(stall & `STALL_MEM_WB)) begin
-      out_rd        <= in_rd;
-      out_mem_res   <= in_mem_res;
-      out_regw_data <= in_regw_data;
-      out_ctl_bus   <= in_ctl_bus;
-   end
   end
   /* verilator lint_on WIDTHTRUNC */
 endmodule

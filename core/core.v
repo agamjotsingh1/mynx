@@ -13,19 +13,24 @@
 
 module core (
   input wire clk,
-  input wire rst
+  input wire rst,
+  input wire intr, // external trap (interrupt)
+
+  input wire `W(`DLEN) intr_cause // interrupt cause
 );
-  // reg `W(PRIVLEN)  priv;
-  // TODO! put the hard stall in pipeline regs
-  // disable nops when hard stall is active
-  /* verilator lint_off UNUSEDSIGNAL */
+  wor xcep; // internal trap (exception)
+  wire `W(`DLEN)   xcep_cause;
+
+  wire `W(TRAPLEN) trap = {xcep, intr};
+  wire `W(`DLEN)   trap_cause = intr ? intr_cause: xcep_cause; // interrupt has priority
+
   wor hard_stall; // stall the entire pipeline
-  /* verilator lint_on UNUSEDSIGNAL */
 
-  wor `W(`STLEN)   stall;
-  wor `W(`NOPILEN) nopi;
+  reg `W(PRIVLEN)      priv;
+  wor `W(`STLEN)       stall;
+  wor `W(`NOPILEN)     nopi;
 
-  wire `W(`DLEN)   satp;
+  wire `W(`DLEN)       satp;
 
   wire `W(`DLEN)       __if_pc /* verilator public*/;
   wire `W(`ILEN)       __if_instr;
@@ -112,6 +117,7 @@ module core (
 
   /* ----- IF STAGE ------ */
   if_stage if_stage_instance (
+    .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
     .clk(clk),
@@ -123,6 +129,7 @@ module core (
   /* -------------------- */
 
   if_id_reg if_id_reg_instance (
+    .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
     .clk(clk),
@@ -139,6 +146,7 @@ module core (
     .clk(clk),
     .rst(rst),
     .stall(stall),
+    .hard_stall(hard_stall),
     .pc(__id_pc),
     .instr(__id_instr),
     .rs1(__id_rs1),
@@ -161,11 +169,10 @@ module core (
     .__mem_ex_res(__mem_ex_res),
     .__wb_write_data(__wb_write_data)
   );
-
-  
   /* -------------------- */
 
   id_ex_reg id_ex_reg_instance (
+    .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
     .clk(clk),
@@ -213,6 +220,7 @@ module core (
   /* -------------------- */
 
   ex_mem_reg ex_mem_reg_instance (
+    .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
     .clk(clk),
@@ -234,6 +242,7 @@ module core (
   /* -------------------- */
 
   mem_wb_reg mem_wb_reg_instance (
+    .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
     .clk(clk),

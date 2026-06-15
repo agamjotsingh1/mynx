@@ -1,6 +1,8 @@
 `include "defs.vh"
 
 module id_ex_reg (
+  input wor hard_stall,
+
   input wor `W(`STLEN)   stall,
   input wor `W(`NOPILEN) nopi,
 
@@ -31,29 +33,31 @@ module id_ex_reg (
 );
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(rst || (nopi & `NOPI_ID_EX)) begin
-      out_pc <= `RSTPC;
-      out_rs1 <= 0;
-      out_rs2 <= 0;
-      out_rd <= 0;
-      out_regdata1 <= 0;
-      out_regdata2 <= 0;
-      out_imm <= 0;
-      out_alu_op <= 0;
-      out_ctl_bus <= 0;
-      out_csr_data <= 0;
-    end
-    else if (!(stall & `STALL_ID_EX)) begin
-      out_pc <= in_pc;
-      out_rs1 <= in_rs1;
-      out_rs2 <= in_rs2;
-      out_rd <= in_rd;
-      out_regdata1 <= in_regdata1;
-      out_regdata2 <= in_regdata2;
-      out_imm <= in_imm;
-      out_alu_op <= in_alu_op;
-      out_ctl_bus <= in_ctl_bus;
-      out_csr_data <= in_csr_data ;
+    if(!hard_stall) begin
+      if(rst || (nopi & `NOPI_ID_EX)) begin
+        out_pc <= `RSTPC;
+        out_rs1 <= 0;
+        out_rs2 <= 0;
+        out_rd <= 0;
+        out_regdata1 <= 0;
+        out_regdata2 <= 0;
+        out_imm <= 0;
+        out_alu_op <= 0;
+        out_ctl_bus <= 0;
+        out_csr_data <= 0;
+      end
+      else if (!(stall & `STALL_ID_EX)) begin
+        out_pc <= in_pc;
+        out_rs1 <= in_rs1;
+        out_rs2 <= in_rs2;
+        out_rd <= in_rd;
+        out_regdata1 <= in_regdata1;
+        out_regdata2 <= in_regdata2;
+        out_imm <= in_imm;
+        out_alu_op <= in_alu_op;
+        out_ctl_bus <= in_ctl_bus;
+        out_csr_data <= in_csr_data ;
+      end
     end
   end
   /* verilator lint_on WIDTHTRUNC */

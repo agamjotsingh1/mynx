@@ -1,16 +1,30 @@
 `include "defs.vh"
 `include "modules/csrmap.v"
 
+// TODO! implement WARL/WPRI functionality
 module csrfile (
 	input wire clk,
   input wire rst,
 
-	// read port #1
+  // input wire `W(`PRIVLEN) priv,
+
+	// standard read port
 	input wire `W(`CSRLEN)  read_csr,
 	output wire `W(`DLEN)   read_data,
 
   // satp read port (mmu -> pagetable ppn fetching)
   output wire `W(`DLEN)   satp,
+
+  // trap handling ports
+  // TODO! disable normal ports when trap occurs
+  input wire  `W(TRAPMODELEN) trap_mode,
+  output wire `W(`DLEN)       read_mip,
+  output wire `W(`DLEN)       read_mstatus,
+  output wire `W(`DLEN)       read_mie,
+  output wire `W(`DLEN)       read_vec,
+  input  wire `W(`DLEN)       write_mstatus,
+  input  wire `W(`DLEN)       write_cause,
+  input  wire `W(`DLEN)       write_epc,
 
 	// write port
 	input wire              write_en,

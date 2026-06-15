@@ -7,6 +7,7 @@
 // supports parallel access different bit widths
 
 // TODO! make mem_read and mem_write mutually exclusive
+// BUG! if hard_stall is on and a trap occurs
 module mem (
   input wire clk,
 
