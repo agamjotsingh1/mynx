@@ -1,7 +1,10 @@
 `include "defs.vh"
 
 module wb_stage (
-  input wor `W(`STLEN) stall,
+  output wor `W(`STLEN) stall,
+
+  input wire clk,
+  input wire rst,
 
   input wire `W(`DLEN)       regw_data,
   input wire `W(`DLEN)       mem_res,
@@ -11,32 +14,34 @@ module wb_stage (
 
   output wire `W(`DLEN)      write_data,
 
-  // csr
-  input wire `W(`CSRLEN)     csr,
-  input wire `W(`DLEN)       csr_write_data,
-
   // trap handling
+  input wire                 valid,
   input wire  `W(`DLEN)      pc,
-  input wire  `W(`DLEN)      __mem_pc,
-  input wire  `W(PRIVLEN)    priv,
+  input wire  `W(`DLEN)      anchor_pc,
+  input wire  `W(`PRIVLEN)   priv,
   input wire  `W(`DLEN)      xcep,
-  output wor  `W(NORILEN)    nopi,
+  output wor  `W(`NOPILEN)   nopi,
   output wire                trap_taken,
   output wire `W(`DLEN)      next_pc,
   output wire `W(`PRIVLEN)   next_priv,
 
   // trap handling (csrfile)
-  output reg `W(TRAPMODELEN) trap_mode,
-  input wire `W(`DLEN)       mip,
-  input wire `W(`DLEN)       mstatus,
-  input wire `W(`DLEN)       mie,
-  input wire `W(`DLEN)       vec,
-  input wire `W(`DLEN)       mideleg,
-  input wire `W(`DLEN)       medeleg,
-  output reg `W(`DLEN)       write_mstatus,
-  output reg `W(`DLEN)       write_cause,
-  output reg `W(`DLEN)       write_epc
+  output reg `W(`TRAPMODELEN) trap_mode,
+  input wire `W(`DLEN)        mip,
+  input wire `W(`DLEN)        mstatus,
+  input wire `W(`DLEN)        mie,
+  input wire `W(`DLEN)        vec,
+  input wire `W(`DLEN)        mideleg,
+  input wire `W(`DLEN)        medeleg,
+  output reg `W(`DLEN)        write_mstatus,
+  output reg `W(`DLEN)        write_cause,
+  output reg `W(`DLEN)        write_epc
 );
+  // anchors even when interrupt on bubble
+  reg `W(`DLEN) safe_anchor_pc;
+
+
+
   assign write_data =
     `MEM_TO_REG(ctl_bus) ? mem_res: regw_data;
 
@@ -77,7 +82,9 @@ module wb_stage (
       // if in M-mode -> Always M-mode
       // if in U/S-mode AND delegated -> S-mode
       // if in U/S-mode AND NOT delegated -> M-mode
+      /* verilator lint_off WIDTHTRUNC */
       if ((priv < `PRIVM) && medeleg[`XCEP_CAUSE(xcep)])
+      /* verilator lint_on WIDTHTRUNC */
         trap_mode = `TRAPMODE_SXCEP;
       else
         trap_mode = `TRAPMODE_MXCEP;
@@ -92,9 +99,9 @@ module wb_stage (
 
 
   /* --- setting values for trap csr writes --- */
-  wire is_trap_m    = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
-  wire is_trap_s    = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
-  wire is_xcep      = (trap_mode == `TRAPMODE_MXCEP || trap_mode == `TRAPMODE_SXCEP);
+  wire   is_trap_m  = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
+  wire   is_trap_s  = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
+  wire   is_xcep    = (trap_mode == `TRAPMODE_MXCEP || trap_mode == `TRAPMODE_SXCEP);
   assign trap_taken = (trap_mode != `TRAPMODE_NONE);
 
   always @(*) begin
@@ -103,7 +110,7 @@ module wb_stage (
 
     // if exception -> store current pc as this instr is NOT executed
     // if intr -> store mem pc as this instr is executed
-    write_epc     = is_xcep ? pc: __mem_pc;
+    write_epc     = is_xcep ? pc: (valid ? anchor_pc: safe_anchor_pc);
 
     if(is_trap_m) begin
       `MSTATUS_MPP(write_mstatus) = priv;
@@ -124,6 +131,11 @@ module wb_stage (
     end
   end
   /* ------------------------------------------ */
+
+  always @(posedge clk) begin
+    if(rst) safe_anchor_pc <= `RSTPC;
+    else if(valid && (!is_xcep)) safe_anchor_pc <= anchor_pc;
+  end
 
   // flush everything except the PC
   assign nopi = trap_taken ? (`NOPI_ALL & (~(`NOPI_PC))): `NOPI_NONE;

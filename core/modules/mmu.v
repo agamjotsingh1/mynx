@@ -37,7 +37,7 @@ module mmu (
   // TODO! have seperate pbtl_en for a and b
   wire pgtbl_en =
     (mem_read_a | mem_read_b | mem_write_a | mem_write_b) &&
-    (`SATP_MODE(satp) & `SATP_MODE_SV39);
+    (`SATP_MODE(satp) == `SATP_MODE_SV39);
   /* verilator lint_on WIDTHTRUNC */
 
   // counter for lvl counting

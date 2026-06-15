@@ -10,9 +10,10 @@ module id_stage (
   input wire rst,
   input wor  hard_stall,
 
-  input wire `W(`DLEN)    pc,
-  input wire `W(`ILEN)    instr,
-  input wor  `W(`STLEN)   stall,
+  input wire  `W(`DLEN)   pc,
+  output wire `W(`DLEN)   anchor_pc,
+  input wire  `W(`ILEN)   instr,
+  input wor   `W(`STLEN)  stall,
 
   // parsing results
   output wire `W(`RLEN)   rs1,
@@ -58,16 +59,16 @@ module id_stage (
   output wire `W(`DLEN)  uxcep,
 
   // trap handling ports
-  input wire  `W(TRAPMODELEN) __wb_trap_mode,
-  output wire `W(`DLEN)       mip,
-  output wire `W(`DLEN)       mstatus,
-  output wire `W(`DLEN)       mie,
-  output wire `W(`DLEN)       vec,
-  output wire `W(`DLEN)       mideleg,
-  output wire `W(`DLEN)       medeleg,
-  input wire  `W(`DLEN)       __wb_write_mstatus,
-  input wire  `W(`DLEN)       __wb_write_cause,
-  input wire  `W(`DLEN)       __wb_write_epc
+  input wire  `W(`TRAPMODELEN) __wb_trap_mode,
+  output wire `W(`DLEN)        mip,
+  output wire `W(`DLEN)        mstatus,
+  output wire `W(`DLEN)        mie,
+  output wire `W(`DLEN)        vec,
+  output wire `W(`DLEN)        mideleg,
+  output wire `W(`DLEN)        medeleg,
+  input wire  `W(`DLEN)        __wb_write_mstatus,
+  input wire  `W(`DLEN)        __wb_write_cause,
+  input wire  `W(`DLEN)        __wb_write_epc
 );
   assign uxcep = xcep;
 
@@ -148,7 +149,7 @@ module id_stage (
     .satp(satp),
     .write_en(`ZICSR_OP(__wb_ctl_bus) != `ZICSR_OP_NONE),
     .write_csr(__wb_csr),
-    .write_data(__wb_csr_write_data)
+    .write_data(__wb_csr_write_data),
 
     // trap handling ports
     .trap_mode(__wb_trap_mode),
@@ -166,4 +167,7 @@ module id_stage (
   // TODO! optimize this to take the alu output instead of an extra adder here
   // shift is implicitly added in the immgen block
   assign next_pc = (`JALR(ctl_bus) ? regdata1_fwded: pc) + imm;
+
+  // anchor to this PC if you see a nop
+  assign anchor_pc = branch_taken ? next_pc: pc + 4;
 endmodule

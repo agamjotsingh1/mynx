@@ -14,89 +14,112 @@
 module core (
   input wire clk,
   input wire rst
-  // input wire intr, // external trap (interrupt)
-  // input wire `W(`DLEN) intr_cause // interrupt cause
 );
-  reg  `W(PRIVLEN) priv;
-  wire `W(PRIVLEN) next_priv;
+  reg  `W(`PRIVLEN) priv;
+  wire `W(`PRIVLEN) next_priv;
 
   always @(posedge clk) begin
     if(rst) priv <= `PRIVM;
-    else(__wb_trap_taken) priv <= next_priv;
+    else if(__wb_trap_taken) priv <= next_priv;
   end
 
   wor hard_stall; // stall the entire pipeline
 
-  wor `W(`STLEN)       stall;
-  wor `W(`NOPILEN)     nopi;
+  wor `W(`STLEN)        trap_stall;
+  wor `W(`STLEN)        hazard_stall;
+  wor `W(`STLEN)        stall = trap_stall | hazard_stall;
 
-  wire `W(`DLEN)       satp;
+  wor `W(`NOPILEN)      trap_nopi;
+  wor `W(`NOPILEN)      hazard_nopi;
+  wor `W(`NOPILEN)      nopi = trap_nopi | hazard_nopi;
 
-  wire `W(`DLEN)       __if_pc /* verilator public*/;
-  wire `W(`ILEN)       __if_instr;
-  wire `W(`DLEN)       __if_uxcep;
+  wire `W(`DLEN)        satp;
 
-  wire `W(`DLEN)       __id_pc;
-  wire `W(`DLEN)       __id_xcep;
-  wire `W(`DLEN)       __id_uxcep;
-  wire `W(`ILEN)       __id_instr;
-  wire `W(`RLEN)       __id_rs1;
-  wire `W(`RLEN)       __id_rs2;
-  wire `W(`RLEN)       __id_rd;
-  wire `W(`DLEN)       __id_regdata1;
-  wire `W(`DLEN)       __id_regdata2;
-  wire `W(`CSRLEN)     __id_csr;
-  wire `W(`DLEN)       __id_csrdata;
-  wire `W(`DLEN)       __id_imm;
-  wire `W(`ALU_OPLEN)  __id_alu_op;
-  wire `W(`CTL_BUSLEN) __id_ctl_bus;
-  wire                 __id_branch_taken;
-  wire `W(`DLEN)       __id_next_pc;
-  wire `W(`FWDLEN)     __id_fwd1;
-  wire `W(`FWDLEN)     __id_fwd2;
+  wire                  __if_valid = 1;
+  wire `W(`DLEN)        __if_pc /* verilator public*/;
+  wire `W(`ILEN)        __if_instr;
+  wire `W(`DLEN)        __if_uxcep;
 
-  wire `W(`DLEN)       __ex_pc;
-  wire `W(`DLEN)       __ex_xcep;
-  wire `W(`DLEN)       __ex_uxcep;
-  wire `W(`RLEN)       __ex_rs1;
-  wire `W(`RLEN)       __ex_rs2;
-  wire `W(`RLEN)       __ex_rd;
-  wire `W(`DLEN)       __ex_regdata1;
-  wire `W(`DLEN)       __ex_regdata2;
-  wire `W(`CSRLEN)     __ex_csr;
-  wire `W(`DLEN)       __ex_csrdata;
-  wire `W(`DLEN)       __ex_imm;
-  wire `W(`ALU_OPLEN)  __ex_alu_op;
-  wire `W(`CTL_BUSLEN) __ex_ctl_bus;
-  wire `W(`DLEN)       __ex_ex_res;
-  wire `W(`DLEN)       __ex_mem_data;
-  wire `W(`DLEN)       __ex_csr_write_data;
-  wire `W(`FWDLEN)     __ex_fwd1;
-  wire `W(`FWDLEN)     __ex_fwd2;
-  wire `W(`FWDLEN)     __ex_fwdcsr;
+  wire                  __id_valid;
+  wire `W(`DLEN)        __id_pc;
+  wire `W(`DLEN)        __id_anchor_pc;
+  wire `W(`DLEN)        __id_xcep;
+  wire `W(`DLEN)        __id_uxcep;
+  wire `W(`ILEN)        __id_instr;
+  wire `W(`RLEN)        __id_rs1;
+  wire `W(`RLEN)        __id_rs2;
+  wire `W(`RLEN)        __id_rd;
+  wire `W(`DLEN)        __id_regdata1;
+  wire `W(`DLEN)        __id_regdata2;
+  wire `W(`CSRLEN)      __id_csr;
+  wire `W(`DLEN)        __id_csrdata;
+  wire `W(`DLEN)        __id_imm;
+  wire `W(`ALU_OPLEN)   __id_alu_op;
+  wire `W(`CTL_BUSLEN)  __id_ctl_bus;
+  wire                  __id_branch_taken;
+  wire `W(`DLEN)        __id_next_pc;
+  wire `W(`FWDLEN)      __id_fwd1;
+  wire `W(`FWDLEN)      __id_fwd2;
+  wire `W(`DLEN)        __id_mip;
+  wire `W(`DLEN)        __id_mstatus;
+  wire `W(`DLEN)        __id_mie;
+  wire `W(`DLEN)        __id_vec;
+  wire `W(`DLEN)        __id_mideleg;
+  wire `W(`DLEN)        __id_medeleg;
 
-  wire `W(`DLEN)       __mem_pc;
-  wire `W(`DLEN)       __mem_xcep;
-  wire `W(`DLEN)       __mem_uxcep;
-  wire `W(`RLEN)       __mem_rd;
-  wire `W(`CSRLEN)     __mem_csr;
-  wire `W(`DLEN)       __mem_ex_res;
-  wire `W(`DLEN)       __mem_csr_write_data;
-  wire `W(`DLEN)       __mem_mem_data;
-  wire `W(`CTL_BUSLEN) __mem_ctl_bus;
-  wire `W(`DLEN)       __mem_mem_res;
-  wire `W(`DLEN)       __mem_regw_data;
+  wire                  __ex_valid;
+  wire `W(`DLEN)        __ex_pc;
+  wire `W(`DLEN)        __ex_anchor_pc;
+  wire `W(`DLEN)        __ex_xcep;
+  wire `W(`DLEN)        __ex_uxcep;
+  wire `W(`RLEN)        __ex_rs1;
+  wire `W(`RLEN)        __ex_rs2;
+  wire `W(`RLEN)        __ex_rd;
+  wire `W(`DLEN)        __ex_regdata1;
+  wire `W(`DLEN)        __ex_regdata2;
+  wire `W(`CSRLEN)      __ex_csr;
+  wire `W(`DLEN)        __ex_csrdata;
+  wire `W(`DLEN)        __ex_imm;
+  wire `W(`ALU_OPLEN)   __ex_alu_op;
+  wire `W(`CTL_BUSLEN)  __ex_ctl_bus;
+  wire `W(`DLEN)        __ex_ex_res;
+  wire `W(`DLEN)        __ex_mem_data;
+  wire `W(`DLEN)        __ex_csr_write_data;
+  wire `W(`FWDLEN)      __ex_fwd1;
+  wire `W(`FWDLEN)      __ex_fwd2;
+  wire `W(`FWDLEN)      __ex_fwdcsr;
 
-  wire `W(`DLEN)       __wb_pc;
-  wire `W(`DLEN)       __wb_next_pc;
-  wire `W(`DLEN)       __wb_xcep;
-  wire `W(`RLEN)       __wb_rd;
-  wire `W(`CSRLEN)     __wb_csr;
-  wire `W(`DLEN)       __wb_regw_data;
-  wire `W(`DLEN)       __wb_mem_res;
-  wire `W(`DLEN)       __wb_csr_write_data;
-  wire `W(`CTL_BUSLEN) __wb_ctl_bus;
-  wire `W(`DLEN)       __wb_write_data;
+  wire                  __mem_valid;
+  wire `W(`DLEN)        __mem_pc;
+  wire `W(`DLEN)        __mem_anchor_pc;
+  wire `W(`DLEN)        __mem_xcep;
+  wire `W(`DLEN)        __mem_uxcep;
+  wire `W(`RLEN)        __mem_rd;
+  wire `W(`CSRLEN)      __mem_csr;
+  wire `W(`DLEN)        __mem_ex_res;
+  wire `W(`DLEN)        __mem_csr_write_data;
+  wire `W(`DLEN)        __mem_mem_data;
+  wire `W(`CTL_BUSLEN)  __mem_ctl_bus;
+  wire `W(`DLEN)        __mem_mem_res;
+  wire `W(`DLEN)        __mem_regw_data;
+
+  wire                  __wb_valid;
+  wire `W(`DLEN)        __wb_pc;
+  wire `W(`DLEN)        __wb_anchor_pc;
+  wire `W(`DLEN)        __wb_next_pc;
+  wire `W(`DLEN)        __wb_xcep;
+  wire `W(`RLEN)        __wb_rd;
+  wire `W(`CSRLEN)      __wb_csr;
+  wire `W(`DLEN)        __wb_regw_data;
+  wire `W(`DLEN)        __wb_mem_res;
+  wire `W(`DLEN)        __wb_csr_write_data;
+  wire `W(`CTL_BUSLEN)  __wb_ctl_bus;
+  wire `W(`DLEN)        __wb_write_data;
+  wire `W(`TRAPMODELEN) __wb_trap_mode;
+  wire                  __wb_trap_taken;
+  wire `W(`DLEN)        __wb_write_mstatus;
+  wire `W(`DLEN)        __wb_write_cause;
+  wire `W(`DLEN)        __wb_write_epc;
 
   `ifdef SIM
   /* verilator lint_off UNUSEDSIGNAL */
@@ -156,10 +179,12 @@ module core (
     .nopi(nopi),
     .clk(clk),
     .rst(rst),
+    .in_valid(__if_valid),
     .in_pc(__if_pc),
     .in_instr(__if_instr),
     .in_xcep(__if_uxcep),
 
+    .out_valid(__id_valid),
     .out_pc(__id_pc),
     .out_instr(__id_instr),
     .out_xcep(__id_xcep)
@@ -172,6 +197,7 @@ module core (
     .stall(stall),
     .hard_stall(hard_stall),
     .pc(__id_pc),
+    .anchor_pc(__id_anchor_pc),
     .instr(__id_instr),
     .rs1(__id_rs1),
     .rs2(__id_rs2),
@@ -207,7 +233,7 @@ module core (
     .medeleg(__id_medeleg),
     .__wb_write_mstatus(__wb_write_mstatus),
     .__wb_write_cause(__wb_write_cause),
-    .__wb_write_epc(__wb_write_epc),
+    .__wb_write_epc(__wb_write_epc)
   );
   /* -------------------- */
 
@@ -217,7 +243,9 @@ module core (
     .nopi(nopi),
     .clk(clk),
     .rst(rst),
+    .in_valid(__id_valid),
     .in_pc(__id_pc),
+    .in_anchor_pc(__id_anchor_pc),
     .in_rs1(__id_rs1),
     .in_rs2(__id_rs2),
     .in_rd(__id_rd),
@@ -230,7 +258,9 @@ module core (
     .in_ctl_bus(__id_ctl_bus),
     .in_xcep(__id_uxcep),
 
+    .out_valid(__ex_valid),
     .out_pc(__ex_pc),
+    .out_anchor_pc(__ex_anchor_pc),
     .out_rs1(__ex_rs1),
     .out_rs2(__ex_rs2),
     .out_rd(__ex_rd),
@@ -275,6 +305,9 @@ module core (
     .nopi(nopi),
     .clk(clk),
     .rst(rst),
+    .in_valid(__ex_valid),
+    .in_pc(__ex_pc),
+    .in_anchor_pc(__ex_anchor_pc),
     .in_rd(__ex_rd),
     .in_csr(__ex_csr),
     .in_ex_res(__ex_ex_res),
@@ -283,6 +316,9 @@ module core (
     .in_ctl_bus(__ex_ctl_bus),
     .in_xcep(__ex_uxcep),
 
+    .out_valid(__mem_valid),
+    .out_pc(__mem_pc),
+    .out_anchor_pc(__mem_anchor_pc),
     .out_rd(__mem_rd),
     .out_csr(__mem_csr),
     .out_ex_res(__mem_ex_res),
@@ -304,6 +340,9 @@ module core (
     .nopi(nopi),
     .clk(clk),
     .rst(rst),
+    .in_valid(__mem_valid),
+    .in_pc(__mem_pc),
+    .in_anchor_pc(__mem_anchor_pc),
     .in_rd(__mem_rd),
     .in_csr(__mem_csr),
     .in_mem_res(__mem_mem_res),
@@ -312,6 +351,9 @@ module core (
     .in_ctl_bus(__mem_ctl_bus),
     .in_xcep(__mem_uxcep),
 
+    .out_valid(__wb_valid),
+    .out_pc(__wb_pc),
+    .out_anchor_pc(__wb_anchor_pc),
     .out_rd(__wb_rd),
     .out_csr(__wb_csr),
     .out_mem_res(__wb_mem_res),
@@ -323,18 +365,21 @@ module core (
 
   /* ----- WB STAGE ------ */
   wb_stage wb_stage_instance (
-    .stall(stall),
+    .clk(clk),
+    .rst(rst),
+    .stall(trap_stall),
     .regw_data(__wb_regw_data),
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
     .write_data(__wb_write_data),
 
     // trap handling
+    .valid(__wb_valid),
     .pc(__wb_pc),
-    .__mem_pc(__mem_pc),
+    .anchor_pc(__wb_anchor_pc),
     .priv(priv),
     .xcep(__wb_xcep),
-    .nopi(nopi),
+    .nopi(trap_nopi),
     .trap_taken(__wb_trap_taken),
     .next_pc(__wb_next_pc),
     .next_priv(next_priv),
@@ -374,8 +419,8 @@ module core (
 
   /* ----- HAZARD DETECTION UNIT ------ */
   hdu hdu_instance (
-    .stall(stall),
-    .nopi(nopi),
+    .stall(hazard_stall),
+    .nopi(hazard_nopi),
     .__id_rs1(__id_rs1),
     .__id_rs2(__id_rs2),
     .__id_branch_taken(__id_branch_taken),

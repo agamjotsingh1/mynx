@@ -18,29 +18,29 @@ module csrfile (
 	// standard write port
 	input wire              write_en,
 	input wire `W(`CSRLEN)  write_csr,
-	input wire `W(`DLEN)    write_data
+	input wire `W(`DLEN)    write_data,
 
   // trap handling ports
-  input wire  `W(TRAPMODELEN) trap_mode,
-  output wire `W(`DLEN)       read_mip,
-  output wire `W(`DLEN)       read_mstatus,
-  output wire `W(`DLEN)       read_mie,
-  output wire `W(`DLEN)       read_vec,
-  output wire `W(`DLEN)       read_mideleg,
-  output wire `W(`DLEN)       read_medeleg,
-  input  wire `W(`DLEN)       write_mstatus,
-  input  wire `W(`DLEN)       write_cause,
-  input  wire `W(`DLEN)       write_epc
+  input wire  `W(`TRAPMODELEN) trap_mode,
+  output wire `W(`DLEN)        read_mip,
+  output wire `W(`DLEN)        read_mstatus,
+  output wire `W(`DLEN)        read_mie,
+  output wire `W(`DLEN)        read_vec,
+  output wire `W(`DLEN)        read_mideleg,
+  output wire `W(`DLEN)        read_medeleg,
+  input  wire `W(`DLEN)        write_mstatus,
+  input  wire `W(`DLEN)        write_cause,
+  input  wire `W(`DLEN)        write_epc
 );
   wire `W(`CSRMAPLEN) read_csrmap, write_csrmap;
   wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
   wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
 
   // buffers to handle negedge/posedge mismatch
-  wire `W(TRAPMODELEN) trap_mode_buf,
-  wire `W(`DLEN)       mstatus_buf;
-  wire `W(`DLEN)       cause_buf;
-  wire `W(`DLEN)       epc_buf;
+  reg `W(`TRAPMODELEN) trap_mode_buf;
+  reg `W(`DLEN)        mstatus_buf;
+  reg `W(`DLEN)        cause_buf;
+  reg `W(`DLEN)        epc_buf;
 
   csrmap csrmap_read_instance (
     .csr(read_csr),

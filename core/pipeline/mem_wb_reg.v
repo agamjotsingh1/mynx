@@ -7,6 +7,9 @@ module mem_wb_reg (
   input wire clk,
   input wire rst,
 
+  input wire                 in_valid,
+  input wire `W(`DLEN)       in_pc,
+  input wire `W(`DLEN)       in_anchor_pc,
   input wire `W(`RLEN)       in_rd,
   input wire `W(`CSRLEN)     in_csr,
   input wire `W(`DLEN)       in_mem_res,
@@ -15,6 +18,9 @@ module mem_wb_reg (
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
   input wire `W(`DLEN)       in_xcep,
 
+  output reg                 out_valid,
+  output reg `W(`DLEN)       out_pc,
+  output reg `W(`DLEN)       out_anchor_pc,
   output reg `W(`RLEN)       out_rd,
   output reg `W(`CSRLEN)     out_csr,
   output reg `W(`DLEN)       out_mem_res,
@@ -27,6 +33,9 @@ module mem_wb_reg (
   always @(posedge clk) begin
     if(!hard_stall) begin
       if(rst || (nopi & `NOPI_MEM_WB)) begin
+        out_valid <= 0;
+        out_pc <= `RSTPC;
+        out_anchor_pc <= `RSTPC;
         out_rd        <= 0;
         out_mem_res   <= 0;
         out_regw_data <= 0;
@@ -36,6 +45,9 @@ module mem_wb_reg (
         out_xcep <= 0;
       end
       else if (!(stall & `STALL_MEM_WB)) begin
+        out_valid <= in_valid;
+        out_pc <= in_pc;
+        out_anchor_pc <= in_anchor_pc;
         out_rd        <= in_rd;
         out_mem_res   <= in_mem_res;
         out_regw_data <= in_regw_data;

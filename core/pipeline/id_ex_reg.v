@@ -9,7 +9,9 @@ module id_ex_reg (
   input wire clk,
   input wire rst,
 
+  input wire                 in_valid,
   input wire `W(`DLEN)       in_pc,
+  input wire `W(`DLEN)       in_anchor_pc,
   input wire `W(`RLEN)       in_rs1,
   input wire `W(`RLEN)       in_rs2,
   input wire `W(`RLEN)       in_rd,
@@ -22,7 +24,9 @@ module id_ex_reg (
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
   input wire `W(`DLEN)       in_xcep,
 
+  output reg                 out_valid,
   output reg `W(`DLEN)       out_pc,
+  output reg `W(`DLEN)       out_anchor_pc,
   output reg `W(`RLEN)       out_rs1,
   output reg `W(`RLEN)       out_rs2,
   output reg `W(`RLEN)       out_rd,
@@ -39,7 +43,9 @@ module id_ex_reg (
   always @(posedge clk) begin
     if(!hard_stall) begin
       if(rst || (nopi & `NOPI_ID_EX)) begin
+        out_valid <= 0;
         out_pc <= `RSTPC;
+        out_anchor_pc <= `RSTPC;
         out_rs1 <= 0;
         out_rs2 <= 0;
         out_rd <= 0;
@@ -53,7 +59,9 @@ module id_ex_reg (
         out_xcep <= 0;
       end
       else if (!(stall & `STALL_ID_EX)) begin
+        out_valid <= in_valid;
         out_pc <= in_pc;
+        out_anchor_pc <= in_anchor_pc;
         out_rs1 <= in_rs1;
         out_rs2 <= in_rs2;
         out_rd <= in_rd;
