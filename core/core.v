@@ -13,20 +13,19 @@
 
 module core (
   input wire clk,
-  input wire rst,
-  input wire intr, // external trap (interrupt)
-
-  input wire `W(`DLEN) intr_cause // interrupt cause
+  input wire rst
+  // input wire intr, // external trap (interrupt)
+  // input wire `W(`DLEN) intr_cause // interrupt cause
 );
-  wor xcep; // internal trap (exception)
-  wire `W(`DLEN)   xcep_cause;
+  // wor xcep; // internal trap (exception)
+  // wire `W(`DLEN)   xcep_cause;
 
-  wire `W(TRAPLEN) trap = {xcep, intr};
-  wire `W(`DLEN)   trap_cause = intr ? intr_cause: xcep_cause; // interrupt has priority
+  // wire `W(TRAPLEN) trap = {xcep, intr};
+  // wire `W(`DLEN)   trap_cause = intr ? intr_cause: xcep_cause; // interrupt has priority
 
   wor hard_stall; // stall the entire pipeline
 
-  reg `W(PRIVLEN)      priv;
+  // reg `W(PRIVLEN)      priv;
   wor `W(`STLEN)       stall;
   wor `W(`NOPILEN)     nopi;
 
@@ -42,7 +41,8 @@ module core (
   wire `W(`RLEN)       __id_rd;
   wire `W(`DLEN)       __id_regdata1;
   wire `W(`DLEN)       __id_regdata2;
-  wire `W(`DLEN)       __id_csr_data;
+  wire `W(`CSRLEN)     __id_csr;
+  wire `W(`DLEN)       __id_csrdata;
   wire `W(`DLEN)       __id_imm;
   wire `W(`ALU_OPLEN)  __id_alu_op;
   wire `W(`CTL_BUSLEN) __id_ctl_bus;
@@ -57,25 +57,31 @@ module core (
   wire `W(`RLEN)       __ex_rd;
   wire `W(`DLEN)       __ex_regdata1;
   wire `W(`DLEN)       __ex_regdata2;
-  wire `W(`DLEN)       __ex_csr_data;
+  wire `W(`CSRLEN)     __ex_csr;
+  wire `W(`DLEN)       __ex_csrdata;
   wire `W(`DLEN)       __ex_imm;
   wire `W(`ALU_OPLEN)  __ex_alu_op;
   wire `W(`CTL_BUSLEN) __ex_ctl_bus;
   wire `W(`DLEN)       __ex_ex_res;
   wire `W(`DLEN)       __ex_mem_data;
+  wire `W(`DLEN)       __ex_csr_write_data;
   wire `W(`FWDLEN)     __ex_fwd1;
   wire `W(`FWDLEN)     __ex_fwd2;
 
   wire `W(`RLEN)       __mem_rd;
+  wire `W(`CSRLEN)     __mem_csr;
   wire `W(`DLEN)       __mem_ex_res;
+  wire `W(`DLEN)       __mem_csr_write_data;
   wire `W(`DLEN)       __mem_mem_data;
   wire `W(`CTL_BUSLEN) __mem_ctl_bus;
   wire `W(`DLEN)       __mem_mem_res;
   wire `W(`DLEN)       __mem_regw_data;
 
   wire `W(`RLEN)       __wb_rd;
+  wire `W(`CSRLEN)     __wb_csr;
   wire `W(`DLEN)       __wb_regw_data;
   wire `W(`DLEN)       __wb_mem_res;
+  wire `W(`DLEN)       __wb_csr_write_data;
   wire `W(`CTL_BUSLEN) __wb_ctl_bus;
   wire `W(`DLEN)       __wb_write_data;
 
@@ -154,7 +160,8 @@ module core (
     .rd(__id_rd),
     .regdata1(__id_regdata1),
     .regdata2(__id_regdata2),
-    .csr_data(__id_csr_data),
+    .csr(__id_csr),
+    .csrdata(__id_csrdata),
     .satp(satp),
     .imm(__id_imm),
     .alu_op(__id_alu_op),
@@ -162,7 +169,9 @@ module core (
     .branch_taken(__id_branch_taken),
     .next_pc(__id_next_pc),
     .__wb_rd(__wb_rd),
-    .__wb_reg_write(`REG_WRITE(__wb_ctl_bus)),
+    .__wb_csr(__wb_csr),
+    .__wb_ctl_bus(__wb_ctl_bus),
+    .__wb_csr_write_data(__wb_csr_write_data),
 
     .fwd1(__id_fwd1),
     .fwd2(__id_fwd2),
@@ -183,7 +192,8 @@ module core (
     .in_rd(__id_rd),
     .in_regdata1(__id_regdata1),
     .in_regdata2(__id_regdata2),
-    .in_csr_data(__id_csr_data),
+    .in_csr(__id_csr),
+    .in_csrdata(__id_csrdata),
     .in_imm(__id_imm),
     .in_alu_op(__id_alu_op),
     .in_ctl_bus(__id_ctl_bus),
@@ -194,7 +204,8 @@ module core (
     .out_rd(__ex_rd),
     .out_regdata1(__ex_regdata1),
     .out_regdata2(__ex_regdata2),
-    .out_csr_data(__ex_csr_data),
+    .out_csr(__ex_csr),
+    .out_csrdata(__ex_csrdata),
     .out_imm(__ex_imm),
     .out_alu_op(__ex_alu_op),
     .out_ctl_bus(__ex_ctl_bus)
@@ -205,12 +216,13 @@ module core (
     .pc(__ex_pc),
     .regdata1(__ex_regdata1),
     .regdata2(__ex_regdata2),
+    .csrdata(__ex_csrdata),
     .imm(__ex_imm),
-    .csr_data(__ex_csr_data),
     .mem_data(__ex_mem_data),
     .alu_op(__ex_alu_op),
     .ctl_bus(__ex_ctl_bus),
     .ex_res(__ex_ex_res),
+    .csr_write_data(__ex_csr_write_data),
 
     .fwd1(__ex_fwd1),
     .fwd2(__ex_fwd2),
@@ -226,13 +238,17 @@ module core (
     .clk(clk),
     .rst(rst),
     .in_rd(__ex_rd),
+    .in_csr(__ex_csr),
     .in_ex_res(__ex_ex_res),
+    .in_csr_write_data(__ex_csr_write_data),
     .in_mem_data(__ex_mem_data),
     .in_ctl_bus(__ex_ctl_bus),
 
     .out_rd(__mem_rd),
+    .out_csr(__mem_csr),
     .out_ex_res(__mem_ex_res),
     .out_mem_data(__mem_mem_data),
+    .out_csr_write_data(__mem_csr_write_data),
     .out_ctl_bus(__mem_ctl_bus)
   );
 
@@ -248,13 +264,17 @@ module core (
     .clk(clk),
     .rst(rst),
     .in_rd(__mem_rd),
+    .in_csr(__mem_csr),
     .in_mem_res(__mem_mem_res),
     .in_regw_data(__mem_regw_data),
+    .in_csr_write_data(__mem_csr_write_data),
     .in_ctl_bus(__mem_ctl_bus),
 
     .out_rd(__wb_rd),
+    .out_csr(__wb_csr),
     .out_mem_res(__wb_mem_res),
     .out_regw_data(__wb_regw_data),
+    .out_csr_write_data(__wb_csr_write_data),
     .out_ctl_bus(__wb_ctl_bus)
   );
 

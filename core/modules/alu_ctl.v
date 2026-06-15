@@ -25,7 +25,9 @@ module alu_ctl (
       `BOP_SB, 
       `BOP_SH, 
       `BOP_SW, 
-      `BOP_SD 
+      `BOP_SD,
+      `BOP_CSRRW,
+      `BOP_CSRRWI
       : alu_op = `ALU_OP_ADD;
 
       `BOP_SUB,
@@ -45,11 +47,15 @@ module alu_ctl (
       : alu_op = `ALU_OP_XOR;
 
       `BOP_OR, 
-      `BOP_ORI
+      `BOP_ORI,
+      `BOP_CSRRS,
+      `BOP_CSRRSI
       : alu_op = `ALU_OP_OR;
 
       `BOP_AND, 
-      `BOP_ANDI
+      `BOP_ANDI,
+      `BOP_CSRRC,
+      `BOP_CSRRCI
       : alu_op = `ALU_OP_AND;
 
       `BOP_SLL, 

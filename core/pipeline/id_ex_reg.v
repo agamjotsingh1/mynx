@@ -15,7 +15,8 @@ module id_ex_reg (
   input wire `W(`RLEN)       in_rd,
   input wire `W(`DLEN)       in_regdata1,
   input wire `W(`DLEN)       in_regdata2,
-  input wire `W(`DLEN)       in_csr_data,
+  input wire `W(`CSRLEN)     in_csr,
+  input wire `W(`DLEN)       in_csrdata,
   input wire `W(`DLEN)       in_imm,
   input wire `W(`ALU_OPLEN)  in_alu_op,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
@@ -25,8 +26,9 @@ module id_ex_reg (
   output reg `W(`RLEN)       out_rs2,
   output reg `W(`RLEN)       out_rd,
   output reg `W(`DLEN)       out_regdata1,
-  output reg `W(`DLEN)       out_csr_data,
   output reg `W(`DLEN)       out_regdata2,
+  output reg `W(`CSRLEN)     out_csr,
+  output reg `W(`DLEN)       out_csrdata,
   output reg `W(`DLEN)       out_imm,
   output reg `W(`ALU_OPLEN)  out_alu_op,
   output reg `W(`CTL_BUSLEN) out_ctl_bus
@@ -44,7 +46,8 @@ module id_ex_reg (
         out_imm <= 0;
         out_alu_op <= 0;
         out_ctl_bus <= 0;
-        out_csr_data <= 0;
+        out_csr <= 0;
+        out_csrdata <= 0;
       end
       else if (!(stall & `STALL_ID_EX)) begin
         out_pc <= in_pc;
@@ -56,7 +59,8 @@ module id_ex_reg (
         out_imm <= in_imm;
         out_alu_op <= in_alu_op;
         out_ctl_bus <= in_ctl_bus;
-        out_csr_data <= in_csr_data ;
+        out_csr <= in_csr;
+        out_csrdata <= in_csrdata;
       end
     end
   end

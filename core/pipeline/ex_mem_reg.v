@@ -9,13 +9,17 @@ module ex_mem_reg (
   input wire rst,
 
   input wire `W(`RLEN)       in_rd,
+  input wire `W(`CSRLEN)     in_csr,
   input wire `W(`DLEN)       in_ex_res,
   input wire `W(`DLEN)       in_mem_data,
+  input wire `W(`DLEN)       in_csr_write_data,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
 
   output reg `W(`RLEN)       out_rd,
+  output reg `W(`CSRLEN)     out_csr,
   output reg `W(`DLEN)       out_ex_res,
   output reg `W(`DLEN)       out_mem_data,
+  output reg `W(`DLEN)       out_csr_write_data,
   output reg `W(`CTL_BUSLEN) out_ctl_bus
 );
   /* verilator lint_off WIDTHTRUNC */
@@ -26,12 +30,16 @@ module ex_mem_reg (
         out_ex_res <= 0;
         out_mem_data <= 0;
         out_ctl_bus <= 0;
+        out_csr <= 0;
+        out_csr_write_data <= 0;
       end
       else if (!(stall & `STALL_EX_MEM)) begin
         out_rd <= in_rd;
         out_ex_res <= in_ex_res;
         out_mem_data <= in_mem_data;
         out_ctl_bus <= in_ctl_bus;
+        out_csr <= in_csr;
+        out_csr_write_data <= in_csr_write_data;
       end
     end
   end

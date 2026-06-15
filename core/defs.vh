@@ -139,6 +139,12 @@
 `define BOP_XORI          17'b0010011_100_zzzzzzz
 `define BOP_ORI           17'b0010011_110_zzzzzzz
 `define BOP_ANDI          17'b0010011_111_zzzzzzz
+`define BOP_CSRRW         17'b1110011_001_zzzzzzz
+`define BOP_CSRRS         17'b1110011_010_zzzzzzz
+`define BOP_CSRRC         17'b1110011_011_zzzzzzz
+`define BOP_CSRRWI        17'b1110011_101_zzzzzzz
+`define BOP_CSRRSI        17'b1110011_110_zzzzzzz
+`define BOP_CSRRCI        17'b1110011_111_zzzzzzz
 
 // ALU OPCodes (custom defined)
 `define ALU_OPLEN         4
