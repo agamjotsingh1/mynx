@@ -33,8 +33,11 @@ module core (
 
   wire `W(`DLEN)       __if_pc /* verilator public*/;
   wire `W(`ILEN)       __if_instr;
+  wire `W(`DLEN)       __if_uxcep;
 
   wire `W(`DLEN)       __id_pc;
+  wire `W(`DLEN)       __id_xcep;
+  wire `W(`DLEN)       __id_uxcep;
   wire `W(`ILEN)       __id_instr;
   wire `W(`RLEN)       __id_rs1;
   wire `W(`RLEN)       __id_rs2;
@@ -52,6 +55,8 @@ module core (
   wire `W(`FWDLEN)     __id_fwd2;
 
   wire `W(`DLEN)       __ex_pc;
+  wire `W(`DLEN)       __ex_xcep;
+  wire `W(`DLEN)       __ex_uxcep;
   wire `W(`RLEN)       __ex_rs1;
   wire `W(`RLEN)       __ex_rs2;
   wire `W(`RLEN)       __ex_rd;
@@ -69,6 +74,9 @@ module core (
   wire `W(`FWDLEN)     __ex_fwd2;
   wire `W(`FWDLEN)     __ex_fwdcsr;
 
+  wire `W(`DLEN)       __mem_pc;
+  wire `W(`DLEN)       __mem_xcep;
+  wire `W(`DLEN)       __mem_uxcep;
   wire `W(`RLEN)       __mem_rd;
   wire `W(`CSRLEN)     __mem_csr;
   wire `W(`DLEN)       __mem_ex_res;
@@ -78,6 +86,9 @@ module core (
   wire `W(`DLEN)       __mem_mem_res;
   wire `W(`DLEN)       __mem_regw_data;
 
+  wire `W(`DLEN)       __wb_pc;
+  wire `W(`DLEN)       __wb_xcep;
+  wire `W(`DLEN)       __wb_xcep_cause;
   wire `W(`RLEN)       __wb_rd;
   wire `W(`CSRLEN)     __wb_csr;
   wire `W(`DLEN)       __wb_regw_data;
@@ -287,7 +298,7 @@ module core (
     .regw_data(__wb_regw_data),
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
-    .wb_write_data(__wb_write_data)
+    .write_data(__wb_write_data)
   );
   /* -------------------- */
 

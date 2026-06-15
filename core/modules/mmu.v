@@ -5,6 +5,7 @@
 // true 2 port memory with pagetable
 
 // TODO! add exception if sv39 not setup properly
+// BUG! abort if trap is taken
 module mmu (
   input wire clk,
   input wire rst,

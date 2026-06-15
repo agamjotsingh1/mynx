@@ -204,15 +204,16 @@
 
 // Pipeline stalling signals
 // "stall" is wor type bus
-`define STLEN                 6
-`define STALL_PC              6'b000001
-`define STALL_IF_ID           6'b000010
-`define STALL_CSRFILE         6'b000100
-`define STALL_ID_EX           6'b001000
-`define STALL_EX_MEM          6'b010000
-`define STALL_MEM_WB          6'b100000
-`define STALL_ALL             6'b111111
-`define STALL_NONE            6'b000000
+`define STLEN                 7
+`define STALL_PC              7'b0000001
+`define STALL_IF_ID           7'b0000010
+`define STALL_CSRFILE         7'b0000100
+`define STALL_REGFILE         7'b0001000
+`define STALL_ID_EX           7'b0010000
+`define STALL_EX_MEM          7'b0100000
+`define STALL_MEM_WB          7'b1000000
+`define STALL_ALL             7'b1111111
+`define STALL_NONE            7'b0000000
 
 // Pipeline nop inserting signals
 // "nopi" is wor type bus
@@ -239,6 +240,10 @@
 `define TRAPMODE_MXCEP        3'b010
 `define TRAPMODE_SINTR        3'b101
 `define TRAPMODE_MINTR        3'b110
+
+// xcep bus defs
+`define XCEP(xcep)            xcep[63]   // is it exception or not
+`define XCEP_CAUSE(xcep)      xcep[62:0] // cause is always 63 bits
 
 // S/M interrupt causes
 // intentionally kept 63 bits long
