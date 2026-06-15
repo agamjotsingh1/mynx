@@ -18,12 +18,15 @@ module ex_stage (
   output wire `W(`DLEN) csr_write_data,
 
   // fwd controls
-  input wire `W(`FWDLEN)     fwd1,
-  input wire `W(`FWDLEN)     fwd2,
+  input wire `W(`FWDLEN) fwd1,
+  input wire `W(`FWDLEN) fwd2,
+  input wire `W(`FWDLEN) fwdcsr,
 
   // fwd inputs
-  input wire `W(`DLEN)       __mem_ex_res,
-  input wire `W(`DLEN)       __wb_write_data
+  input wire `W(`DLEN) __mem_ex_res,
+  input wire `W(`DLEN) __wb_write_data,
+  input wire `W(`DLEN) __mem_csr_write_data,
+  input wire `W(`DLEN) __wb_csr_write_data
 );
   wire `W(`DLEN) alu_res;
   reg  `W(`DLEN) alu_in1, alu_in2;
@@ -35,6 +38,10 @@ module ex_stage (
   wire `W(`DLEN) regdata2_fwded = 
     (fwd2 == `FWD_EX_MEM) ? __mem_ex_res:
     ((fwd2 == `FWD_MEM_WB) ? __wb_write_data: regdata2);
+
+  wire `W(`DLEN) csrdata_fwded = 
+    (fwdcsr == `FWD_EX_MEM) ? __mem_csr_write_data:
+    ((fwdcsr == `FWD_MEM_WB) ? __wb_csr_write_data: csrdata);
 
   always @(*) begin
     case(`ZICSR_OP(ctl_bus)) 
@@ -84,7 +91,7 @@ module ex_stage (
     (`LUI(ctl_bus) ? imm:
     (`AUIPC(ctl_bus) ? pc + imm:
     (`WORDTRUNC(ctl_bus) ? {{32{alu_res[31]}}, alu_res[31:0]}:
-    (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE ? csrdata:
+    (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE ? csrdata_fwded:
     alu_res))));
 
   assign csr_write_data = alu_res;

@@ -67,6 +67,7 @@ module core (
   wire `W(`DLEN)       __ex_csr_write_data;
   wire `W(`FWDLEN)     __ex_fwd1;
   wire `W(`FWDLEN)     __ex_fwd2;
+  wire `W(`FWDLEN)     __ex_fwdcsr;
 
   wire `W(`RLEN)       __mem_rd;
   wire `W(`CSRLEN)     __mem_csr;
@@ -226,8 +227,11 @@ module core (
 
     .fwd1(__ex_fwd1),
     .fwd2(__ex_fwd2),
+    .fwdcsr(__ex_fwdcsr),
     .__mem_ex_res(__mem_ex_res),
-    .__wb_write_data(__wb_write_data)
+    .__wb_write_data(__wb_write_data),
+    .__mem_csr_write_data(__mem_csr_write_data),
+    .__wb_csr_write_data(__wb_csr_write_data)
   );
   /* -------------------- */
 
@@ -293,14 +297,18 @@ module core (
     .__id_rs2(__id_rs2),
     .__ex_rs1(__ex_rs1),
     .__ex_rs2(__ex_rs2),
+    .__ex_csr(__ex_csr),
     .__mem_rd(__mem_rd),
+    .__mem_csr(__mem_csr),
     .__mem_ctl_bus(__mem_ctl_bus),
     .__wb_rd(__wb_rd),
+    .__wb_csr(__wb_csr),
     .__wb_ctl_bus(__wb_ctl_bus),
     .__id_fwd1(__id_fwd1),
     .__id_fwd2(__id_fwd2),
     .__ex_fwd1(__ex_fwd1),
-    .__ex_fwd2(__ex_fwd2)
+    .__ex_fwd2(__ex_fwd2),
+    .__ex_fwdcsr(__ex_fwdcsr)
   );
   /* -------------------- */
 
