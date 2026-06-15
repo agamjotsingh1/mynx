@@ -229,18 +229,20 @@
 // trap mode defs
 `define TRAPMODELEN           3
 `define TRAPMODE_NONE         3'b000
-`define TRAPMODE_SINTR        3'b001
-`define TRAPMODE_MINTR        3'b010
-`define TRAPMODE_SXCEP        3'b101
-`define TRAPMODE_MXCEP        3'b110
+`define TRAPMODE_SXCEP        3'b001
+`define TRAPMODE_MXCEP        3'b010
+`define TRAPMODE_SINTR        3'b101
+`define TRAPMODE_MINTR        3'b110
 
 // S/M interrupt causes
-`define MICAUSE_EXT            64'd11
-`define MICAUSE_TIMER          64'd7
-`define MICAUSE_SOFT           64'd3
-`define SICAUSE_EXT            64'd9
-`define SICAUSE_TIMER          64'd5
-`define SICAUSE_SOFT           64'd1
+// intentionally kept 63 bits long
+// as cause regs MSB bit is for intr/xcep specification
+`define MICAUSE_EXT            63'd11
+`define MICAUSE_TIMER          63'd7
+`define MICAUSE_SOFT           63'd3
+`define SICAUSE_EXT            63'd9
+`define SICAUSE_TIMER          63'd5
+`define SICAUSE_SOFT           63'd1
 
 // Pgtbl defs (Sv39 format)
 `define PGTBL_LVLS            3
@@ -375,9 +377,15 @@
 // MIP defs
 `define MIP_MMASK             64'h0x0000_0000_0000_0888
 `define MIP_SMASK             64'h0x0000_0000_0000_0222
+
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
-`define MIP_GET_MICAUSE(mip) (mip[11] ? `MICAUSE_EXT: (mip[3]? `MICAUSE_TIMER: `MICAUSE_SOFT))
-`define MIP_GET_SICAUSE(mip) (mip[9]  ? `SICAUSE_EXT: (mip[5]? `SICAUSE_TIMER: `SICAUSE_SOFT))
+`define MIP_GET_MICAUSE(mip) \
+  (mip[11] ? `MICAUSE_EXT : \
+  (mip[3]  ? `MICAUSE_SOFT: `MICAUSE_TIMER))
+
+`define MIP_GET_SICAUSE(mip) \
+  (mip[9]  ? `SICAUSE_EXT : \
+  (mip[1]  ? `SICAUSE_SOFT: `SICAUSE_TIMER))
 
 // MIE defs
 `define MIE_MMASK             64'h0x0000_0000_0000_0888

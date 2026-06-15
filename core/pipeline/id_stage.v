@@ -24,7 +24,7 @@ module id_stage (
   output wire `W(`RLEN)   rs1,
   output wire `W(`RLEN)   rs2,
   output wire `W(`RLEN)   rd,
-  output reg  `W(`DLEN)   csr_data,  // data to pass to EX-stage to update rd
+  output wire `W(`DLEN)   csr_data,  // data to pass to EX-stage to update rd
   output wire `W(`DLEN)   satp,
   output wire `W(`DLEN)   regdata1,
   output wire `W(`DLEN)   regdata2,
@@ -37,7 +37,8 @@ module id_stage (
   output wire `W(`CTL_BUSLEN) ctl_bus,
 
   // branch taken or not (for both branch and jal instr)
-  output reg branch_taken,
+  output reg  branch_taken,
+  output wire trap_taken,
 
   // next pc (for branching/jal)
   output reg `W(`DLEN) next_pc,
@@ -119,7 +120,6 @@ module id_stage (
     branch_taken |= (`JAL(ctl_bus) | `JALR(ctl_bus));
   end
 
-  // TODO! think about how you would go about negedge/posedge for csrfile
   /* TRAP HANDLING
   wonderful video explaining exactly whats going on here
     - https://www.youtube.com/watch?v=YWSNj3Mn2gI
@@ -141,102 +141,125 @@ module id_stage (
     - (s/m)epc                (saved pc for (s/m)ret)
   */
 
-  wire `W(DLEN) mstatus, mip, mie, mideleg, medeleg;
+  wire `W(`DLEN) mstatus, mip, mie, mideleg, medeleg, vec;
+  reg  `W(`DLEN) write_mstatus, write_cause, write_epc;
 
   /* --- determining trap mode --- */
   reg `W(TRAPMODELEN) trap_mode;
   wire m_intr_en = (priv < `PRIVM) || (priv == `PRIVM && `MSTATUS_MIE(mstatus));
   wire s_intr_en = (priv < `PRIVS) || (priv == `PRIVS && `MSTATUS_SIE(mstatus));
 
-  wire `W(`DLEN) pending_intr    = mip & mie;
-  wire `W(`DLEN) pending_s_instr = pending_intr & mideleg;
-  wire `W(`DLEN) pending_m_instr = pending_intr & (~mideleg);
+  wire `W(`DLEN) pending_intr   = mip & mie;
+  wire `W(`DLEN) pending_s_intr = pending_intr & mideleg;
+  wire `W(`DLEN) pending_m_intr = pending_intr & (~mideleg);
 
   always @(*) begin
+    trap_mode = `TRAPMODE_NONE;
+
     // intrs
-    if((pending_m_intr != 0) && m_intr_en)      trap_mode = `TRAPMODE_MINTR;
-    else if((pending_s_intr != 0) && s_intr_en) trap_mode = `TRAPMODE_SINTR;
+    if((pending_m_intr != 0) && m_intr_en)
+      trap_mode = `TRAPMODE_MINTR;
+    else if((pending_s_intr != 0) && s_intr_en)
+      trap_mode = `TRAPMODE_SINTR;
+
     // xceps
     else if(xcep) begin
-      // If in M-mode -> Always M-mode
-      // If in U/S-mode AND delegated -> S-mode
-      // If in U/S-mode AND NOT delegated -> M-mode
-      if ((priv < `PRIVM) && medeleg[xcep_cause]) trap_mode = `TRAPMODE_SXCEP;
-      else trap_mode = `TRAPMODE_MXCEP;
+      // if in M-mode -> Always M-mode
+      // if in U/S-mode AND delegated -> S-mode
+      // if in U/S-mode AND NOT delegated -> M-mode
+      if ((priv < `PRIVM) && medeleg[xcep_cause])
+        trap_mode = `TRAPMODE_SXCEP;
+      else
+        trap_mode = `TRAPMODE_MXCEP;
     end
   end
   /* ----------------------------- */
 
+  /* --- setting values for trap csr writes --- */
+  wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
+  wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
+  assign trap_taken = (trap_mode != `TRAPMODE_NONE);
+
+  always @(*) begin
+    write_mstatus = mstatus;
+    write_cause = 0;
+    write_epc = pc;
+
+    if(is_trap_m) begin
+      `MSTATUS_MPP(write_mstatus) = priv;
+      `MSTATUS_MPIE(write_mstatus) = `MSTATUS_MIE(mstatus);
+      `MSTATUS_MIE(write_mstatus) = 0;
+      // MSB of trap mode specifies interrupt or exception
+      write_cause = {trap_mode[`TRAPMODELEN-1], 
+        trap_mode[`TRAPMODELEN-1] ? `MIP_GET_MICAUSE(pending_m_intr): xcep_cause[`DLEN-2:0]};
+    end
+    else if(is_trap_s) begin
+      // LSB of priv specifies user/supervisor if we know we trapped into supervisor
+      `MSTATUS_SPP(write_mstatus) = priv[0];
+      `MSTATUS_SPIE(write_mstatus) = `MSTATUS_SIE(mstatus);
+      `MSTATUS_SIE(write_mstatus) = 0;
+      // MSB of trap mode specifies interrupt or exception
+      write_cause = {trap_mode[`TRAPMODELEN-1], 
+        trap_mode[`TRAPMODELEN-1] ? `MIP_GET_SICAUSE(pending_s_intr): xcep_cause[`DLEN-2:0]};
+    end
+  end
+  /* ------------------------------------------ */
+
+  /* --- standard csr r/w logic --- */
   // finish the csr reading/writing task in ID stage only
   wire `W(`CSRLEN) csr;
-  wire `W(`DLEN) csr_read_data;
+
   // TODO! optimize this so ALU is used for | and &
-  /* verilator lint_off WIDTHTRUNC */
-  wire csr_write_en =
-    (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE) &&
-    (!(stall & `STALL_CSRFILE)) &&
-    (!hard_stall) &&
-    (!trap);
-  /* verilator lint_on WIDTHTRUNC */
+  wire csr_write_en = (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE);
   reg `W(`DLEN) csr_write_data;
 
   always @(*) begin
-    if(trap) begin
-      csr_write_data = 
-    end
-    else begin
-      case(`ZICSR_OP(ctl_bus)) 
-      `ZICSR_OP_NONE  : csr_write_data = 0;
-      `ZICSR_OP_CSRRW : csr_write_data = regdata1_fwded;
-      `ZICSR_OP_CSRRS : csr_write_data = csr_read_data | regdata1_fwded;
-      `ZICSR_OP_CSRRC : csr_write_data = csr_read_data & (~regdata1_fwded);
-      `ZICSR_OP_CSRRWI: csr_write_data = imm;
-      `ZICSR_OP_CSRRSI: csr_write_data = csr_read_data | imm;
-      `ZICSR_OP_CSRRCI: csr_write_data = csr_read_data & (~imm);
-      default:          csr_write_data = 0;
-      endcase
-    end
+    case(`ZICSR_OP(ctl_bus)) 
+    `ZICSR_OP_NONE  : csr_write_data = 0;
+    `ZICSR_OP_CSRRW : csr_write_data = regdata1_fwded;
+    `ZICSR_OP_CSRRS : csr_write_data = csr_data | regdata1_fwded;
+    `ZICSR_OP_CSRRC : csr_write_data = csr_data & (~regdata1_fwded);
+    `ZICSR_OP_CSRRWI: csr_write_data = imm;
+    `ZICSR_OP_CSRRSI: csr_write_data = csr_data | imm;
+    `ZICSR_OP_CSRRCI: csr_write_data = csr_data & (~imm);
+    default:          csr_write_data = 0;
+    endcase
   end
+  /* ------------------------------ */
 
-  // csrfile is negedge so this same stage writing works out
   csrfile csrfile_instance (
     .clk(clk),
     .rst(rst),
+    .stall(stall),
+    .hard_stall(hard_stall),
     .read_csr(csr),
-    .read_data(csr_read_data),
+    .read_data(csr_data),
     .satp(satp),
     .write_en(csr_write_en),
     .write_csr(csr),
-    .write_data(csr_write_data)
-  );
+    .write_data(csr_write_data),
 
-  always @(negedge clk) csr_data <= csr_read_data;
+    // trap handling ports
+    .trap_mode(trap_mode),
+    .read_mip(mip),
+    .read_mstatus(mstatus),
+    .read_mie(mie),
+    .read_vec(vec),
+    .read_mideleg(mideleg),
+    .read_medeleg(medeleg),
+    .write_mstatus(write_mstatus),
+    .write_cause(write_cause),
+    .write_epc(write_epc)
+  );
 
   // shift is implicitly added in the immgen block
   // TODO! optimize this to take the alu output instead of an extra adder here
-  reg  `W(`DLEN)   trap_pc;
-
-  reg  `W(`CSRLEN) trap_csr;
-  wire `W(`CSRLEN) trap_csr_data = trap_cause;
-
-  always @(*) begin
-    trap_saved_cause = trap_cause;
-
-    case(priv)
-      `PRIVM: begin
-        trap_pc  = mtvec;
-        trap_csr = `CSR_MCAUSE;
-      end
-      `PRIVS: begin
-        trap_pc
-      end
-    endcase
-  end
-
-  assign next_pc = trap
-    ? trap_pc
+  assign next_pc = (trap_taken)
+    ? vec
     :(`JALR(ctl_bus) ? regdata1_fwded: pc) + imm;
 
   // flush the IF_ID and ID_EX stages if trap occurs
-  assign nopi = trap ? `NOPI_IF_ID | `NOPI_ID_EX: `NOPI_NONE;
+  assign nopi = (trap_taken)
+    ? `NOPI_IF_ID | `NOPI_ID_EX
+    :  `NOPI_NONE;
 endmodule
