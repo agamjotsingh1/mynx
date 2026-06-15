@@ -7,13 +7,19 @@ module if_stage (
   input wor `W(`STLEN)   stall,
   input wor `W(`NOPILEN) nopi,
 
+  output wire `W(`DLEN)  uxcep,
+
   input wire clk,
   input wire rst,
-  input wire __id_branch_taken,
-  input wire `W(`DLEN) __id_next_pc,
+  output reg `W(`DLEN)  pc,
 
-  output reg `W(`DLEN)  pc
+  input wire __id_branch_taken,
+  input wire __wb_trap_taken,
+  input wire `W(`DLEN) __id_next_pc,
+  input wire `W(`DLEN) __wb_next_pc
 );
+  assign uxcep = 0;
+
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
     if(!hard_stall) begin
@@ -21,12 +27,9 @@ module if_stage (
         pc <= `RSTPC;
       end
       else if(!(stall & `STALL_PC)) begin
-        if(__id_branch_taken) begin
-          pc <= __id_next_pc;
-        end
-        else begin
-          pc <= pc + 4;
-        end
+        if(__wb_trap_taken) pc <= __wb_next_pc;
+        else if(__id_branch_taken) pc <= __id_next_pc;
+        else pc <= pc + 4;
       end
     end
   end

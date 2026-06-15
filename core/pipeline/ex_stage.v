@@ -17,6 +17,9 @@ module ex_stage (
   output wire `W(`DLEN) ex_res,
   output wire `W(`DLEN) csr_write_data,
 
+  input wire  `W(`DLEN) xcep,
+  output wire `W(`DLEN) uxcep,
+
   // fwd controls
   input wire `W(`FWDLEN) fwd1,
   input wire `W(`FWDLEN) fwd2,
@@ -28,6 +31,8 @@ module ex_stage (
   input wire `W(`DLEN) __mem_csr_write_data,
   input wire `W(`DLEN) __wb_csr_write_data
 );
+  assign uxcep = xcep;
+
   wire `W(`DLEN) alu_res;
   reg  `W(`DLEN) alu_in1, alu_in2;
 

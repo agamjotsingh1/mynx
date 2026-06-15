@@ -52,8 +52,25 @@ module id_stage (
   // fwd inputs
   input wire `W(`DLEN)    __mem_ex_res,
   // TODO! you dont really need this forward from WB stage hehe
-  input wire `W(`DLEN)    __wb_write_data
+  input wire `W(`DLEN)    __wb_write_data,
+
+  input wire `W(`DLEN)   xcep,
+  output wire `W(`DLEN)  uxcep,
+
+  // trap handling ports
+  input wire  `W(TRAPMODELEN) __wb_trap_mode,
+  output wire `W(`DLEN)       mip,
+  output wire `W(`DLEN)       mstatus,
+  output wire `W(`DLEN)       mie,
+  output wire `W(`DLEN)       vec,
+  output wire `W(`DLEN)       mideleg,
+  output wire `W(`DLEN)       medeleg,
+  input wire  `W(`DLEN)       __wb_write_mstatus,
+  input wire  `W(`DLEN)       __wb_write_cause,
+  input wire  `W(`DLEN)       __wb_write_epc
 );
+  assign uxcep = xcep;
+
   // instruction parsing
   assign rs1 = instr`RS1SLICE;
   assign rs2 = instr`RS2SLICE;
@@ -134,16 +151,16 @@ module id_stage (
     .write_data(__wb_csr_write_data)
 
     // trap handling ports
-    .trap_mode(trap_mode),
+    .trap_mode(__wb_trap_mode),
     .read_mip(mip),
     .read_mstatus(mstatus),
     .read_mie(mie),
     .read_vec(vec),
     .read_mideleg(mideleg),
     .read_medeleg(medeleg),
-    .write_mstatus(write_mstatus),
-    .write_cause(write_cause),
-    .write_epc(write_epc)
+    .write_mstatus(__wb_write_mstatus),
+    .write_cause(__wb_write_cause),
+    .write_epc(__wb_write_epc)
   );
 
   // TODO! optimize this to take the alu output instead of an extra adder here

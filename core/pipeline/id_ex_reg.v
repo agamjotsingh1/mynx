@@ -20,6 +20,7 @@ module id_ex_reg (
   input wire `W(`DLEN)       in_imm,
   input wire `W(`ALU_OPLEN)  in_alu_op,
   input wire `W(`CTL_BUSLEN) in_ctl_bus,
+  input wire `W(`DLEN)       in_xcep,
 
   output reg `W(`DLEN)       out_pc,
   output reg `W(`RLEN)       out_rs1,
@@ -31,7 +32,8 @@ module id_ex_reg (
   output reg `W(`DLEN)       out_csrdata,
   output reg `W(`DLEN)       out_imm,
   output reg `W(`ALU_OPLEN)  out_alu_op,
-  output reg `W(`CTL_BUSLEN) out_ctl_bus
+  output reg `W(`CTL_BUSLEN) out_ctl_bus,
+  output reg `W(`DLEN)       out_xcep
 );
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
@@ -48,6 +50,7 @@ module id_ex_reg (
         out_ctl_bus <= 0;
         out_csr <= 0;
         out_csrdata <= 0;
+        out_xcep <= 0;
       end
       else if (!(stall & `STALL_ID_EX)) begin
         out_pc <= in_pc;
@@ -61,6 +64,7 @@ module id_ex_reg (
         out_ctl_bus <= in_ctl_bus;
         out_csr <= in_csr;
         out_csrdata <= in_csrdata;
+        out_xcep <= in_xcep;
       end
     end
   end

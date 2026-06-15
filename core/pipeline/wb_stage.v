@@ -1,7 +1,6 @@
 `include "defs.vh"
 
 module wb_stage (
-  input wor  hard_stall,
   input wor `W(`STLEN) stall,
 
   input wire `W(`DLEN)       regw_data,
@@ -11,6 +10,10 @@ module wb_stage (
   /* verilator lint_on UNUSEDSIGNAL */
 
   output wire `W(`DLEN)      write_data,
+
+  // csr
+  input wire `W(`CSRLEN)     csr,
+  input wire `W(`DLEN)       csr_write_data,
 
   // trap handling
   input wire  `W(`DLEN)      pc,
@@ -33,7 +36,6 @@ module wb_stage (
   output reg `W(`DLEN)       write_mstatus,
   output reg `W(`DLEN)       write_cause,
   output reg `W(`DLEN)       write_epc
-
 );
   assign write_data =
     `MEM_TO_REG(ctl_bus) ? mem_res: regw_data;
@@ -88,6 +90,7 @@ module wb_stage (
   end
   /* ----------------------------- */
 
+
   /* --- setting values for trap csr writes --- */
   wire is_trap_m    = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
   wire is_trap_s    = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
@@ -127,7 +130,7 @@ module wb_stage (
 
   // assign next pc to whatever vec
   // will be taken up if trap_taken is high
-  assign next_pc = vec;
+  assign next_pc = vec & `VEC_MASK;
 
   assign next_priv = is_trap_m
     ? `PRIVM

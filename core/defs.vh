@@ -386,8 +386,8 @@
 `define SSTATUS_MASK          64'h0000_0000_000C_0122
 
 // MIP defs
-`define MIP_MMASK             64'h0x0000_0000_0000_0888
-`define MIP_SMASK             64'h0x0000_0000_0000_0222
+`define MIP_MMASK             64'h0000_0000_0000_0888
+`define MIP_SMASK             64'h0000_0000_0000_0222
 
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
 `define MIP_GET_MICAUSE(mip) \
@@ -399,7 +399,10 @@
   (mip[1]  ? `SICAUSE_SOFT: `SICAUSE_TIMER))
 
 // MIE defs
-`define MIE_MMASK             64'h0x0000_0000_0000_0888
-`define MIE_SMASK             64'h0x0000_0000_0000_0222
+`define MIE_MMASK             64'h0000_0000_0000_0888
+`define MIE_SMASK             64'h0000_0000_0000_0222
+
+// (S/M)TVEC defs
+`define VEC_MASK              64'hFFFF_FFFF_FFFF_FFFC
 
 `endif

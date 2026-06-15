@@ -33,8 +33,14 @@ module csrfile (
   input  wire `W(`DLEN)       write_epc
 );
   wire `W(`CSRMAPLEN) read_csrmap, write_csrmap;
-  // wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
-  // wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
+  wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
+  wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
+
+  // buffers to handle negedge/posedge mismatch
+  wire `W(TRAPMODELEN) trap_mode_buf,
+  wire `W(`DLEN)       mstatus_buf;
+  wire `W(`DLEN)       cause_buf;
+  wire `W(`DLEN)       epc_buf;
 
   csrmap csrmap_read_instance (
     .csr(read_csr),
@@ -48,6 +54,23 @@ module csrfile (
   
   integer i;
 	reg `W(`DLEN) csr_array [(2**(`CSRMAPLEN)- 1):0];
+
+  always @(posedge clk) begin
+    if(!hard_stall) begin
+      if(rst || (trap_mode == `TRAPMODE_NONE)) begin
+        trap_mode_buf <= 0;
+        mstatus_buf <= 0;
+        cause_buf <= 0;
+        epc_buf <= 0;
+      end
+      else begin
+        trap_mode_buf <= trap_mode;
+        mstatus_buf <= write_mstatus;
+        cause_buf <= write_cause;
+        epc_buf <= write_epc;
+      end
+    end
+  end
 	
 	always @(negedge clk) begin
     if(!hard_stall) begin
@@ -56,29 +79,23 @@ module csrfile (
           csr_array[i] <= 0;
         end
       end
+      else if(trap_mode_buf != `TRAPMODE_NONE) begin
+        csr_array[`CSRMAP_MSTATUS] <= mstatus_buf;
+
+        if(is_trap_m) begin
+          csr_array[`CSRMAP_MCAUSE] <= cause_buf;
+          csr_array[`CSRMAP_MEPC]   <= epc_buf;
+        end
+        else if(is_trap_s) begin
+          csr_array[`CSRMAP_SCAUSE] <= cause_buf;
+          csr_array[`CSRMAP_SEPC]   <= epc_buf;
+        end
+      end
       /* verilator lint_off WIDTHTRUNC */
-      else if(write_en && (!(stall & `STALL_CSRFILE)) && (trap_mode == `TRAPMODE_NONE)) begin
+      else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
         csr_array[write_csrmap] <= write_data;
       end
-      else if(trap_mode != `TRAPMODE_NONE) begin
-        csr_array[`CSRMAP_MSTATUS] <= write_mstatus;
-
-        if(is_trap_m) begin
-          csr_array[`CSRMAP_MCAUSE] <= write_cause;
-          csr_array[`CSRMAP_MEPC]   <= write_epc;
-        end
-        else if(is_trap_s) begin
-          csr_array[`CSRMAP_SCAUSE] <= write_cause;
-          csr_array[`CSRMAP_SEPC]   <= write_epc;
-        end
-      end
-
-      // /* verilator lint_off WIDTHTRUNC */
-      // else if(write_en && (!(stall & `STALL_CSRFILE))) begin
-      //   csr_array[write_csrmap] <= write_data;
-      // end
-      // /* verilator lint_on WIDTHTRUNC */
     end
 	end
 

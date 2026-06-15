@@ -17,15 +17,16 @@ module core (
   // input wire intr, // external trap (interrupt)
   // input wire `W(`DLEN) intr_cause // interrupt cause
 );
-  // wor xcep; // internal trap (exception)
-  // wire `W(`DLEN)   xcep_cause;
+  reg  `W(PRIVLEN) priv;
+  wire `W(PRIVLEN) next_priv;
 
-  // wire `W(TRAPLEN) trap = {xcep, intr};
-  // wire `W(`DLEN)   trap_cause = intr ? intr_cause: xcep_cause; // interrupt has priority
+  always @(posedge clk) begin
+    if(rst) priv <= `PRIVM;
+    else(__wb_trap_taken) priv <= next_priv;
+  end
 
   wor hard_stall; // stall the entire pipeline
 
-  // reg `W(PRIVLEN)      priv;
   wor `W(`STLEN)       stall;
   wor `W(`NOPILEN)     nopi;
 
@@ -87,8 +88,8 @@ module core (
   wire `W(`DLEN)       __mem_regw_data;
 
   wire `W(`DLEN)       __wb_pc;
+  wire `W(`DLEN)       __wb_next_pc;
   wire `W(`DLEN)       __wb_xcep;
-  wire `W(`DLEN)       __wb_xcep_cause;
   wire `W(`RLEN)       __wb_rd;
   wire `W(`CSRLEN)     __wb_csr;
   wire `W(`DLEN)       __wb_regw_data;
@@ -138,11 +139,14 @@ module core (
     .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
+    .uxcep(__if_uxcep),
     .clk(clk),
     .rst(rst),
+    .pc(__if_pc),
     .__id_branch_taken(__id_branch_taken),
+    .__wb_trap_taken(__wb_trap_taken),
     .__id_next_pc(__id_next_pc),
-    .pc(__if_pc)
+    .__wb_next_pc(__wb_next_pc)
   );
   /* -------------------- */
 
@@ -154,9 +158,11 @@ module core (
     .rst(rst),
     .in_pc(__if_pc),
     .in_instr(__if_instr),
+    .in_xcep(__if_uxcep),
 
     .out_pc(__id_pc),
-    .out_instr(__id_instr)
+    .out_instr(__id_instr),
+    .out_xcep(__id_xcep)
   );
 
   /* ----- ID STAGE ------ */
@@ -184,11 +190,24 @@ module core (
     .__wb_csr(__wb_csr),
     .__wb_ctl_bus(__wb_ctl_bus),
     .__wb_csr_write_data(__wb_csr_write_data),
-
     .fwd1(__id_fwd1),
     .fwd2(__id_fwd2),
     .__mem_ex_res(__mem_ex_res),
-    .__wb_write_data(__wb_write_data)
+    .__wb_write_data(__wb_write_data),
+    .xcep(__id_xcep),
+    .uxcep(__id_uxcep),
+
+    // trap handling
+    .__wb_trap_mode(__wb_trap_mode),
+    .mip(__id_mip),
+    .mstatus(__id_mstatus),
+    .mie(__id_mie),
+    .vec(__id_vec),
+    .mideleg(__id_mideleg),
+    .medeleg(__id_medeleg),
+    .__wb_write_mstatus(__wb_write_mstatus),
+    .__wb_write_cause(__wb_write_cause),
+    .__wb_write_epc(__wb_write_epc),
   );
   /* -------------------- */
 
@@ -209,6 +228,7 @@ module core (
     .in_imm(__id_imm),
     .in_alu_op(__id_alu_op),
     .in_ctl_bus(__id_ctl_bus),
+    .in_xcep(__id_uxcep),
 
     .out_pc(__ex_pc),
     .out_rs1(__ex_rs1),
@@ -220,7 +240,8 @@ module core (
     .out_csrdata(__ex_csrdata),
     .out_imm(__ex_imm),
     .out_alu_op(__ex_alu_op),
-    .out_ctl_bus(__ex_ctl_bus)
+    .out_ctl_bus(__ex_ctl_bus),
+    .out_xcep(__ex_xcep)
   );
 
   /* ----- EX STAGE ------ */
@@ -235,6 +256,8 @@ module core (
     .ctl_bus(__ex_ctl_bus),
     .ex_res(__ex_ex_res),
     .csr_write_data(__ex_csr_write_data),
+    .xcep(__ex_xcep),
+    .uxcep(__ex_uxcep),
 
     .fwd1(__ex_fwd1),
     .fwd2(__ex_fwd2),
@@ -258,18 +281,21 @@ module core (
     .in_csr_write_data(__ex_csr_write_data),
     .in_mem_data(__ex_mem_data),
     .in_ctl_bus(__ex_ctl_bus),
+    .in_xcep(__ex_uxcep),
 
     .out_rd(__mem_rd),
     .out_csr(__mem_csr),
     .out_ex_res(__mem_ex_res),
     .out_mem_data(__mem_mem_data),
     .out_csr_write_data(__mem_csr_write_data),
-    .out_ctl_bus(__mem_ctl_bus)
+    .out_ctl_bus(__mem_ctl_bus),
+    .out_xcep(__mem_xcep)
   );
 
   /* ----- MEM STAGE ------ */
   // TODO!
   assign __mem_regw_data = __mem_ex_res;
+  assign __mem_uxcep = __mem_xcep;
   /* -------------------- */
 
   mem_wb_reg mem_wb_reg_instance (
@@ -284,21 +310,44 @@ module core (
     .in_regw_data(__mem_regw_data),
     .in_csr_write_data(__mem_csr_write_data),
     .in_ctl_bus(__mem_ctl_bus),
+    .in_xcep(__mem_uxcep),
 
     .out_rd(__wb_rd),
     .out_csr(__wb_csr),
     .out_mem_res(__wb_mem_res),
     .out_regw_data(__wb_regw_data),
     .out_csr_write_data(__wb_csr_write_data),
-    .out_ctl_bus(__wb_ctl_bus)
+    .out_ctl_bus(__wb_ctl_bus),
+    .out_xcep(__wb_xcep)
   );
 
   /* ----- WB STAGE ------ */
   wb_stage wb_stage_instance (
+    .stall(stall),
     .regw_data(__wb_regw_data),
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
-    .write_data(__wb_write_data)
+    .write_data(__wb_write_data),
+
+    // trap handling
+    .pc(__wb_pc),
+    .__mem_pc(__mem_pc),
+    .priv(priv),
+    .xcep(__wb_xcep),
+    .nopi(nopi),
+    .trap_taken(__wb_trap_taken),
+    .next_pc(__wb_next_pc),
+    .next_priv(next_priv),
+    .trap_mode(__wb_trap_mode),
+    .mip(__id_mip),
+    .mstatus(__id_mstatus),
+    .mie(__id_mie),
+    .vec(__id_vec),
+    .mideleg(__id_mideleg),
+    .medeleg(__id_medeleg),
+    .write_mstatus(__wb_write_mstatus),
+    .write_cause(__wb_write_cause),
+    .write_epc(__wb_write_epc)
   );
   /* -------------------- */
 
