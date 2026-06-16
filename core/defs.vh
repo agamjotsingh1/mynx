@@ -132,11 +132,11 @@
 `define BOP_SLTI          17'b0010011_010_zzzzzzz
 `define BOP_SLTIU         17'b0010011_011_zzzzzzz
 `define BOP_SLLI          17'b0010011_001_zzzzzzz
-`define BOP_SRLI          17'b0010011_101_zzzzzzz 
-`define BOP_SRAI          17'b0010011_101_zzzzzzz // same as SRLI except upper bits of imm
+`define BOP_SRLI          17'b0010011_101_0000000 
+`define BOP_SRAI          17'b0010011_101_0100000
 `define BOP_SLLIW         17'b0011011_001_zzzzzzz
-`define BOP_SRLIW         17'b0011011_101_zzzzzzz 
-`define BOP_SRAIW         17'b0011011_101_zzzzzzz // same as SRLIW except upper bits of imm
+`define BOP_SRLIW         17'b0011011_101_0000000
+`define BOP_SRAIW         17'b0011011_101_0100000
 `define BOP_XORI          17'b0010011_100_zzzzzzz
 `define BOP_ORI           17'b0010011_110_zzzzzzz
 `define BOP_ANDI          17'b0010011_111_zzzzzzz
@@ -165,6 +165,7 @@
 `define ALU_OP_SLLW       4'ha
 `define ALU_OP_SRLW       4'hb
 `define ALU_OP_SRAW       4'hc
+`define ALU_OP_ILLEGAL    4'hd
 
 // Branching ctl sigs
 `define BRLEN             3
@@ -246,6 +247,7 @@
 // xcep bus defs
 `define XCEP(xcep)            xcep[63]   // is it exception or not
 `define XCEP_CAUSE(xcep)      xcep[62:0] // cause is always 63 bits
+
 `define XCEP_INST_ADDR_MISALIGNED       63'd0
 `define XCEP_INST_ACCESS_FAULT          63'd1
 `define XCEP_ILLEGAL_INSTRUCTION        63'd2
@@ -341,74 +343,44 @@
 `define CSR_PMPCFG0           12'h3a0
 `define CSR_PMPADDR0          12'h3b0
 
-// CSR Maps
-`define CSRMAPLEN             5 // change this len whenever adding more CSRs
-`define CSRMAP_MSTATUS        5'd0
-`define CSRMAP_MEPC           5'd1
-`define CSRMAP_MHARTID        5'd2
-`define CSRMAP_MEDELEG        5'd3
-`define CSRMAP_MIDELEG        5'd4
-`define CSRMAP_MIE            5'd5
-`define CSRMAP_MIP            5'd6
-`define CSRMAP_MTVEC          5'd7
-`define CSRMAP_MSCRATCH       5'd8
-`define CSRMAP_MCAUSE         5'd9
-`define CSRMAP_MTVAL          5'd10
-`define CSRMAP_SSTATUS        5'd11
-`define CSRMAP_SEPC           5'd12
-`define CSRMAP_SATP           5'd13
-`define CSRMAP_STVEC          5'd14
-`define CSRMAP_SSCRATCH       5'd15
-`define CSRMAP_SCAUSE         5'd16
-`define CSRMAP_STVAL          5'd17
-`define CSRMAP_SIE            5'd18
-`define CSRMAP_SIP            5'd19
-`define CSRMAP_PMPCFG0        5'd20
-`define CSRMAP_PMPADDR0       5'd21
-
-// MSTATUS fields
+// MSTATUS/SSTATUS fields
+// SSTATUS is just restrictively masked MSTATUS
+`define SSTATUS_MASK          64'h0000_0000_000C_0122
 `define MSTATUS_RST           64'h0000_000A_0000_0000
 `define MSTATUS_MASK          64'h0000_0000_007E_19AA
-`define MSTATUS_SD(val)       val[63]
-`define MSTATUS_WPRI_5(val)   val[62:43] // Reserved (WPRI)
-`define MSTATUS_MDT(val)      val[42]
-`define MSTATUS_MPELP(val)    val[41]
-`define MSTATUS_WPRI_4(val)   val[40]    // Reserved (WPRI)
-`define MSTATUS_MPV(val)      val[39]
-`define MSTATUS_GVA(val)      val[38]
-`define MSTATUS_MBE(val)      val[37]
-`define MSTATUS_SBE(val)      val[36]
-`define MSTATUS_SXL(val)      val[35:34]
-`define MSTATUS_UXL(val)      val[33:32]
-`define MSTATUS_WPRI_3(val)   val[31:25] // Reserved (WPRI)
-`define MSTATUS_SDT(val)      val[24]
-`define MSTATUS_SPELP(val)    val[23]
-`define MSTATUS_TSR(val)      val[22]
-`define MSTATUS_TW(val)       val[21]
-`define MSTATUS_TVM(val)      val[20]
-`define MSTATUS_MXR(val)      val[19]
-`define MSTATUS_SUM(val)      val[18]
-`define MSTATUS_MPRV(val)     val[17]
-`define MSTATUS_XS(val)       val[16:15]
-`define MSTATUS_FS(val)       val[14:13]
 `define MSTATUS_MPP(val)      val[12:11]
-`define MSTATUS_VS(val)       val[10:9]
 `define MSTATUS_SPP(val)      val[8]
 `define MSTATUS_MPIE(val)     val[7]
-`define MSTATUS_UBE(val)      val[6]
 `define MSTATUS_SPIE(val)     val[5]
-`define MSTATUS_WPRI_2(val)   val[4]     // Reserved (WPRI)
 `define MSTATUS_MIE(val)      val[3]
-`define MSTATUS_WPRI_1(val)   val[2]     // Reserved (WPRI)
 `define MSTATUS_SIE(val)      val[1]
-`define MSTATUS_WPRI_0(val)   val[0]     // Reserved (WPRI)
 
-// SSTATUS (same fields as MSTATUS but restricted view)
-`define SSTATUS_MASK          64'h0000_0000_000C_0122
+// MEPC/SEPC defs
+`define MEPC_RST              `RSTPC
+`define SEPC_RST              `RSTPC
+`define MEPC_MASK             64'hFFFF_FFFF_FFFF_FFFC
+`define SEPC_MASK             64'hFFFF_FFFF_FFFF_FFFC
+
+// MHARTID defs
+`define MHARTID_RST           64'0000_0000_0000_0000
+
+// MEDELEG defs
+`define MEDELEG_RST           64'0000_0000_0000_0000
+`define MEDELEG_MASK          64'h0000_0000_0000_B3FF
+
+// MIDELEG defs
+`define MIDELEG_RST           64'0000_0000_0000_0000
+`define MIDELEG_MASK          64'h0000_0000_0000_0222
 
 // MIP defs
 `define MIP_MMASK             64'h0000_0000_0000_0888
 `define MIP_SMASK             64'h0000_0000_0000_0222
+
+// MIE/SIE defs
+// SIE is just restrictively masked MIE
+`define MIE_RST               64'h0000_0000_0000_0000
+`define MIE_MASK              64'h0000_0000_0000_0AAA
+`define SIE_MASK              64'h0000_0000_0000_0222
 
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
 `define MIP_GET_MICAUSE(mip) \
@@ -418,10 +390,6 @@
 `define MIP_GET_SICAUSE(mip) \
   (mip[9]  ? `SICAUSE_EXT : \
   (mip[1]  ? `SICAUSE_SOFT: `SICAUSE_TIMER))
-
-// MIE defs
-`define MIE_MMASK             64'h0000_0000_0000_0888
-`define MIE_SMASK             64'h0000_0000_0000_0222
 
 // (S/M)TVEC defs
 `define VEC_MASK              64'hFFFF_FFFF_FFFF_FFFC

@@ -31,7 +31,9 @@ module ex_stage (
   input wire `W(`DLEN) __mem_csr_write_data,
   input wire `W(`DLEN) __wb_csr_write_data
 );
-  assign uxcep = xcep;
+  assign uxcep = `XCEP(xcep)
+    ? xcep
+    : (alu_op == `ALU_OP_ILLEGAL ? {1'b1, `XCEP_ILLEGAL_INSTRUCTION}: 0);
 
   wire `W(`DLEN) alu_res;
   reg  `W(`DLEN) alu_in1, alu_in2;

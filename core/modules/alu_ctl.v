@@ -27,7 +27,15 @@ module alu_ctl (
       `BOP_SW, 
       `BOP_SD,
       `BOP_CSRRW,
-      `BOP_CSRRWI
+      `BOP_CSRRWI,
+
+      // pass just for the sake of not creating illegal exceptions
+      {`OP_NULL,    10'b?},
+      {`OP_B,       10'b?},
+      {`OP_J,       10'b?},
+      {`OP_I_JALR,  10'b?},
+      {`OP_U_LUI,   10'b?},
+      {`OP_U_AUIPC, 10'b?}
       : alu_op = `ALU_OP_ADD;
 
       `BOP_SUB,
@@ -78,22 +86,24 @@ module alu_ctl (
       `BOP_SRAW
       : alu_op = `ALU_OP_SRAW;
 
-      `BOP_SRLI  // SRAI only differ by upper immediate bits, BOP is same
-      : begin
-        // upper immediate extraction
-        if(instr[30]) alu_op = `ALU_OP_SRA;
-        else alu_op = `ALU_OP_SRL;
-      end
+      `BOP_SRL,
+      `BOP_SRLI
+      : alu_op = `ALU_OP_SRL;
 
-      `BOP_SRLIW  // SRAIW only differ by upper immediate bits, BOP is same
-      : begin
-        // upper immediate extraction
-        if(instr[30]) alu_op = `ALU_OP_SRAW;
-        else alu_op = `ALU_OP_SRLW;
-      end
+      `BOP_SRLW,
+      `BOP_SRLIW
+      : alu_op = `ALU_OP_SRLW;
+
+      `BOP_SRA,
+      `BOP_SRAI
+      : alu_op = `ALU_OP_SRA;
+
+      `BOP_SRAW,
+      `BOP_SRAIW
+      : alu_op = `ALU_OP_SRAW;
 
       default
-      : alu_op = `ALU_OP_ADD;
+      : alu_op = `ALU_OP_ILLEGAL;
 
       endcase
   end

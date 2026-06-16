@@ -3,11 +3,23 @@
 
 // TODO! implement WARL/WPRI functionality
 // TODO! implement CSR_WRITE in ctl_bus to make sure "phantom writes" dont occur, instructions like CSSRS x5, mstatus, x0 will not even try to write to mstatus
+
+// CSR Fields
+// 1. WARL -> Write Any, Read Legal
+// ..Ignore all illegal writes, preserve the values in these fields
+// ..but dont generate exceptions when software tries to write to them
+// 2. WPRI -> Write Preserves, Read Ignores
+// ..Writes are ignored, preserved for later use
+// 3. WLRL -> Write Legal, Read Legal
+// ..Software can write whatever it wants
+// ..but its the job of software to ensure legality,
+// ..hardware has nothing to do with this
 module csrfile (
 	input wire clk,
   input wire rst,
   input wor  hard_stall,
   input wor `W(`STLEN) stall,
+  output reg illegal_csr,
 
 	// standard read port
 	input wire  `W(`CSRLEN) read_csr,
@@ -33,27 +45,34 @@ module csrfile (
   input  wire `W(`DLEN)        write_cause,
   input  wire `W(`DLEN)        write_epc
 );
-  wire `W(`CSRMAPLEN) read_csrmap, write_csrmap;
+  // CSRs
+  reg `W(`DLEN) mstatus;
+  reg `W(`DLEN) mepc;
+  reg `W(`DLEN) mhartid;
+  reg `W(`DLEN) medeleg;
+  reg `W(`DLEN) mideleg;
+  reg `W(`DLEN) mie;
+  reg `W(`DLEN) mip;
+  reg `W(`DLEN) mtvec;
+  reg `W(`DLEN) mscratch;
+  reg `W(`DLEN) mcause;
+  reg `W(`DLEN) mtval;
+  reg `W(`DLEN) sepc;
+  reg `W(`DLEN) satp;
+  reg `W(`DLEN) stvec;
+  reg `W(`DLEN) sscratch;
+  reg `W(`DLEN) scause;
+  reg `W(`DLEN) stval;
+  reg `W(`DLEN) sip;
+  reg `W(`DLEN) pmpcfg0;
+  reg `W(`DLEN) pmpaddr0;
 
   // buffers to handle negedge/posedge mismatch
   reg `W(`TRAPMODELEN) trap_mode_buf;
   reg `W(`DLEN)        mstatus_buf;
   reg `W(`DLEN)        cause_buf;
   reg `W(`DLEN)        epc_buf;
-
-  csrmap csrmap_read_instance (
-    .csr(read_csr),
-    .csrmap(read_csrmap)
-  );
-
-  csrmap csrmap_write_instance (
-    .csr(write_csr),
-    .csrmap(write_csrmap)
-  );
   
-  integer i;
-	reg `W(`DLEN) csr_array [(2**(`CSRMAPLEN)- 1):0];
-
   always @(posedge clk) begin
     if(!hard_stall) begin
       if(rst || (trap_mode == `TRAPMODE_NONE)) begin
@@ -80,26 +99,41 @@ module csrfile (
 	always @(negedge clk) begin
     if(!hard_stall) begin
       if(rst) begin
-        for(i = 0; i < 2**(`CSRMAPLEN); i = i + 1) begin
-          csr_array[i] <= 0;
-        end
+        mstatus <= `MSTATUS_RST;
+        mepc <= `MEPC_RST;
+        sepc <= `SEPC_RST;
+        mhartid <= `MHARTID_RST;
+        medeleg <= `MEDELEG_RST;
+        mideleg <= `MIDELEG_RST;
+        mie <= `MIE_RST;
       end
       else if(trap_mode_buf != `TRAPMODE_NONE) begin
-        csr_array[`CSRMAP_MSTATUS] <= mstatus_buf;
+        // trust all buffers
+        // as hardware will write it
+        mstatus  <= mstatus_buf;
 
         if(is_trap_buf_m) begin
-          csr_array[`CSRMAP_MCAUSE] <= cause_buf;
-          csr_array[`CSRMAP_MEPC]   <= epc_buf;
+          mcause <= cause_buf;
+          mepc   <= epc_buf;
         end
         else if(is_trap_buf_s) begin
-          csr_array[`CSRMAP_SCAUSE] <= cause_buf;
-          csr_array[`CSRMAP_SEPC]   <= epc_buf;
+          scause <= cause_buf;
+          sepc   <= epc_buf;
         end
       end
       /* verilator lint_off WIDTHTRUNC */
       else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
-        csr_array[write_csrmap] <= write_data;
+        case(write_csr)
+          `CSR_MSTATUS: mstatus <= (write_data & `MSTATUS_MASK) | (mstatus & (~`MSTATUS_MASK));
+          `CSR_SSTATUS: mstatus <= (write_data & `SSTATUS_MASK) | (mstatus & (~`SSTATUS_MASK));
+          `CSR_MEPC   : mepc    <= (write_data & `MEPC_MASK)    | (mepc    & (~`MEPC_MASK));
+          `CSR_SEPC   : sepc    <= (write_data & `SEPC_MASK)    | (sepc    & (~`SEPC_MASK));
+          `CSR_MEDELEG: medeleg <= (write_data & `MEDELEG_MASK) | (medeleg & (~`MEDELEG_MASK));
+          `CSR_MIDELEG: mideleg <= (write_data & `MIDELEG_MASK) | (mideleg & (~`MIDELEG_MASK));
+          `CSR_MIE    : mie     <= (write_data & `MIE_MASK)     | (mie     & (~`MIE_MASK));
+          `CSR_SIE    : mie     <= (write_data & `SIE_MASK)     | (mie     & (~`SIE_MASK));
+        endcase
       end
     end
 	end

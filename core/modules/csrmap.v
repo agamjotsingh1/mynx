@@ -28,7 +28,7 @@ module csrmap (
       `CSR_PMPCFG0:   csrmap = `CSRMAP_PMPCFG0;
       `CSR_PMPADDR0:  csrmap = `CSRMAP_PMPADDR0;
       // TODO! make an invalid CSRMAP
-      default:        csrmap = `CSRMAP_MSTATUS;
+      default:        csrmap = `CSRMAP_ILLEGAL;
     endcase
   end
 endmodule

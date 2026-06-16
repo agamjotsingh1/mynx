@@ -70,9 +70,12 @@ module id_stage (
   input wire  `W(`DLEN)        __wb_write_cause,
   input wire  `W(`DLEN)        __wb_write_epc
 );
+  wire illegal_csr;
+
   assign uxcep = `XCEP(xcep)
     ? xcep
-    : (`ILLEGAL(ctl_bus) ? {1'b1, `XCEP_ILLEGAL_INSTRUCTION}: 0);
+    : (`ILLEGAL(ctl_bus) | (illegal_csr && (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE)) 
+    ? {1'b1, `XCEP_ILLEGAL_INSTRUCTION}: 0);
 
   // instruction parsing
   assign rs1 = instr`RS1SLICE;
@@ -145,6 +148,7 @@ module id_stage (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    .illegal_csr(illegal_csr),
     .stall(stall),
     .read_csr(csr),
     .read_data(csrdata),

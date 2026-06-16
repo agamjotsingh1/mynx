@@ -22,7 +22,7 @@ module ctl (
           `F3CSRRWI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRWI;
           `F3CSRRSI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRSI;
           `F3CSRRCI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRCI;
-          default:   `ZICSR_OP(ctl_bus) = `ZICSR_OP_NONE;
+          default:    `ILLEGAL(ctl_bus) = 1;
         endcase
       end
 
@@ -57,7 +57,7 @@ module ctl (
           `F3LH, `F3LHU: `BW(ctl_bus) = `BW_HALFWORD;
           `F3LW, `F3LWU: `BW(ctl_bus) = `BW_WORD;
           `F3LD:         `BW(ctl_bus) = `BW_DBLWORD;
-          default:       `BW(ctl_bus) = `BW_BYTE;
+          default:  `ILLEGAL(ctl_bus) = 1;
         endcase
 
         case(funct3)
@@ -89,7 +89,7 @@ module ctl (
           `F3SH:   `BW(ctl_bus) = `BW_HALFWORD;
           `F3SW:   `BW(ctl_bus) = `BW_WORD;
           `F3SD:   `BW(ctl_bus) = `BW_DBLWORD;
-          default: `BW(ctl_bus) = `BW_BYTE;
+          default: `ILLEGAL(ctl_bus) = 1;
         endcase
       end
 
@@ -101,7 +101,7 @@ module ctl (
           `F3BGE:  `BR(ctl_bus) = `BR_BGE;
           `F3BLTU: `BR(ctl_bus) = `BR_BLTU;
           `F3BGEU: `BR(ctl_bus) = `BR_BGEU;
-          default: `BR(ctl_bus) = `BR_NONE;
+          default: `ILLEGAL(ctl_bus) = 1;
         endcase
       end
 
@@ -121,6 +121,8 @@ module ctl (
       end
 
       `OP_NULL: begin
+        // do nothing (nop)
+        if(instr != 0) `ILLEGAL(ctl_bus) = 1;
       end
 
       default: begin
