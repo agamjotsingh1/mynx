@@ -285,12 +285,6 @@
 `define VA2VPN(va, lvl)      {((lvl == 3) ? va[38:30]: ((lvl == 2) ? va[29:21]: va[20:12])), 3'b0}
 `define VA2OFF(va)           va[11:0]
 
-// SATP defs
-`define SATP_MODE(satp)       satp[63:60]
-`define SATP_MODE_BAREMETAL   4'h0
-`define SATP_MODE_SV39        4'h8
-`define SATP_PPN(satp)        satp[43:0]
-
 // PTE defs
 `define PTELEN                64
 `define PTE2PA(pte, off)      {pte[53:10], off}
@@ -330,14 +324,14 @@
 `define CSR_MTVEC             12'h305
 `define CSR_MSCRATCH          12'h340
 `define CSR_MCAUSE            12'h342
-`define CSR_MTVAL             12'h343
+// `define CSR_MTVAL             12'h343
 `define CSR_SSTATUS           12'h100
 `define CSR_SEPC              12'h141
 `define CSR_SATP              12'h180
 `define CSR_STVEC             12'h105
 `define CSR_SSCRATCH          12'h140
 `define CSR_SCAUSE            12'h142
-`define CSR_STVAL             12'h143
+// `define CSR_STVAL             12'h143
 `define CSR_SIE               12'h104
 `define CSR_SIP               12'h144
 `define CSR_PMPCFG0           12'h3a0
@@ -382,6 +376,11 @@
 `define MIE_MASK              64'h0000_0000_0000_0AAA
 `define SIE_MASK              64'h0000_0000_0000_0222
 
+// MIP/SIP defs
+// SIP is just restrictively masked MIP
+`define MIP_RST               64'h0000_0000_0000_0000
+`define MIP_MASK              64'h0000_0000_0000_0022
+`define SIP_MASK              64'h0000_0000_0000_0002
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
 `define MIP_GET_MICAUSE(mip) \
   (mip[11] ? `MICAUSE_EXT : \
@@ -392,6 +391,35 @@
   (mip[1]  ? `SICAUSE_SOFT: `SICAUSE_TIMER))
 
 // (S/M)TVEC defs
+`define MTVEC_RST             `RSTPC
+`define STVEC_RST             `RSTPC
 `define VEC_MASK              64'hFFFF_FFFF_FFFF_FFFC
+`define MTVEC_MASK            `VEC_MASK
+`define STVEC_MASK            `VEC_MASK
+
+// (S/M)SCRATCH defs
+`define MSCRATCH_RST          64'h0000_0000_0000_0000
+`define SSCRATCH_RST          64'h0000_0000_0000_0000
+
+// (S/M)CAUSE defs
+`define MCAUSE_RST            64'h0000_0000_0000_0000
+`define SCAUSE_RST            64'h0000_0000_0000_0000
+
+// PMPCFG0 defs
+`define PMPCFG0_RST           64'h0000_0000_0000_0000
+`define PMPCFG0_MASK          64'h9F9F_9F9F_9F9F_9F9F
+
+// PMPADDR0 defs
+`define PMPADDR0_RST          64'h0000_0000_0000_0000
+`define PMPADDR0_MASK         64'h003F_FFFF_FFFF_FFFF
+
+// SATP defs
+`define SATP_RST              64'h0000_0000_0000_0000
+// only SV39/baremetal is allowed, WARL fields!
+`define SATP_MASK             64'h8FFF_FFFF_FFFF_FFFF
+`define SATP_MODE(satp)       satp[63:60]
+`define SATP_MODE_BAREMETAL   4'h0
+`define SATP_MODE_SV39        4'h8
+`define SATP_PPN(satp)        satp[43:0]
 
 `endif

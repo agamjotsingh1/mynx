@@ -1,7 +1,6 @@
 `include "defs.vh"
 `include "modules/csrmap.v"
 
-// TODO! implement WARL/WPRI functionality
 // TODO! implement CSR_WRITE in ctl_bus to make sure "phantom writes" dont occur, instructions like CSSRS x5, mstatus, x0 will not even try to write to mstatus
 
 // CSR Fields
@@ -15,18 +14,20 @@
 // ..but its the job of software to ensure legality,
 // ..hardware has nothing to do with this
 module csrfile (
-	input wire clk,
-  input wire rst,
-  input wor  hard_stall,
+	input wire  clk,
+  input wire  rst,
+  input wor   hard_stall,
+  output reg  illegal_csr,
+  output wire unpriv_csr,
+
   input wor `W(`STLEN) stall,
-  output reg illegal_csr,
 
 	// standard read port
-	input wire  `W(`CSRLEN) read_csr,
-	output wire `W(`DLEN)   read_data,
+	input wire `W(`CSRLEN) read_csr,
+	output reg `W(`DLEN)   read_data,
 
   // satp read port (mmu -> pagetable ppn fetching)
-  output wire `W(`DLEN)   satp,
+  output reg  `W(`DLEN)   satp,
 
 	// standard write port
 	input wire              write_en,
@@ -56,14 +57,10 @@ module csrfile (
   reg `W(`DLEN) mtvec;
   reg `W(`DLEN) mscratch;
   reg `W(`DLEN) mcause;
-  reg `W(`DLEN) mtval;
   reg `W(`DLEN) sepc;
-  reg `W(`DLEN) satp;
   reg `W(`DLEN) stvec;
   reg `W(`DLEN) sscratch;
   reg `W(`DLEN) scause;
-  reg `W(`DLEN) stval;
-  reg `W(`DLEN) sip;
   reg `W(`DLEN) pmpcfg0;
   reg `W(`DLEN) pmpaddr0;
 
@@ -95,7 +92,7 @@ module csrfile (
 
   wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
   // wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
-	
+
 	always @(negedge clk) begin
     if(!hard_stall) begin
       if(rst) begin
@@ -106,6 +103,16 @@ module csrfile (
         medeleg <= `MEDELEG_RST;
         mideleg <= `MIDELEG_RST;
         mie <= `MIE_RST;
+        mip <= `MIP_RST;
+        mtvec <= `MTVEC_RST;
+        stvec <= `MTVEC_RST;
+        mscratch <= `MSCRATCH_RST;
+        sscratch <= `SSCRATCH_RST;
+        mcause <= `MCAUSE_RST;
+        scause <= `SCAUSE_RST;
+        pmpcfg0 <= `PMPCFG0_RST;
+        pmpaddr0 <= `PMPADDR0_RST;
+        satp <= `SATP_RST;
       end
       else if(trap_mode_buf != `TRAPMODE_NONE) begin
         // trust all buffers
@@ -125,25 +132,63 @@ module csrfile (
       else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
         case(write_csr)
-          `CSR_MSTATUS: mstatus <= (write_data & `MSTATUS_MASK) | (mstatus & (~`MSTATUS_MASK));
-          `CSR_SSTATUS: mstatus <= (write_data & `SSTATUS_MASK) | (mstatus & (~`SSTATUS_MASK));
-          `CSR_MEPC   : mepc    <= (write_data & `MEPC_MASK)    | (mepc    & (~`MEPC_MASK));
-          `CSR_SEPC   : sepc    <= (write_data & `SEPC_MASK)    | (sepc    & (~`SEPC_MASK));
-          `CSR_MEDELEG: medeleg <= (write_data & `MEDELEG_MASK) | (medeleg & (~`MEDELEG_MASK));
-          `CSR_MIDELEG: mideleg <= (write_data & `MIDELEG_MASK) | (mideleg & (~`MIDELEG_MASK));
-          `CSR_MIE    : mie     <= (write_data & `MIE_MASK)     | (mie     & (~`MIE_MASK));
-          `CSR_SIE    : mie     <= (write_data & `SIE_MASK)     | (mie     & (~`SIE_MASK));
+          `CSR_MSTATUS : mstatus  <= (write_data & `MSTATUS_MASK)  | (mstatus  & (~`MSTATUS_MASK));
+          `CSR_SSTATUS : mstatus  <= (write_data & `SSTATUS_MASK)  | (mstatus  & (~`SSTATUS_MASK));
+          `CSR_MEPC    : mepc     <= (write_data & `MEPC_MASK)     | (mepc     & (~`MEPC_MASK));
+          `CSR_SEPC    : sepc     <= (write_data & `SEPC_MASK)     | (sepc     & (~`SEPC_MASK));
+          `CSR_MEDELEG : medeleg  <= (write_data & `MEDELEG_MASK)  | (medeleg  & (~`MEDELEG_MASK));
+          `CSR_MIDELEG : mideleg  <= (write_data & `MIDELEG_MASK)  | (mideleg  & (~`MIDELEG_MASK));
+          `CSR_MIE     : mie      <= (write_data & `MIE_MASK)      | (mie      & (~`MIE_MASK));
+          `CSR_SIE     : mie      <= (write_data & `SIE_MASK)      | (mie      & (~`SIE_MASK));
+          `CSR_MIP     : mip      <= (write_data & `MIP_MASK)      | (mip      & (~`MIP_MASK));
+          `CSR_SIP     : mip      <= (write_data & `SIP_MASK)      | (mip      & (~`SIP_MASK));
+          `CSR_MTVEC   : mtvec    <= (write_data & `MTVEC_MASK)    | (mtvec    & (~`MTVEC_MASK));
+          `CSR_STVEC   : stvec    <= (write_data & `STVEC_MASK)    | (stvec    & (~`STVEC_MASK));
+          `CSR_MSCRATCH: mscratch <= write_data;
+          `CSR_SSCRATCH: sscratch <= write_data;
+          `CSR_MCAUSE  : mcause   <= write_data;
+          `CSR_SCAUSE  : scause   <= write_data;
+          `CSR_PMPCFG0 : pmpcfg0  <= (write_data & `PMPCFG0_MASK)  | (pmpcfg0  & (~`PMPCFG0_MASK));
+          `CSR_PMPADDR0: pmpaddr0 <= (write_data & `PMPADDR0_MASK) | (pmpaddr0 & (~`PMPADDR0_MASK));
+          `CSR_SATP    : satp     <= (write_data & `SATP_MASK)     | (satp     & (~`SATP_MASK));
         endcase
       end
     end
 	end
 
-	assign read_data    = csr_array[read_csrmap];
-  assign satp         = csr_array[`CSRMAP_SATP];
-  assign read_mip     = csr_array[`CSRMAP_MIP];
-  assign read_mstatus = csr_array[`CSRMAP_MSTATUS];
-  assign read_mie     = csr_array[`CSRMAP_MIE];
-  assign read_vec     = is_trap_m ? csr_array[`CSRMAP_MTVEC]: csr_array[`CSRMAP_STVEC];
-  assign read_mideleg = csr_array[`CSRMAP_MIDELEG];
-  assign read_medeleg = csr_array[`CSRMAP_MEDELEG];
+  always @(*) begin
+    read_data = 0;
+    illegal_csr = 0;
+
+    case(read_csr)
+      `CSR_MSTATUS : read_data   = mstatus   & `MSTATUS_MASK;
+      `CSR_SSTATUS : read_data   = mstatus   & `SSTATUS_MASK;
+      `CSR_MEPC    : read_data   = mepc      & `MEPC_MASK;
+      `CSR_SEPC    : read_data   = sepc      & `SEPC_MASK;
+      `CSR_MEDELEG : read_data   = medeleg   & `MEDELEG_MASK;
+      `CSR_MIDELEG : read_data   = mideleg   & `MIDELEG_MASK;
+      `CSR_MIE     : read_data   = mie       & `MIE_MASK;
+      `CSR_SIE     : read_data   = mie       & `SIE_MASK;
+      `CSR_MIP     : read_data   = mip       & `MIP_MASK;
+      `CSR_SIP     : read_data   = mip       & `SIP_MASK;
+      `CSR_MTVEC   : read_data   = mtvec     & `MTVEC_MASK;
+      `CSR_STVEC   : read_data   = stvec     & `STVEC_MASK;
+      `CSR_MSCRATCH: read_data   = mscratch;
+      `CSR_SSCRATCH: read_data   = sscratch;
+      `CSR_MCAUSE  : read_data   = mcause;
+      `CSR_SCAUSE  : read_data   = scause;
+      `CSR_MHARTID : read_data   = mhartid;
+      `CSR_PMPCFG0 : read_data   = pmpcfg0   & `PMPCFG0_MASK;
+      `CSR_PMPADDR0: read_data   = pmpaddr0  & `PMPADDR0_MASK;
+      `CSR_SATP    : read_data   = satp      & `SATP_MASK;
+      default      : illegal_csr = 1;
+    endcase
+  end
+
+  assign read_mip     = mip;
+  assign read_mstatus = mstatus;
+  assign read_mie     = mie;
+  assign read_vec     = is_trap_m ? mtvec: stvec;
+  assign read_mideleg = mideleg;
+  assign read_medeleg = medeleg;
 endmodule
