@@ -36,6 +36,7 @@
 `define OLEN              7  // opcode width
 `define F3LEN             3  // funct3 width
 `define F7LEN             7  // funct7 width
+`define F12LEN            12  // funct12 width
 `define MLEN              8  // byte addressable mem => 8 bits = 1 byte
 `define ADDRLEN           $clog2(`DEPTH*`NBANKS)    // mem addr width
 `define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
@@ -48,6 +49,7 @@
 `define OSLICE            [6:0]   // opcode
 `define F3SLICE           [14:12] // funct3
 `define F7SLICE           [31:25] // funct7
+`define F12SLICE           [31:20] // funct12
 `define RS1SLICE          [19:15] // rs1
 `define RS2SLICE          [24:20] // rs2
 `define RDSLICE           [11:7]  // rd
@@ -64,7 +66,6 @@
 `define OP_IW             7'b0011011 // word instrs (like addiw)
 `define OP_I_LOAD         7'b0000011
 `define OP_I_JALR         7'b1100111
-`define OP_I_ECALL        7'b1110011
 `define OP_S              7'b0100011
 `define OP_B              7'b1100011
 `define OP_U_LUI          7'b0110111
@@ -73,7 +74,7 @@
 `define OP_NULL           7'b0000000
 
 // TODO! add underscore as im kinda getting triggered
-// Some useful funct3 defs
+// funct3 defs
 `define F3LB              3'h0
 `define F3LH              3'h1
 `define F3LW              3'h2
@@ -97,6 +98,12 @@
 `define F3CSRRWI          3'h5
 `define F3CSRRSI          3'h6
 `define F3CSRRCI          3'h7
+`define F3NULL            3'h0
+
+// funct12 defs
+`define F12ECALL          12'b000000000000
+`define F12MRET           12'b001100000010
+`define F12SRET           12'b000100000010
 
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
@@ -190,7 +197,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            21
+`define CTL_BUSLEN            24
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -206,7 +213,10 @@
 `define WORDTRUNC(ctl_bus)    ctl_bus[15]    // 1 if instr does word trunc ops (like addiw)
 `define ZICSR_OP(ctl_bus)     ctl_bus[18:16] // Zicsr op signals
 `define CSR_WRITE(ctl_bus)    ctl_bus[19]    // 1 if csr is to be written to
-`define ILLEGAL(ctl_bus)      ctl_bus[20]    // 1 if instr is illegal
+`define MRET(ctl_bus)         ctl_bus[20]    // 1 if instr is mret
+`define SRET(ctl_bus)         ctl_bus[21]    // 1 if instr is sret
+`define ECALL(ctl_bus)        ctl_bus[22]    // 1 if instr is ecall
+`define ILLEGAL(ctl_bus)      ctl_bus[23]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 // "stall" is wor type bus
@@ -240,12 +250,22 @@
 `define FWD_MEM_WB            2'h3
 
 // trap mode defs
-`define TRAPMODELEN           3
-`define TRAPMODE_NONE         3'b000
-`define TRAPMODE_SXCEP        3'b001
-`define TRAPMODE_MXCEP        3'b010
-`define TRAPMODE_SINTR        3'b101
-`define TRAPMODE_MINTR        3'b110
+`define TRAPMODELEN           6
+`define TRAPMODE_NONE         6'b000000
+`define TRAPMODE_SXCEP        6'b000001
+`define TRAPMODE_MXCEP        6'b000010
+`define TRAPMODE_SINTR        6'b000100
+`define TRAPMODE_MINTR        6'b001000
+`define TRAPMODE_MRET         6'b010000
+`define TRAPMODE_SRET         6'b100000
+
+`define TRAP_TAKEN(trap_mode) (|trap_mode)
+`define TRAP_RET(trap_mode)   (trap_mode[5] | trap_mode[4])
+`define TRAP_INTR(trap_mode)  (trap_mode[3] | trap_mode[2])
+`define TRAP_XCEP(trap_mode)  (trap_mode[1] | trap_mode[0])
+// only for intr/xceps
+`define TRAP_M(trap_mode)     (trap_mode[1] | trap_mode[3])
+`define TRAP_S(trap_mode)     (trap_mode[0] | trap_mode[2])
 
 // xcep bus defs
 `define XCEP(xcep)            xcep[63]   // is it exception or not

@@ -57,7 +57,7 @@ module id_stage (
   input wire `W(`DLEN)    __wb_write_data,
 
   input wire `W(`DLEN)   xcep,
-  output wire `W(`DLEN)  uxcep,
+  output reg `W(`DLEN)   uxcep,
 
   // trap handling ports
   input wire  `W(`TRAPMODELEN) __wb_trap_mode,
@@ -73,10 +73,18 @@ module id_stage (
 );
   wire illegal_csr;
 
-  assign uxcep = `XCEP(xcep)
-    ? xcep
-    : (`ILLEGAL(ctl_bus) | (illegal_csr && (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE)) 
-    ? {1'b1, `XCEP_ILLEGAL_INSTRUCTION}: 0);
+  always @(*) begin
+    uxcep = 0;
+
+    if(`XCEP(xcep))
+      uxcep = xcep;
+    else if(
+      `ILLEGAL(ctl_bus) |
+      (illegal_csr && (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE)) |
+      (priv < `PRIVM && `MRET(ctl_bus)) |
+      (priv < `PRIVS && `SRET(ctl_bus))
+    ) uxcep = {1'b1, `XCEP_ILLEGAL_INSTRUCTION};
+  end
 
   // instruction parsing
   assign rs1 = instr`RS1SLICE;

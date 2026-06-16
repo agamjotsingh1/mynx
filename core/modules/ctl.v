@@ -5,33 +5,64 @@ module ctl (
   input wire `W(`ILEN)       instr,
   output reg `W(`CTL_BUSLEN) ctl_bus
 );
-  wire `W(`OLEN)  opcode = instr`OSLICE;
-  wire `W(`F3LEN) funct3 = instr`F3SLICE;
-  wire `W(`RLEN)  rs1    = instr`RS1SLICE; // for csr write
+  wire `W(`OLEN)   opcode  = instr`OSLICE;
+  wire `W(`F3LEN)  funct3  = instr`F3SLICE;
+  wire `W(`F12LEN) funct12 = instr`F12SLICE;
+  wire `W(`RLEN)   rs1     = instr`RS1SLICE;
+  wire `W(`RLEN)   rd      = instr`RDSLICE;
 
   always @(*) begin
-    // defaults
+    // all defaults
     ctl_bus = 0;
 
     case(opcode)
       `OP_SYS: begin
-        `REG_WRITE(ctl_bus)   = 1;
-        `CSR_WRITE(ctl_bus)   = (rs1 != 0);
-
         case(funct3)
           `F3CSRRW : begin
+            `REG_WRITE(ctl_bus) = 1;
             `CSR_WRITE(ctl_bus) = 1;
-            `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRW;
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRW;
           end
-          `F3CSRRS : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRS;
-          `F3CSRRC : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRC;
-          `F3CSRRWI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRWI;
-          `F3CSRRSI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRSI;
-          `F3CSRRCI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRCI;
-          default: begin
-            `CSR_WRITE(ctl_bus) = 0;
-            `ILLEGAL(ctl_bus) = 1;
+          `F3CSRRS : begin 
+            `REG_WRITE(ctl_bus) = 1;
+            `CSR_WRITE(ctl_bus) = (rs1 != 0);
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRS;
           end
+          `F3CSRRC : begin
+            `REG_WRITE(ctl_bus) = 1;
+            `CSR_WRITE(ctl_bus) = (rs1 != 0);
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRC;
+          end
+          `F3CSRRWI: begin
+            `REG_WRITE(ctl_bus) = 1;
+            `CSR_WRITE(ctl_bus) = 1;
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRWI;
+          end
+          `F3CSRRSI: begin
+            `REG_WRITE(ctl_bus) = 1;
+            `CSR_WRITE(ctl_bus) = 1;
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRSI;
+          end
+          `F3CSRRCI: begin
+            `REG_WRITE(ctl_bus) = 1;
+            `CSR_WRITE(ctl_bus) = 1;
+            `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRCI;
+          end
+
+          // ecall/mret/sret
+          `F3NULL: begin
+            if(rs1 == 0 && rd == 0) begin
+              case(funct12)
+                `F12MRET : `MRET(ctl_bus) = 1;
+                `F12SRET : `SRET(ctl_bus) = 1;
+                `F12ECALL: `ECALL(ctl_bus) = 1;
+                default  : `ILLEGAL(ctl_bus) = 1;
+              endcase
+            end
+            else `ILLEGAL(ctl_bus) = 1;
+          end
+
+          default: `ILLEGAL(ctl_bus) = 1;
         endcase
       end
 

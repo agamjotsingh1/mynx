@@ -23,11 +23,12 @@ module wb_stage (
   output wor  `W(`NOPILEN)   nopi,
   output wire                trap_taken,
   output wire `W(`DLEN)      next_pc,
-  output wire `W(`PRIVLEN)   next_priv,
+  output reg  `W(`PRIVLEN)   next_priv,
 
   // trap handling (csrfile)
   output reg `W(`TRAPMODELEN) trap_mode,
   input wire `W(`DLEN)        mip,
+  input wire `W(`DLEN)        epc,
   input wire `W(`DLEN)        mstatus,
   input wire `W(`DLEN)        mie,
   input wire `W(`DLEN)        vec,
@@ -87,6 +88,13 @@ module wb_stage (
       else
         trap_mode = `TRAPMODE_MXCEP;
     end
+
+    // rets
+    else if(`MRET(ctl_bus))
+      trap_mode = `TRAPMODE_MRET;
+    else if(`SRET(ctl_bus))
+      trap_mode = `TRAPMODE_SRET;
+
     // intrs
     else if((pending_m_intr != 0) && m_intr_en)
       trap_mode = `TRAPMODE_MINTR;
@@ -97,42 +105,47 @@ module wb_stage (
 
 
   /* --- setting values for trap csr writes --- */
-  wire   is_trap_m  = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
-  wire   is_trap_s  = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
-  wire   is_xcep    = (trap_mode == `TRAPMODE_MXCEP || trap_mode == `TRAPMODE_SXCEP);
-  assign trap_taken = (trap_mode != `TRAPMODE_NONE);
+  assign trap_taken = `TRAP_TAKEN(trap_mode);
 
   always @(*) begin
     write_mstatus = mstatus;
     write_cause   = 0;
-
     // if exception -> store current pc as this instr is NOT executed
     // if intr -> store mem pc as this instr is executed
-    write_epc     = is_xcep ? pc: (valid ? anchor_pc: safe_anchor_pc);
+    // if ret -> ignored in csrfile
+    write_epc     = `TRAP_XCEP(trap_mode) ? pc: (valid ? anchor_pc: safe_anchor_pc);
 
-    if(is_trap_m) begin
+    if(trap_mode == `TRAPMODE_MRET) begin
+      `MSTATUS_MIE(write_mstatus) = `MSTATUS_MPIE(mstatus);
+      `MSTATUS_MPP(write_mstatus) = `PRIVU;
+      `MSTATUS_MPIE(write_mstatus) = 1;
+    end
+    else if(trap_mode == `TRAPMODE_SRET) begin
+      `MSTATUS_SIE(write_mstatus) = `MSTATUS_SPIE(mstatus);
+      `MSTATUS_SPP(write_mstatus) = `PRIVU[0];
+      `MSTATUS_SPIE(write_mstatus) = 1;
+    end
+    else if(`TRAP_M(trap_mode)) begin
       `MSTATUS_MPP(write_mstatus) = priv;
       `MSTATUS_MPIE(write_mstatus) = `MSTATUS_MIE(mstatus);
       `MSTATUS_MIE(write_mstatus) = 0;
-      // MSB of trap mode specifies interrupt or exception
-      write_cause = {trap_mode[`TRAPMODELEN-1], 
-        trap_mode[`TRAPMODELEN-1] ? `MIP_GET_MICAUSE(pending_m_intr): `XCEP_CAUSE(xcep)};
+      write_cause = {~`TRAP_XCEP(trap_mode),
+        `TRAP_XCEP(trap_mode) ? `XCEP_CAUSE(xcep): `MIP_GET_MICAUSE(pending_m_intr)};
     end
-    else if(is_trap_s) begin
+    else if(`TRAP_S(trap_mode)) begin
       // LSB of priv specifies user/supervisor if we know we trapped into supervisor
       `MSTATUS_SPP(write_mstatus) = priv[0];
       `MSTATUS_SPIE(write_mstatus) = `MSTATUS_SIE(mstatus);
       `MSTATUS_SIE(write_mstatus) = 0;
-      // MSB of trap mode specifies interrupt or exception
-      write_cause = {trap_mode[`TRAPMODELEN-1], 
-        trap_mode[`TRAPMODELEN-1] ? `MIP_GET_SICAUSE(pending_s_intr): `XCEP_CAUSE(xcep)};
+      write_cause = {~`TRAP_XCEP(trap_mode),
+        `TRAP_XCEP(trap_mode) ? `XCEP_CAUSE(xcep): `MIP_GET_SICAUSE(pending_s_intr)};
     end
   end
   /* ------------------------------------------ */
 
   always @(posedge clk) begin
     if(rst) safe_anchor_pc <= `RSTPC;
-    else if(valid && (!is_xcep)) safe_anchor_pc <= anchor_pc;
+    else if(valid && (!`TRAP_XCEP(trap_mode))) safe_anchor_pc <= anchor_pc;
   end
 
   // flush everything except the PC
@@ -141,16 +154,27 @@ module wb_stage (
   // TODO! add support for vector interrutps
   // assign next pc to whatever vec
   // will be taken up if trap_taken is high
-  assign next_pc = vec & `VEC_MASK;
+  assign next_pc = `TRAP_RET(trap_mode)
+    ? epc
+    : vec & `VEC_MASK;
 
-  assign next_priv = is_trap_m
-    ? `PRIVM
-    : (is_trap_s ? `PRIVS: priv);
+  always @(*) begin
+    next_priv = priv;
+
+    if(trap_mode == `TRAPMODE_MRET)
+      next_priv = `MSTATUS_MPP(mstatus);
+    else if(trap_mode == `TRAPMODE_SRET)
+      next_priv = {1'b0, `MSTATUS_SPP(mstatus)};
+    else if(`TRAP_M(trap_mode))
+      next_priv = `PRIVM;
+    else if(`TRAP_S(trap_mode))
+      next_priv = `PRIVS;
+  end
 
   // stall the regfile and csrfile
   // so that no updates happen when exceptions
   // in interrupt the instruction should still execute
-  assign stall = is_xcep
+  assign stall = `TRAP_XCEP(trap_mode)
     ? `STALL_REGFILE | `STALL_CSRFILE
     : `STALL_NONE;
 endmodule
