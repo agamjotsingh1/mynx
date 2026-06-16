@@ -68,6 +68,7 @@
 `define OP_U_LUI          7'b0110111
 `define OP_U_AUIPC        7'b0010111
 `define OP_J              7'b1101111
+`define OP_NULL           7'b0000000
 
 // TODO! add underscore as im kinda getting triggered
 // Some useful funct3 defs
@@ -186,7 +187,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            19
+`define CTL_BUSLEN            20
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -201,6 +202,7 @@
 `define AUIPC(ctl_bus)        ctl_bus[14]    // 1 if instr is auipc 
 `define WORDTRUNC(ctl_bus)    ctl_bus[15]    // 1 if instr does word trunc ops (like addiw)
 `define ZICSR_OP(ctl_bus)     ctl_bus[18:16] // Zicsr op signals
+`define ILLEGAL(ctl_bus)      ctl_bus[19]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 // "stall" is wor type bus
@@ -244,6 +246,25 @@
 // xcep bus defs
 `define XCEP(xcep)            xcep[63]   // is it exception or not
 `define XCEP_CAUSE(xcep)      xcep[62:0] // cause is always 63 bits
+`define XCEP_INST_ADDR_MISALIGNED       63'd0
+`define XCEP_INST_ACCESS_FAULT          63'd1
+`define XCEP_ILLEGAL_INSTRUCTION        63'd2
+`define XCEP_BREAKPOINT                 63'd3
+`define XCEP_LOAD_ADDR_MISALIGNED       63'd4
+`define XCEP_LOAD_ACCESS_FAULT          63'd5
+`define XCEP_STORE_AMO_ADDR_MISALIGNED  63'd6
+`define XCEP_STORE_AMO_ACCESS_FAULT     63'd7
+`define XCEP_ECALL_FROM_U_MODE          63'd8
+`define XCEP_ECALL_FROM_S_MODE          63'd9
+`define XCEP_ECALL_FROM_VS_MODE         63'd10
+`define XCEP_ECALL_FROM_M_MODE          63'd11
+`define XCEP_INST_PAGE_FAULT            63'd12
+`define XCEP_LOAD_PAGE_FAULT            63'd13
+`define XCEP_STORE_AMO_PAGE_FAULT       63'd15
+`define XCEP_INST_GUEST_PAGE_FAULT      63'd16
+`define XCEP_LOAD_GUEST_PAGE_FAULT      63'd20
+`define XCEP_VIRTUAL_INSTRUCTION        63'd21
+`define XCEP_STORE_GUEST_PAGE_FAULT     63'd22
 
 // S/M interrupt causes
 // intentionally kept 63 bits long

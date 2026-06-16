@@ -23,12 +23,10 @@ module if_stage (
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
     if(!hard_stall) begin
-      if(rst || (nopi & `NOPI_PC)) begin
-        pc <= `RSTPC;
-      end
+      if(rst || (nopi & `NOPI_PC)) pc <= `RSTPC;
+      else if(__wb_trap_taken) pc <= __wb_next_pc;
       else if(!(stall & `STALL_PC)) begin
-        if(__wb_trap_taken) pc <= __wb_next_pc;
-        else if(__id_branch_taken) pc <= __id_next_pc;
+        if(__id_branch_taken) pc <= __id_next_pc;
         else pc <= pc + 4;
       end
     end

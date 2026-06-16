@@ -11,8 +11,11 @@ module mmu (
   input wire rst,
   output wor hard_stall,
 
+  input wire __wb_trap_taken,
+
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`DLEN)      satp,
+  input wire `W(`DLEN)      xcep,
   /* verilator lint_on UNUSEDSIGNAL */
 
   // Port A
@@ -33,18 +36,20 @@ module mmu (
   input wire  `W(`DLEN)     data_in_b,
   output wire  `W(`DLEN)    data_out_b
 );
+  wire abort = `XCEP(xcep) | __wb_trap_taken;
+
   /* verilator lint_off WIDTHTRUNC */
   // TODO! have seperate pbtl_en for a and b
   wire pgtbl_en =
     (mem_read_a | mem_read_b | mem_write_a | mem_write_b) &&
-    (`SATP_MODE(satp) == `SATP_MODE_SV39);
+    (`SATP_MODE(satp) == `SATP_MODE_SV39) && (!(abort));
   /* verilator lint_on WIDTHTRUNC */
 
   // counter for lvl counting
   reg `W($clog2(`PGTBL_LVLS)) lvl;
 
   always @(posedge clk) begin
-    if(rst) begin
+    if(rst || abort) begin
       lvl <= `PGTBL_LVLS;
     end
     else if(pgtbl_en) begin
@@ -81,14 +86,14 @@ module mmu (
 
   // Port A
   /* verilator lint_off WIDTHEXPAND */
-  wire `W(`DLEN) phymem_addr_a = (!pgtbl_en) ? addr_a
+  wire `W(`DLEN) phymem_addr_a = (!pgtbl_en) ? addr_a 
     :((lvl == 0) ? `PTE2PA(pte_a, `VA2OFF(addr_a)): pte_addr_a);
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_read_a = (!pgtbl_en) ? mem_read_a
+  wire phymem_read_a = (!pgtbl_en) ? (mem_read_a & (~abort))
     :((lvl == 0) ? mem_read_a: 1);
 
-  wire phymem_write_a = (!pgtbl_en) ? mem_write_a
+  wire phymem_write_a = (!pgtbl_en) ? (mem_write_a & (~abort))
     :((lvl == 0) ? mem_write_a: 0);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en) ? bw_a
@@ -105,10 +110,10 @@ module mmu (
     :((lvl == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b);
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_read_b = (!pgtbl_en) ? mem_read_b
+  wire phymem_read_b = (!pgtbl_en) ? (mem_read_b & (~abort))
     :((lvl == 0) ? mem_read_b: 1);
 
-  wire phymem_write_b = (!pgtbl_en) ? mem_write_b
+  wire phymem_write_b = (!pgtbl_en) ? (mem_write_b & (~abort))
     :((lvl == 0) ? mem_write_b: 0);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en) ? bw_b

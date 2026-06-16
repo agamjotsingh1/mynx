@@ -2,6 +2,7 @@
 `include "modules/csrmap.v"
 
 // TODO! implement WARL/WPRI functionality
+// TODO! implement CSR_WRITE in ctl_bus to make sure "phantom writes" dont occur, instructions like CSSRS x5, mstatus, x0 will not even try to write to mstatus
 module csrfile (
 	input wire clk,
   input wire rst,
@@ -33,8 +34,6 @@ module csrfile (
   input  wire `W(`DLEN)        write_epc
 );
   wire `W(`CSRMAPLEN) read_csrmap, write_csrmap;
-  wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
-  wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
 
   // buffers to handle negedge/posedge mismatch
   reg `W(`TRAPMODELEN) trap_mode_buf;
@@ -71,6 +70,12 @@ module csrfile (
       end
     end
   end
+
+  wire is_trap_buf_m = (trap_mode_buf == `TRAPMODE_MINTR || trap_mode_buf == `TRAPMODE_MXCEP);
+  wire is_trap_buf_s = (trap_mode_buf == `TRAPMODE_SINTR || trap_mode_buf == `TRAPMODE_SXCEP);
+
+  wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
+  // wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
 	
 	always @(negedge clk) begin
     if(!hard_stall) begin
@@ -82,11 +87,11 @@ module csrfile (
       else if(trap_mode_buf != `TRAPMODE_NONE) begin
         csr_array[`CSRMAP_MSTATUS] <= mstatus_buf;
 
-        if(is_trap_m) begin
+        if(is_trap_buf_m) begin
           csr_array[`CSRMAP_MCAUSE] <= cause_buf;
           csr_array[`CSRMAP_MEPC]   <= epc_buf;
         end
-        else if(is_trap_s) begin
+        else if(is_trap_buf_s) begin
           csr_array[`CSRMAP_SCAUSE] <= cause_buf;
           csr_array[`CSRMAP_SEPC]   <= epc_buf;
         end

@@ -132,6 +132,8 @@ module core (
     .rst(rst),
     .hard_stall(hard_stall),
     .satp(satp),
+    .xcep(__mem_xcep),
+    .__wb_trap_taken(__wb_trap_taken),
 
     // port a for instr fetch
     .addr_a(__mem_instr_addr),

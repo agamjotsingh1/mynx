@@ -55,11 +55,11 @@ module ex_stage (
         alu_in2 = regdata1_fwded;
       end
       `ZICSR_OP_CSRRS : begin 
-        alu_in1 = csrdata;
+        alu_in1 = csrdata_fwded;
         alu_in2 = regdata1_fwded;
       end
       `ZICSR_OP_CSRRC : begin 
-        alu_in1 = csrdata;
+        alu_in1 = csrdata_fwded;
         alu_in2 = ~regdata1_fwded;
       end
       `ZICSR_OP_CSRRWI: begin
@@ -67,11 +67,11 @@ module ex_stage (
         alu_in2 = imm;
       end
       `ZICSR_OP_CSRRSI: begin 
-        alu_in1 = csrdata;
+        alu_in1 = csrdata_fwded;
         alu_in2 = imm;
       end
       `ZICSR_OP_CSRRCI: begin 
-        alu_in1 = csrdata;
+        alu_in1 = csrdata_fwded;
         alu_in2 = ~imm;
       end
       default: begin

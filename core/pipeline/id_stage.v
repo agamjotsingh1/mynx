@@ -70,7 +70,9 @@ module id_stage (
   input wire  `W(`DLEN)        __wb_write_cause,
   input wire  `W(`DLEN)        __wb_write_epc
 );
-  assign uxcep = xcep;
+  assign uxcep = `XCEP(xcep)
+    ? xcep
+    : (`ILLEGAL(ctl_bus) ? {1'b1, `XCEP_ILLEGAL_INSTRUCTION}: 0);
 
   // instruction parsing
   assign rs1 = instr`RS1SLICE;

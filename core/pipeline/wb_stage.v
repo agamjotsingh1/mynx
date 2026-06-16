@@ -40,8 +40,6 @@ module wb_stage (
   // anchors even when interrupt on bubble
   reg `W(`DLEN) safe_anchor_pc;
 
-
-
   assign write_data =
     `MEM_TO_REG(ctl_bus) ? mem_res: regw_data;
 
@@ -78,7 +76,7 @@ module wb_stage (
     trap_mode = `TRAPMODE_NONE;
 
     // xceps (higher priority than intrs)
-    if(`XCEP(xcep)) begin
+    if(valid && `XCEP(xcep)) begin
       // if in M-mode -> Always M-mode
       // if in U/S-mode AND delegated -> S-mode
       // if in U/S-mode AND NOT delegated -> M-mode
@@ -140,6 +138,7 @@ module wb_stage (
   // flush everything except the PC
   assign nopi = trap_taken ? (`NOPI_ALL & (~(`NOPI_PC))): `NOPI_NONE;
 
+  // TODO! add support for vector interrutps
   // assign next pc to whatever vec
   // will be taken up if trap_taken is high
   assign next_pc = vec & `VEC_MASK;

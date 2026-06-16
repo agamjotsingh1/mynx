@@ -120,7 +120,12 @@ module ctl (
         `JAL(ctl_bus)         = 1;
       end
 
-      default: ctl_bus = 1;
+      `OP_NULL: begin
+      end
+
+      default: begin
+        `ILLEGAL(ctl_bus)     = 1;
+      end
     endcase
   end
 endmodule
