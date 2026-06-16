@@ -16,13 +16,15 @@ module csrfile (
 	input wire  clk,
   input wire  rst,
   input wor   hard_stall,
-  output reg  illegal_csr,
-  // output wire unpriv_csr,
+  output wire illegal_csr,
+
+  input wire `W(`PRIVLEN) priv,
 
   input wor `W(`STLEN) stall,
 
 	// standard read port
 	input wire `W(`CSRLEN) read_csr,
+	input wire             read_csr_future_write, // will read_csr be written to in future 
 	output reg `W(`DLEN)   read_data,
 
   // satp read port (mmu -> pagetable ppn fetching)
@@ -45,6 +47,16 @@ module csrfile (
   input  wire `W(`DLEN)        write_cause,
   input  wire `W(`DLEN)        write_epc
 );
+  reg invalid_address;
+
+  wire ro_violation = read_csr_future_write &&
+    (read_csr`CSRPERMSLICE == `CSR_PERM_RO); 
+
+  wire priv_violation = (priv < read_csr`CSRPRIVSLICE);
+
+  assign illegal_csr =
+    invalid_address | ro_violation | priv_violation;
+
   // CSRs
   reg `W(`DLEN) mstatus;
   reg `W(`DLEN) mepc;
@@ -131,6 +143,7 @@ module csrfile (
       else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
       /* verilator lint_off CASEINCOMPLETE */
+      // TODO! port over do csrmask module
       // any changes made below have to be reproduced in csrmask.v
         case(write_csr)
           `CSR_MSTATUS : mstatus  <= (write_data & `MSTATUS_MASK)  | (mstatus  & (~`MSTATUS_MASK));
@@ -160,7 +173,7 @@ module csrfile (
 
   always @(*) begin
     read_data = 0;
-    illegal_csr = 0;
+    invalid_address = 0;
 
     case(read_csr)
       `CSR_MSTATUS : read_data   = mstatus   & `MSTATUS_MASK;
@@ -183,7 +196,7 @@ module csrfile (
       `CSR_PMPCFG0 : read_data   = pmpcfg0   & `PMPCFG0_MASK;
       `CSR_PMPADDR0: read_data   = pmpaddr0  & `PMPADDR0_MASK;
       `CSR_SATP    : read_data   = satp      & `SATP_MASK;
-      default      : illegal_csr = 1;
+      default      : invalid_address = 1;
     endcase
   end
 

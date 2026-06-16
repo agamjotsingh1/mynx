@@ -72,8 +72,8 @@ module fwd_unit (
   end
 
   // CSR forwards
-  wire is_csrwrite_ex_mem = `ZICSR_OP(__mem_ctl_bus) != `ZICSR_OP_NONE;
-  wire is_csrwrite_mem_wb = `ZICSR_OP(__wb_ctl_bus) != `ZICSR_OP_NONE;
+  wire is_csrwrite_ex_mem = `CSR_WRITE(__mem_ctl_bus);
+  wire is_csrwrite_mem_wb = `CSR_WRITE(__wb_ctl_bus);
 
   wire __ex_fwdcsr_ex_mem = is_csrwrite_ex_mem && (__mem_csr == __ex_csr);
   wire __ex_fwdcsr_mem_wb = is_csrwrite_mem_wb && (__wb_csr == __ex_csr);

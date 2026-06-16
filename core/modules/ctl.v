@@ -7,6 +7,7 @@ module ctl (
 );
   wire `W(`OLEN)  opcode = instr`OSLICE;
   wire `W(`F3LEN) funct3 = instr`F3SLICE;
+  wire `W(`RLEN)  rs1    = instr`RS1SLICE; // for csr write
 
   always @(*) begin
     // defaults
@@ -15,14 +16,22 @@ module ctl (
     case(opcode)
       `OP_SYS: begin
         `REG_WRITE(ctl_bus)   = 1;
+        `CSR_WRITE(ctl_bus)   = (rs1 != 0);
+
         case(funct3)
-          `F3CSRRW : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRW;
+          `F3CSRRW : begin
+            `CSR_WRITE(ctl_bus) = 1;
+            `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRW;
+          end
           `F3CSRRS : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRS;
           `F3CSRRC : `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRC;
           `F3CSRRWI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRWI;
           `F3CSRRSI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRSI;
           `F3CSRRCI: `ZICSR_OP(ctl_bus) = `ZICSR_OP_CSRRCI;
-          default:    `ILLEGAL(ctl_bus) = 1;
+          default: begin
+            `CSR_WRITE(ctl_bus) = 0;
+            `ILLEGAL(ctl_bus) = 1;
+          end
         endcase
       end
 

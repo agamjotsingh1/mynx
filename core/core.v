@@ -197,6 +197,7 @@ module core (
     .clk(clk),
     .rst(rst),
     .stall(stall),
+    .priv(priv),
     .hard_stall(hard_stall),
     .pc(__id_pc),
     .anchor_pc(__id_anchor_pc),

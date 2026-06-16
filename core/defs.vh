@@ -51,8 +51,10 @@
 `define RS1SLICE          [19:15] // rs1
 `define RS2SLICE          [24:20] // rs2
 `define RDSLICE           [11:7]  // rd
-`define CSRSLICE          [31:20]  // csr
+`define CSRSLICE          [31:20] // csr
 `define WSLICE            [31:0]  // word
+`define CSRPERMSLICE      [11:10] // csr read only or not (perm)
+`define CSRPRIVSLICE      [9:8]   // csr privilege 
 
 // OPcodes wrt instruction format
 `define OP_SYS            7'b1110011
@@ -188,7 +190,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            20
+`define CTL_BUSLEN            21
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -203,7 +205,8 @@
 `define AUIPC(ctl_bus)        ctl_bus[14]    // 1 if instr is auipc 
 `define WORDTRUNC(ctl_bus)    ctl_bus[15]    // 1 if instr does word trunc ops (like addiw)
 `define ZICSR_OP(ctl_bus)     ctl_bus[18:16] // Zicsr op signals
-`define ILLEGAL(ctl_bus)      ctl_bus[19]    // 1 if instr is illegal
+`define CSR_WRITE(ctl_bus)    ctl_bus[19]    // 1 if csr is to be written to
+`define ILLEGAL(ctl_bus)      ctl_bus[20]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 // "stall" is wor type bus

@@ -9,6 +9,7 @@ module id_stage (
   input wire clk,
   input wire rst,
   input wor  hard_stall,
+  input wire `W(`PRIVLEN) priv,
 
   input wire  `W(`DLEN)   pc,
   output wire `W(`DLEN)   anchor_pc,
@@ -148,12 +149,14 @@ module id_stage (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    .priv(priv),
+    .read_csr_future_write(`CSR_WRITE(ctl_bus)),
     .illegal_csr(illegal_csr),
     .stall(stall),
     .read_csr(csr),
     .read_data(csrdata),
     .satp(satp),
-    .write_en(`ZICSR_OP(__wb_ctl_bus) != `ZICSR_OP_NONE),
+    .write_en(`CSR_WRITE(__wb_ctl_bus)),
     .write_csr(__wb_csr),
     .write_data(__wb_csr_write_data),
 
