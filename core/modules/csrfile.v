@@ -1,5 +1,4 @@
 `include "defs.vh"
-`include "modules/csrmap.v"
 
 // TODO! implement CSR_WRITE in ctl_bus to make sure "phantom writes" dont occur, instructions like CSSRS x5, mstatus, x0 will not even try to write to mstatus
 
@@ -18,7 +17,7 @@ module csrfile (
   input wire  rst,
   input wor   hard_stall,
   output reg  illegal_csr,
-  output wire unpriv_csr,
+  // output wire unpriv_csr,
 
   input wor `W(`STLEN) stall,
 
@@ -131,6 +130,8 @@ module csrfile (
       /* verilator lint_off WIDTHTRUNC */
       else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
+      /* verilator lint_off CASEINCOMPLETE */
+      // any changes made below have to be reproduced in csrmask.v
         case(write_csr)
           `CSR_MSTATUS : mstatus  <= (write_data & `MSTATUS_MASK)  | (mstatus  & (~`MSTATUS_MASK));
           `CSR_SSTATUS : mstatus  <= (write_data & `SSTATUS_MASK)  | (mstatus  & (~`SSTATUS_MASK));
@@ -152,6 +153,7 @@ module csrfile (
           `CSR_PMPADDR0: pmpaddr0 <= (write_data & `PMPADDR0_MASK) | (pmpaddr0 & (~`PMPADDR0_MASK));
           `CSR_SATP    : satp     <= (write_data & `SATP_MASK)     | (satp     & (~`SATP_MASK));
         endcase
+      /* verilator lint_on CASEINCOMPLETE */
       end
     end
 	end

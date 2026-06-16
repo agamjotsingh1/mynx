@@ -279,6 +279,7 @@ module core (
   /* ----- EX STAGE ------ */
   ex_stage ex_stage_instance (
     .pc(__ex_pc),
+    .csr(__ex_csr),
     .regdata1(__ex_regdata1),
     .regdata2(__ex_regdata2),
     .csrdata(__ex_csrdata),

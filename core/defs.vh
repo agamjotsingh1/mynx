@@ -356,14 +356,14 @@
 `define SEPC_MASK             64'hFFFF_FFFF_FFFF_FFFC
 
 // MHARTID defs
-`define MHARTID_RST           64'0000_0000_0000_0000
+`define MHARTID_RST           64'h0000_0000_0000_0000
 
 // MEDELEG defs
-`define MEDELEG_RST           64'0000_0000_0000_0000
+`define MEDELEG_RST           64'h0000_0000_0000_0000
 `define MEDELEG_MASK          64'h0000_0000_0000_B3FF
 
 // MIDELEG defs
-`define MIDELEG_RST           64'0000_0000_0000_0000
+`define MIDELEG_RST           64'h0000_0000_0000_0000
 `define MIDELEG_MASK          64'h0000_0000_0000_0222
 
 // MIP defs

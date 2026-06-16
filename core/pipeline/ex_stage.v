@@ -1,8 +1,10 @@
 `include "defs.vh"
 `include "modules/alu.v"
+`include "modules/csrmask.v"
 
 module ex_stage (
   input wire `W(`DLEN)       pc,
+  input wire `W(`CSRLEN)     csr,
   input wire `W(`DLEN)       regdata1,
   input wire `W(`DLEN)       regdata2,
   input wire `W(`DLEN)       csrdata,
@@ -101,5 +103,10 @@ module ex_stage (
     (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE ? csrdata_fwded:
     alu_res))));
 
-  assign csr_write_data = alu_res;
+  csrmask csrmask_instance (
+    .csr(csr),
+    .csr_read_data(csrdata_fwded),
+    .csr_write_data(alu_res),
+    .masked_csr_write_data(csr_write_data)
+  );
 endmodule
