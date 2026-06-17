@@ -23,6 +23,7 @@ module core (
     else if(__wb_trap_taken) priv <= next_priv;
   end
 
+  // TODO! change hard_stall, nop and stall to wires instead of wors
   wor hard_stall; // stall the entire pipeline
 
   wor `W(`STLEN)        trap_stall;
@@ -38,6 +39,7 @@ module core (
   wire                  __if_valid = 1;
   wire `W(`DLEN)        __if_pc /* verilator public*/;
   wire `W(`ILEN)        __if_instr;
+  wire `W(`DLEN)        __if_xcep = 0;
   wire `W(`DLEN)        __if_uxcep;
 
   wire                  __id_valid;
@@ -132,8 +134,12 @@ module core (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    .priv(priv),
     .satp(satp),
-    .xcep(__mem_xcep),
+    .xcep_a(__if_xcep),
+    .uxcep_a(__if_uxcep),
+    .xcep_b(__mem_xcep),
+    .uxcep_b(__mem_uxcep),
     .__wb_trap_taken(__wb_trap_taken),
 
     // port a for instr fetch
@@ -165,7 +171,6 @@ module core (
     .hard_stall(hard_stall),
     .stall(stall),
     .nopi(nopi),
-    .uxcep(__if_uxcep),
     .clk(clk),
     .rst(rst),
     .pc(__if_pc),
@@ -337,7 +342,8 @@ module core (
   /* ----- MEM STAGE ------ */
   // TODO!
   assign __mem_regw_data = __mem_ex_res;
-  assign __mem_uxcep = __mem_xcep;
+  // goes through mmu
+  // assign __mem_uxcep = __mem_xcep; 
   /* -------------------- */
 
   mem_wb_reg mem_wb_reg_instance (

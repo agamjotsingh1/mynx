@@ -7,8 +7,6 @@ module if_stage (
   input wor `W(`STLEN)   stall,
   input wor `W(`NOPILEN) nopi,
 
-  output wire `W(`DLEN)  uxcep,
-
   input wire clk,
   input wire rst,
   output reg `W(`DLEN)  pc,
@@ -18,8 +16,6 @@ module if_stage (
   input wire `W(`DLEN) __id_next_pc,
   input wire `W(`DLEN) __wb_next_pc
 );
-  assign uxcep = 0;
-
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
     if(!hard_stall) begin

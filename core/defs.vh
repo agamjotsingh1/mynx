@@ -317,6 +317,7 @@
 
 // PTEF (Page table entry flags)
 `define PTEFLEN               10
+`define PTEF(pte)             pte[9:0]
 `define PTEF_V                10'b0000000001
 `define PTEF_R                10'b0000000010
 `define PTEF_W                10'b0000000100
