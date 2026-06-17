@@ -59,6 +59,10 @@ module id_stage (
   input wire `W(`DLEN)   xcep,
   output reg `W(`DLEN)   uxcep,
 
+  // pmp handling ports
+  output wire `W(`DLEN)  pmpaddr0,
+  output wire `W(`DLEN)  pmpcfg0,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) __wb_trap_mode,
   output wire `W(`DLEN)        mip,
@@ -179,6 +183,10 @@ module id_stage (
     .write_en(`CSR_WRITE(__wb_ctl_bus)),
     .write_csr(__wb_csr),
     .write_data(__wb_csr_write_data),
+
+    // pmp handling ports
+    .read_pmpaddr0(pmpaddr0),
+    .read_pmpcfg0(pmpcfg0),
 
     // trap handling ports
     .trap_mode(__wb_trap_mode),

@@ -15,14 +15,20 @@ module mmu (
   output wor hard_stall,
   input wire __wb_trap_taken,
 
-  input wire  `W(`PRIVLEN)   priv,
+  input wire  `W(`PRIVLEN)  priv,
 
   /* verilator lint_off UNUSEDSIGNAL */
-  input wire  `W(`DLEN)      satp,
-  input wire  `W(`DLEN)      xcep_a,
-  output reg  `W(`DLEN)      uxcep_a,
-  input wire  `W(`DLEN)      xcep_b,
-  output reg  `W(`DLEN)      uxcep_b,
+  input wire  `W(`DLEN)     satp,
+  input wire  `W(`DLEN)     xcep_a,
+  output reg  `W(`DLEN)     uxcep_a,
+  input wire  `W(`DLEN)     xcep_b,
+  output reg  `W(`DLEN)     uxcep_b,
+  /* verilator lint_on UNUSEDSIGNAL */
+
+  // pmp handling
+  input wire `W(`DLEN)      pmpaddr0,
+  /* verilator lint_off UNUSEDSIGNAL */
+  input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
 
   // Port A
@@ -62,8 +68,8 @@ module mmu (
   // counter for lvl counting
   reg `W($clog2(`PGTBL_LVLS)) lvl;
 
-  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a);
-  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b);
+  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a);
+  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b);
 
   always @(posedge clk) begin
     if(rst || !(stall_req_a | stall_req_b)) begin
@@ -90,12 +96,12 @@ module mmu (
     : `PTE2PA(pte_b, `VA2VPN(addr_b, lvl));
 
   always @(posedge clk) begin
-    if(rst || mmu_abort_a) 
+    if(rst || mmu_abort_a || pmp_fault_a) 
       pte_a <= 0;
     else if(pgtbl_en_a) 
       pte_a <= phymem_data_out_a;
       
-    if(rst || mmu_abort_b) 
+    if(rst || mmu_abort_b || pmp_fault_b) 
       pte_b <= 0;
     else if(pgtbl_en_b) 
       pte_b <= phymem_data_out_b;
@@ -118,6 +124,8 @@ module mmu (
           uxcep_a = {1'b1, `XCEP_INST_PAGE_FAULT};
       end
     end
+    else if(pmp_fault_a)
+      uxcep_a = {1'b1, pmp_xcep_cause_a};
 
     // b port -> mem fetch
     if(`XCEP(xcep_b)) 
@@ -135,6 +143,8 @@ module mmu (
         ) uxcep_b = {1'b1, mem_write_b ? `XCEP_STORE_AMO_PAGE_FAULT : `XCEP_LOAD_PAGE_FAULT};
       end
     end
+    else if(pmp_fault_b)
+      uxcep_b = {1'b1, pmp_xcep_cause_b};
     /* verilator lint_on WIDTHTRUNC */
   end
 
@@ -144,11 +154,14 @@ module mmu (
     :((lvl == 0) ? `PTE2PA(pte_a, `VA2OFF(addr_a)): pte_addr_a);
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_read_a = (!pgtbl_en_a) ? (mem_read_a & (~mmu_abort_a))
-    :((lvl == 0) ? (mem_read_a & (~mmu_abort_a)): ~mmu_abort_a);
+  wire phymem_raw_read_a = (!pgtbl_en_a) ? mem_read_a
+    :((lvl == 0) ? mem_read_a: 1);
 
-  wire phymem_write_a = (!pgtbl_en_a) ? (mem_write_a & (~mmu_abort_a))
-    :((lvl == 0) ? (mem_write_a & (~mmu_abort_a)): 0);
+  wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
+    :((lvl == 0) ? mem_write_a: 0);
+
+  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a);
+  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
     :((lvl == 0) ? bw_a: `BW_DBLWORD);
@@ -164,11 +177,14 @@ module mmu (
     :((lvl == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b);
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_read_b = (!pgtbl_en_b) ? (mem_read_b & (~mmu_abort_b))
-    :((lvl == 0) ? (mem_read_b & (~mmu_abort_b)): ~mmu_abort_b);
+  wire phymem_raw_read_b = (!pgtbl_en_b) ? mem_read_b
+    :((lvl == 0) ? mem_read_b: 1);
 
-  wire phymem_write_b = (!pgtbl_en_b) ? (mem_write_b & (~mmu_abort_b))
-    :((lvl == 0) ? (mem_write_b & (~mmu_abort_b)): 0);
+  wire phymem_raw_write_b = (!pgtbl_en_b) ? mem_write_b
+    :((lvl == 0) ? mem_write_b: 0);
+
+  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b);
+  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl == 0) ? bw_b: `BW_DBLWORD);
@@ -177,6 +193,54 @@ module mmu (
   wire phymem_sign_extend_b = sign_extend_b;
   wire `W(`DLEN) phymem_data_in_b = data_in_b;
   assign data_out_b = phymem_data_out_b;
+
+  /* --- PMP logic --- */
+  wire `W(`DLEN) pmp_bound = pmpaddr0 << `PMPADDRSHIFT;
+  wire pmp_enforce = (priv != `PRIVM) || `PMPCFG_L(pmpcfg0);
+  reg pmp_fault_a, pmp_fault_b;
+  reg `W(`XCEP_CAUSELEN) pmp_xcep_cause_a, pmp_xcep_cause_b;
+
+  always @(*) begin
+    pmp_fault_a = 0;
+    pmp_fault_b = 0;
+    pmp_xcep_cause_a = 0;
+    pmp_xcep_cause_b = 0;
+
+    if(pmp_enforce) begin
+      if(phymem_addr_a < pmp_bound) begin
+        // Address matches Entry 0, check specific permissions
+        if (phymem_raw_read_a && !`PMPCFG_R(pmpcfg0)) begin
+          pmp_xcep_cause_a = `XCEP_LOAD_ACCESS_FAULT;
+          pmp_fault_a = 1;
+        end
+        if (phymem_raw_write_a && !`PMPCFG_W(pmpcfg0)) begin
+          pmp_xcep_cause_a = `XCEP_STORE_AMO_ACCESS_FAULT;
+          pmp_fault_a = 1'b1;
+        end
+        if (!`PMPCFG_X(pmpcfg0)) begin
+          pmp_xcep_cause_a = `XCEP_INST_ACCESS_FAULT;
+          pmp_fault_a = 1'b1;
+        end
+      end else begin
+        pmp_fault_a = 1'b1; 
+      end
+
+      if(phymem_addr_b < pmp_bound) begin
+        // Address matches Entry 0, check specific permissions
+        if (phymem_raw_read_b && !`PMPCFG_R(pmpcfg0)) begin
+          pmp_xcep_cause_b = `XCEP_LOAD_ACCESS_FAULT;
+          pmp_fault_b = 1;
+        end
+        if (phymem_raw_write_b && !`PMPCFG_W(pmpcfg0)) begin
+          pmp_xcep_cause_b = `XCEP_STORE_AMO_ACCESS_FAULT;
+          pmp_fault_b = 1;
+        end
+      end else begin
+        pmp_fault_b = 1;
+      end
+    end
+  end
+  /* ----------------- */
 
   mem mem_instance (
     .clk(clk),

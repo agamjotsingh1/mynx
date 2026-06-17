@@ -48,6 +48,12 @@ extern char payload_end[];
 void main() {
     __asm__ volatile ("csrw mtvec, %0" : : "r"(trap_handler));
 
+    __asm__ volatile (
+        "li t0, 0x3fffffffffffffff\n"
+        "csrw pmpaddr0, t0\n"
+        "csrw pmpcfg0, 0xf\n"
+    );
+
     // Page Tables in physical memory
     uint64_t *root = (uint64_t *)0x80010000;
     uint64_t *l1   = (uint64_t *)0x80020000;

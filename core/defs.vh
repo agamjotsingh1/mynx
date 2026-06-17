@@ -271,6 +271,7 @@
 `define TRAP_S(trap_mode)     (trap_mode[0] | trap_mode[2])
 
 // xcep bus defs
+`define XCEP_CAUSELEN         63
 `define XCEP(xcep)            xcep[63]   // is it exception or not
 `define XCEP_CAUSE(xcep)      xcep[62:0] // cause is always 63 bits
 
@@ -445,5 +446,12 @@
 `define SATP_MODE_BAREMETAL   4'h0
 `define SATP_MODE_SV39        4'h8
 `define SATP_PPN(satp)        satp[43:0]
+
+// PMP defs
+`define PMPADDRSHIFT          2
+`define PMPCFG_R(pmpcfg0)     pmpcfg0[0]
+`define PMPCFG_W(pmpcfg0)     pmpcfg0[1]
+`define PMPCFG_X(pmpcfg0)     pmpcfg0[2]
+`define PMPCFG_L(pmpcfg0)     pmpcfg0[7]
 
 `endif

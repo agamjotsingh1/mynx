@@ -69,6 +69,8 @@ module core (
   wire `W(`DLEN)        __id_epc;
   wire `W(`DLEN)        __id_mideleg;
   wire `W(`DLEN)        __id_medeleg;
+  wire `W(`DLEN)        __id_pmpaddr0;
+  wire `W(`DLEN)        __id_pmpcfg0;
 
   wire                  __ex_valid;
   wire `W(`DLEN)        __ex_pc;
@@ -141,6 +143,9 @@ module core (
     .xcep_b(__mem_xcep),
     .uxcep_b(__mem_uxcep),
     .__wb_trap_taken(__wb_trap_taken),
+
+    .pmpaddr0(__id_pmpaddr0),
+    .pmpcfg0(__id_pmpcfg0),
 
     // port a for instr fetch
     .addr_a(__mem_instr_addr),
@@ -231,6 +236,10 @@ module core (
     .__wb_write_data(__wb_write_data),
     .xcep(__id_xcep),
     .uxcep(__id_uxcep),
+
+    // pmp handling
+    .pmpaddr0(__id_pmpaddr0),
+    .pmpcfg0(__id_pmpcfg0),
 
     // trap handling
     .__wb_trap_mode(__wb_trap_mode),

@@ -10,6 +10,9 @@ _start:
     # ==========================================
     la t0, trap_vector
     csrw mtvec, t0          # Set M-mode trap vector
+    li t0, 0x3fffffffffffffff
+    csrw pmpaddr0, t0
+    csrw pmpcfg0, 0xf
 
     # ==========================================
     # 2. BUILD SV39 PAGE TABLES IN PHYSICAL MEMORY

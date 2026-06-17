@@ -33,6 +33,10 @@ module csrfile (
 	input wire `W(`CSRLEN)  write_csr,
 	input wire `W(`DLEN)    write_data,
 
+  // pmp handling ports
+  output wire `W(`DLEN)        read_pmpaddr0,
+  output wire `W(`DLEN)        read_pmpcfg0,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) trap_mode,
   output wire `W(`DLEN)        read_mip,
@@ -200,4 +204,7 @@ module csrfile (
   assign read_epc     = (trap_mode == `TRAPMODE_MRET) ? mepc: sepc;
   assign read_mideleg = mideleg;
   assign read_medeleg = medeleg;
+
+  assign read_pmpaddr0 = pmpaddr0;
+  assign read_pmpcfg0 = pmpcfg0;
 endmodule
