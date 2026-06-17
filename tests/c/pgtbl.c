@@ -15,9 +15,6 @@ typedef unsigned char      uint8_t;
 
 #define PA2PTE(pa) ((((uint64_t)(pa) >> 12) << 10))
 
-// ---------------------------------------------------------
-// Trap Handler
-// ---------------------------------------------------------
 void __attribute__((naked)) trap_handler() {
     __asm__ volatile (
         "csrr t0, mcause \n"
@@ -25,18 +22,15 @@ void __attribute__((naked)) trap_handler() {
         "bne t0, t1, test_fail \n"
 
         "test_pass: \n"
-        "li x31, 0xBABE \n"    // Pass magic number
+        "li x31, 0xBABE \n"
         "1: j 1b \n"
 
         "test_fail: \n"
-        "li x31, 0xDEAD \n"    // Fail magic number
+        "li x31, 0xDEAD \n"
         "2: j 2b \n"
     );
 }
 
-// ---------------------------------------------------------
-// User Payload (Naked C function)
-// ---------------------------------------------------------
 void __attribute__((naked)) user_payload() {
     __asm__ volatile (
         ".global payload_start \n payload_start: \n"
@@ -51,9 +45,6 @@ void __attribute__((naked)) user_payload() {
 extern char payload_start[];
 extern char payload_end[];
 
-// ---------------------------------------------------------
-// Main Boot
-// ---------------------------------------------------------
 void main() {
     __asm__ volatile ("csrw mtvec, %0" : : "r"(trap_handler));
 
