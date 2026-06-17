@@ -102,6 +102,12 @@ module alu_ctl (
       `BOP_SRAIW
       : alu_op = `ALU_OP_SRAW;
 
+      // FIXME! temporary patch for mret/sret/ecall to go through, make it more granular by only allowing mret/sret/ecall
+      {`OP_SYS,     10'b?}
+      : begin
+        alu_op = `ALU_OP_ADD; // placeholder
+      end
+
       default
       : alu_op = `ALU_OP_ILLEGAL;
 

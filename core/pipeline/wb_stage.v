@@ -122,9 +122,13 @@ module wb_stage (
     end
     else if(trap_mode == `TRAPMODE_SRET) begin
       `MSTATUS_SIE(write_mstatus) = `MSTATUS_SPIE(mstatus);
-      `MSTATUS_SPP(write_mstatus) = `PRIVU[0];
+      /* verilator lint_off WIDTHTRUNC */
+      `MSTATUS_SPP(write_mstatus) = `PRIVU;
+      /* verilator lint_on WIDTHTRUNC */
       `MSTATUS_SPIE(write_mstatus) = 1;
     end
+
+    // intr/xcep
     else if(`TRAP_M(trap_mode)) begin
       `MSTATUS_MPP(write_mstatus) = priv;
       `MSTATUS_MPIE(write_mstatus) = `MSTATUS_MIE(mstatus);

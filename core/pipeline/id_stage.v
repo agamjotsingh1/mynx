@@ -65,6 +65,7 @@ module id_stage (
   output wire `W(`DLEN)        mstatus,
   output wire `W(`DLEN)        mie,
   output wire `W(`DLEN)        vec,
+  output wire `W(`DLEN)        epc,
   output wire `W(`DLEN)        mideleg,
   output wire `W(`DLEN)        medeleg,
   input wire  `W(`DLEN)        __wb_write_mstatus,
@@ -84,6 +85,17 @@ module id_stage (
       (priv < `PRIVM && `MRET(ctl_bus)) |
       (priv < `PRIVS && `SRET(ctl_bus))
     ) uxcep = {1'b1, `XCEP_ILLEGAL_INSTRUCTION};
+    else if(`ECALL(ctl_bus)) begin
+      /* verilator lint_off CASEINCOMPLETE */
+      case(priv)
+        `PRIVU: uxcep = {1'b1, `XCEP_ECALL_FROM_U_MODE};
+        `PRIVS: uxcep = {1'b1, `XCEP_ECALL_FROM_S_MODE};
+        `PRIVM: uxcep = {1'b1, `XCEP_ECALL_FROM_M_MODE};
+      endcase
+      /* verilator lint_on CASEINCOMPLETE */
+    end
+    else if(`EBREAK(ctl_bus))
+      uxcep = {1'b1, `XCEP_BREAKPOINT};
   end
 
   // instruction parsing
@@ -174,6 +186,7 @@ module id_stage (
     .read_mstatus(mstatus),
     .read_mie(mie),
     .read_vec(vec),
+    .read_epc(epc),
     .read_mideleg(mideleg),
     .read_medeleg(medeleg),
     .write_mstatus(__wb_write_mstatus),

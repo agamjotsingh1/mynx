@@ -64,6 +64,7 @@ module core (
   wire `W(`DLEN)        __id_mstatus;
   wire `W(`DLEN)        __id_mie;
   wire `W(`DLEN)        __id_vec;
+  wire `W(`DLEN)        __id_epc;
   wire `W(`DLEN)        __id_mideleg;
   wire `W(`DLEN)        __id_medeleg;
 
@@ -232,6 +233,7 @@ module core (
     .mstatus(__id_mstatus),
     .mie(__id_mie),
     .vec(__id_vec),
+    .epc(__id_epc),
     .mideleg(__id_mideleg),
     .medeleg(__id_medeleg),
     .__wb_write_mstatus(__wb_write_mstatus),
@@ -392,6 +394,7 @@ module core (
     .mstatus(__id_mstatus),
     .mie(__id_mie),
     .vec(__id_vec),
+    .epc(__id_epc),
     .mideleg(__id_mideleg),
     .medeleg(__id_medeleg),
     .write_mstatus(__wb_write_mstatus),

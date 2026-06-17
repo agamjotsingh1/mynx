@@ -53,10 +53,11 @@ module ctl (
           `F3NULL: begin
             if(rs1 == 0 && rd == 0) begin
               case(funct12)
-                `F12MRET : `MRET(ctl_bus) = 1;
-                `F12SRET : `SRET(ctl_bus) = 1;
-                `F12ECALL: `ECALL(ctl_bus) = 1;
-                default  : `ILLEGAL(ctl_bus) = 1;
+                `F12MRET  : `MRET(ctl_bus) = 1;
+                `F12SRET  : `SRET(ctl_bus) = 1;
+                `F12ECALL : `ECALL(ctl_bus) = 1;
+                `F12EBREAK: `EBREAK(ctl_bus) = 1;
+                default   : `ILLEGAL(ctl_bus) = 1;
               endcase
             end
             else `ILLEGAL(ctl_bus) = 1;

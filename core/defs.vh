@@ -104,6 +104,8 @@
 `define F12ECALL          12'b000000000000
 `define F12MRET           12'b001100000010
 `define F12SRET           12'b000100000010
+`define F12ECALL          12'b000000000000
+`define F12EBREAK         12'b000000000001
 
 // Bunch opcodes (BOPcodes)
 // bunch is defined as {opcode, funct3, funct7}
@@ -197,7 +199,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            24
+`define CTL_BUSLEN            25
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -216,7 +218,8 @@
 `define MRET(ctl_bus)         ctl_bus[20]    // 1 if instr is mret
 `define SRET(ctl_bus)         ctl_bus[21]    // 1 if instr is sret
 `define ECALL(ctl_bus)        ctl_bus[22]    // 1 if instr is ecall
-`define ILLEGAL(ctl_bus)      ctl_bus[23]    // 1 if instr is illegal
+`define EBREAK(ctl_bus)       ctl_bus[23]    // 1 if instr is ebreak
+`define ILLEGAL(ctl_bus)      ctl_bus[24]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 // "stall" is wor type bus
@@ -373,8 +376,8 @@
 `define MSTATUS_SIE(val)      val[1]
 
 // MEPC/SEPC defs
-`define MEPC_RST              `RSTPC
-`define SEPC_RST              `RSTPC
+`define MEPC_RST              64'h0000_0000_0000_0000
+`define SEPC_RST              64'h0000_0000_0000_0000
 `define MEPC_MASK             64'hFFFF_FFFF_FFFF_FFFC
 `define SEPC_MASK             64'hFFFF_FFFF_FFFF_FFFC
 
@@ -389,10 +392,6 @@
 `define MIDELEG_RST           64'h0000_0000_0000_0000
 `define MIDELEG_MASK          64'h0000_0000_0000_0222
 
-// MIP defs
-`define MIP_MMASK             64'h0000_0000_0000_0888
-`define MIP_SMASK             64'h0000_0000_0000_0222
-
 // MIE/SIE defs
 // SIE is just restrictively masked MIE
 `define MIE_RST               64'h0000_0000_0000_0000
@@ -404,6 +403,7 @@
 `define MIP_RST               64'h0000_0000_0000_0000
 `define MIP_MASK              64'h0000_0000_0000_0022
 `define SIP_MASK              64'h0000_0000_0000_0002
+`define SIP_READ_MASK         64'h0000_0000_0000_0222
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
 `define MIP_GET_MICAUSE(mip) \
   (mip[11] ? `MICAUSE_EXT : \

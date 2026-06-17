@@ -51,7 +51,7 @@ module hdu (
     is_hazard ? `NOPI_ID_EX: `NOPI_NONE;
 
   assign stall =
-    is_hazard ? (`STALL_PC | `STALL_IF_ID | `STALL_CSRFILE): `STALL_NONE;
+    is_hazard ? (`STALL_PC | `STALL_IF_ID): `STALL_NONE;
 
   // control nop insert
   // only insert if there is no load hazard

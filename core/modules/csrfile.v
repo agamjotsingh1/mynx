@@ -1,7 +1,5 @@
 `include "defs.vh"
 
-// TODO! implement CSR_WRITE in ctl_bus to make sure "phantom writes" dont occur, instructions like CSSRS x5, mstatus, x0 will not even try to write to mstatus
-
 // CSR Fields
 // 1. WARL -> Write Any, Read Legal
 // ..Ignore all illegal writes, preserve the values in these fields
@@ -41,6 +39,7 @@ module csrfile (
   output wire `W(`DLEN)        read_mstatus,
   output wire `W(`DLEN)        read_mie,
   output wire `W(`DLEN)        read_vec,
+  output wire `W(`DLEN)        read_epc,
   output wire `W(`DLEN)        read_mideleg,
   output wire `W(`DLEN)        read_medeleg,
   input  wire `W(`DLEN)        write_mstatus,
@@ -98,12 +97,6 @@ module csrfile (
     end
   end
 
-  wire is_trap_buf_m = (trap_mode_buf == `TRAPMODE_MINTR || trap_mode_buf == `TRAPMODE_MXCEP);
-  wire is_trap_buf_s = (trap_mode_buf == `TRAPMODE_SINTR || trap_mode_buf == `TRAPMODE_SXCEP);
-
-  wire is_trap_m = (trap_mode == `TRAPMODE_MINTR || trap_mode == `TRAPMODE_MXCEP);
-  // wire is_trap_s = (trap_mode == `TRAPMODE_SINTR || trap_mode == `TRAPMODE_SXCEP);
-
 	always @(negedge clk) begin
     if(!hard_stall) begin
       if(rst) begin
@@ -130,11 +123,11 @@ module csrfile (
         // as hardware will write it
         mstatus  <= mstatus_buf;
 
-        if(is_trap_buf_m) begin
+        if(`TRAP_M(trap_mode_buf)) begin
           mcause <= cause_buf;
           mepc   <= epc_buf;
         end
-        else if(is_trap_buf_s) begin
+        else if(`TRAP_S(trap_mode_buf)) begin
           scause <= cause_buf;
           sepc   <= epc_buf;
         end
@@ -176,26 +169,26 @@ module csrfile (
     invalid_address = 0;
 
     case(read_csr)
-      `CSR_MSTATUS : read_data   = mstatus   & `MSTATUS_MASK;
-      `CSR_SSTATUS : read_data   = mstatus   & `SSTATUS_MASK;
-      `CSR_MEPC    : read_data   = mepc      & `MEPC_MASK;
-      `CSR_SEPC    : read_data   = sepc      & `SEPC_MASK;
-      `CSR_MEDELEG : read_data   = medeleg   & `MEDELEG_MASK;
-      `CSR_MIDELEG : read_data   = mideleg   & `MIDELEG_MASK;
-      `CSR_MIE     : read_data   = mie       & `MIE_MASK;
-      `CSR_SIE     : read_data   = mie       & `SIE_MASK;
-      `CSR_MIP     : read_data   = mip       & `MIP_MASK;
-      `CSR_SIP     : read_data   = mip       & `SIP_MASK;
-      `CSR_MTVEC   : read_data   = mtvec     & `MTVEC_MASK;
-      `CSR_STVEC   : read_data   = stvec     & `STVEC_MASK;
-      `CSR_MSCRATCH: read_data   = mscratch;
-      `CSR_SSCRATCH: read_data   = sscratch;
-      `CSR_MCAUSE  : read_data   = mcause;
-      `CSR_SCAUSE  : read_data   = scause;
-      `CSR_MHARTID : read_data   = mhartid;
-      `CSR_PMPCFG0 : read_data   = pmpcfg0   & `PMPCFG0_MASK;
-      `CSR_PMPADDR0: read_data   = pmpaddr0  & `PMPADDR0_MASK;
-      `CSR_SATP    : read_data   = satp      & `SATP_MASK;
+      `CSR_SSTATUS : read_data = mstatus & `SSTATUS_MASK;
+      `CSR_SIE     : read_data = mie     & `SIE_MASK;
+      `CSR_SIP     : read_data = mip     & `SIP_READ_MASK;
+      `CSR_MSTATUS : read_data = mstatus;
+      `CSR_MEPC    : read_data = mepc;
+      `CSR_SEPC    : read_data = sepc;
+      `CSR_MEDELEG : read_data = medeleg;
+      `CSR_MIDELEG : read_data = mideleg;
+      `CSR_MIE     : read_data = mie;
+      `CSR_MIP     : read_data = mip;
+      `CSR_MTVEC   : read_data = mtvec;
+      `CSR_STVEC   : read_data = stvec;
+      `CSR_MSCRATCH: read_data = mscratch;
+      `CSR_SSCRATCH: read_data = sscratch;
+      `CSR_MCAUSE  : read_data = mcause;
+      `CSR_SCAUSE  : read_data = scause;
+      `CSR_MHARTID : read_data = mhartid;
+      `CSR_PMPCFG0 : read_data = pmpcfg0;
+      `CSR_PMPADDR0: read_data = pmpaddr0;
+      `CSR_SATP    : read_data = satp;
       default      : invalid_address = 1;
     endcase
   end
@@ -203,7 +196,8 @@ module csrfile (
   assign read_mip     = mip;
   assign read_mstatus = mstatus;
   assign read_mie     = mie;
-  assign read_vec     = is_trap_m ? mtvec: stvec;
+  assign read_vec     = `TRAP_M(trap_mode) ? mtvec: stvec;
+  assign read_epc     = (trap_mode == `TRAPMODE_MRET) ? mepc: sepc;
   assign read_mideleg = mideleg;
   assign read_medeleg = medeleg;
 endmodule

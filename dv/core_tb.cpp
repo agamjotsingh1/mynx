@@ -68,9 +68,14 @@ int main(int argc, char** argv) {
     infile.close();
 
     // system reset
+    // dut->rst = 1;
+    // tick();
+    // dut->rst = 0;
     dut->rst = 1;
     tick();
-    dut->rst = 0;
+    dut->clk = 0;
+    dut->eval();
+    tfp->dump(time++);
 
     // backdoor memory loading with instructions
     // boot adress at 0x0
@@ -104,6 +109,11 @@ int main(int argc, char** argv) {
             }
         }
     }
+
+    dut->rst = 0;
+    dut->clk = 1;
+    dut->eval();
+    tfp->dump(time++);
 
     /* EXECUTION START */
     std::cout << "Executing pipeline till infinite loop is detected ...\n";
