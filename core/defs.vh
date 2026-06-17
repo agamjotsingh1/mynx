@@ -8,7 +8,7 @@
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
-`define DEPTH             67108864 // number of 64 bit doublewords
+`define DEPTH             524288 // number of 64 bit doublewords
 `define BYTE              8
 `define HALFWORD          16
 `define WORD              32
@@ -49,7 +49,7 @@
 `define OSLICE            [6:0]   // opcode
 `define F3SLICE           [14:12] // funct3
 `define F7SLICE           [31:25] // funct7
-`define F12SLICE           [31:20] // funct12
+`define F12SLICE          [31:20] // funct12
 `define RS1SLICE          [19:15] // rs1
 `define RS2SLICE          [24:20] // rs2
 `define RDSLICE           [11:7]  // rd

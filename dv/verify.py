@@ -60,7 +60,8 @@ timeout = 100
 
 def get_spike_state():
     cmds = f"r {max_instructions}\nreg 0\n"
-    for offset in range(0, 1024 * 8, 8):
+    MAX_DEPTH = 524288;
+    for offset in range(0, MAX_DEPTH, 8):
         cmds += f"mem {0x80000000 + offset:x}\n"
     cmds += "q\n"
     

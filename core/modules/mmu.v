@@ -160,8 +160,8 @@ module mmu (
   wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
     :((lvl == 0) ? mem_write_a: 0);
 
-  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a);
-  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a);
+  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a) & (~mmu_abort_a);
+  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a) & (~mmu_abort_a);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
     :((lvl == 0) ? bw_a: `BW_DBLWORD);
@@ -183,8 +183,8 @@ module mmu (
   wire phymem_raw_write_b = (!pgtbl_en_b) ? mem_write_b
     :((lvl == 0) ? mem_write_b: 0);
 
-  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b);
-  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b);
+  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b) & (~mmu_abort_b);
+  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b) & (~mmu_abort_b);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl == 0) ? bw_b: `BW_DBLWORD);

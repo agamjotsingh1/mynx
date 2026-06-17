@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     // backdoor memory loading with instructions
     // boot adress at 0x0
     std::cout << "Loading " << instructions.size() << " instructions from " << hex_file << " into memory...\n";
-    const uint32_t MAX_DEPTH = 1024; 
+    const uint32_t MAX_DEPTH = 524288; 
 
     for (size_t i = 0; i < instructions.size(); i++) {
         uint32_t instr = instructions[i];
