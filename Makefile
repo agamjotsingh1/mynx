@@ -25,7 +25,7 @@ GREEN   = \033[1;32m
 RED     = \033[1;31m
 NC      = \033[0m
 
-.PHONY: clean build-tests build-riscv-tests run-all test test-all test-riscv-all build-core
+.PHONY: clean build-tests build-riscv-tests run-all test test-all test-riscv-all build-core build-ctests testc-all
 
 tests/hex/%.hex: tests/asm/%.s
 	@mkdir -p tests/hex
