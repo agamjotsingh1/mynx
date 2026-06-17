@@ -8,6 +8,9 @@ ARCH    = -march=rv64i_zicsr -mabi=lp64
 ASFLAGS = $(ARCH)
 CFLAGS  = $(ARCH) -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
 
+# compiler flags
+C_CFLAGS = $(ARCH) -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
+
 VERILATOR = verilator
 VFLAGS    = -Wall --trace --cc --exe --build -I$(CORE)
 
@@ -83,6 +86,32 @@ test-riscv-all: build-core build-riscv-tests
 	done
 	@echo -e "$(GREEN)All RISC-V tests fully verified against Spike!$(NC)"
 
+tests/c/hex/%.hex: tests/c/%.c tests/c/crt0.S
+	@mkdir -p tests/c/hex
+	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S $< -o tests/c/hex/$*_vcore.elf
+	$(OBJCOPY) -O binary --change-addresses=-0x80000000 tests/c/hex/$*_vcore.elf tests/c/hex/$*.bin
+	hexdump -v -e '/4 "%08x\n"' tests/c/hex/$*.bin > $@
+	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S $< -o tests/c/hex/$*_spike.elf
+	@rm -f tests/c/hex/$*.bin tests/c/hex/$*_vcore.elf
+
+build-ctests:
+	@mkdir -p tests/c/hex
+	@for file in tests/c/*.c; do \
+		if [ -f "$$file" ]; then \
+			prog=$$(basename $$file .c); \
+			$(MAKE) --no-print-directory tests/c/hex/$$prog.hex > /dev/null 2>&1; \
+		fi \
+	done
+
+testc-all: build-core build-ctests
+	@for file in tests/c/*.c; do \
+		if [ -f "$$file" ]; then \
+			prog=$$(basename $$file .c); \
+			python3 dv/verify.py tests/c/hex/$${prog}_spike.elf tests/c/hex/$${prog}.hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)C Verification failed on $${prog}!$(NC)"; exit 1; }; \
+		fi \
+	done
+	@echo -e "$(GREEN)All C tests fully verified against Spike!$(NC)"
+
 clean:
-	rm -rf $(OBJ) $(VCD) tests/hex/ tests/riscv/hex/
+	rm -rf $(OBJ) $(VCD) tests/hex/ tests/riscv/hex/ tests/c/hex/
 	@echo -e "$(GREEN)Cleaned up successfully!$(NC)"

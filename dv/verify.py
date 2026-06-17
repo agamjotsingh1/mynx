@@ -67,7 +67,7 @@ def get_spike_state():
     with open("spike.cmd", "w") as f:
         f.write(cmds)
     
-    cmd = ['spike', '--isa=rv64i_zicclsm', '-d', '--debug-cmd=spike.cmd', '-m0x80000000:0x2000', '--pc=0x80000000', elf_file]
+    cmd = ['spike', '--isa=rv64i_zicclsm', '-d', '--debug-cmd=spike.cmd', '-m0x80000000:0x4000000', '--pc=0x80000000', elf_file]
     
     try:
         res = subprocess.run(cmd, text=True, capture_output=True, timeout=timeout)

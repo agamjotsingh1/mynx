@@ -8,7 +8,7 @@
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
-`define DEPTH             1024 // number of 64 bit doublewords
+`define DEPTH             67108864 // number of 64 bit doublewords
 `define BYTE              8
 `define HALFWORD          16
 `define WORD              32

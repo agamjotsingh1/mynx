@@ -3,3 +3,4 @@ vcd/
 .vscode/
 tests/hex/
 tests/riscv/hex
+tests/c/hex
