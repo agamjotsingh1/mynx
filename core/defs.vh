@@ -404,12 +404,16 @@
 // SIP is just restrictively masked MIP
 `define MIP_RST               64'h0000_0000_0000_0000
 `define MIP_MASK              64'h0000_0000_0000_0022
+`define MIP_MEIP_POS          11
+`define MIP_SEIP_POS          9
 `define SIP_MASK              64'h0000_0000_0000_0002
 `define SIP_READ_MASK         64'h0000_0000_0000_0222
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
+// FIXME! add other s-mode interrupt causes
 `define MIP_GET_MICAUSE(mip) \
   (mip[11] ? `MICAUSE_EXT : \
-  (mip[3]  ? `MICAUSE_SOFT: `MICAUSE_TIMER))
+  (mip[9]  ? `SICAUSE_EXT : \
+  (mip[3]  ? `MICAUSE_SOFT: `MICAUSE_TIMER)))
 
 `define MIP_GET_SICAUSE(mip) \
   (mip[9]  ? `SICAUSE_EXT : \
@@ -453,5 +457,39 @@
 `define PMPCFG_W(pmpcfg0)     pmpcfg0[1]
 `define PMPCFG_X(pmpcfg0)     pmpcfg0[2]
 `define PMPCFG_L(pmpcfg0)     pmpcfg0[7]
+
+// UART defs
+`define UARTBASE              64'h0000_0000_1000_0000
+`define UARTTOP               64'h0000_0000_1000_0111
+`define UART_ADDRLEN          3
+// read mode
+`define UART_READ_RHR         3'b000
+`define UART_READ_ISR         3'b010
+`define UART_READ_LSR         3'b101
+`define UART_READ_SCR         3'b111 // scratch
+// write mode
+`define UART_WRITE_THR        3'b000
+`define UART_WRITE_IER        3'b001
+`define UART_WRITE_FCR        3'b010
+`define UART_WRITE_LCR        3'b011
+`define UART_WRITE_SCR        3'b111 // scratch
+// fifo defs
+`define UART_FIFOLEN          16
+// fcr defs
+`define UART_FCR_EN(fcr)      fcr[0]
+`define UART_FCR_RST(fcr)     fcr[1]
+`define UART_FCR_RSTMASK      8'h02
+`define UART_FCR_TRIG(fcr)    fcr[7:6]
+`define UART_FCR_TRIG_1       2'b00
+`define UART_FCR_TRIG_4       2'b01
+`define UART_FCR_TRIG_8       2'b10
+`define UART_FCR_TRIG_14      2'b11
+// ier defs
+`define UART_IER_RX_INTR(ier) ier[0]
+`define UART_IER_TX_INTR(ier) ier[1]
+// isr defs
+`define UART_INTRIDLEN              3
+`define UART_INTRID_DATA_READY      3'b010
+`define UART_INTRID_TX_EMPTY        3'b001
 
 `endif

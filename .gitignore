@@ -2,5 +2,6 @@ obj_dir/
 vcd/
 .vscode/
 tests/hex/
-tests/riscv/hex
-tests/c/hex
+tests/riscv/hex/
+tests/c/hex/
+spike.cmd

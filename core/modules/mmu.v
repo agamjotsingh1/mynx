@@ -1,10 +1,12 @@
 `include "defs.vh"
 `include "modules/mem.v"
+`include "modules/uart.v"
 
 // SIMULATION ONLY
 // true 2 port memory with pagetable
 // a port -> instr fetch
 // b port -> mem fetch
+// cant access mmio from port a
 
 // TODO! add exception if sv39 not setup properly
 // TODO! remove requirement for ports being assigned to isntr/memory
@@ -30,6 +32,12 @@ module mmu (
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
+
+  output wire uart_irq,
+
+  // from verilator (sim only)
+  input wire           rx_valid,
+  input wire `W(`BYTE) rx_data,
 
   // Port A
   input wire  `W(`DLEN)     addr_a,
@@ -189,10 +197,12 @@ module mmu (
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl == 0) ? bw_b: `BW_DBLWORD);
 
+  wire is_uart_b = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
+  wire is_mem_b  = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `MEMBASE): 1;
+
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_b = sign_extend_b;
   wire `W(`DLEN) phymem_data_in_b = data_in_b;
-  assign data_out_b = phymem_data_out_b;
 
   /* --- PMP logic --- */
   wire `W(`DLEN) pmp_bound = pmpaddr0 << `PMPADDRSHIFT;
@@ -260,11 +270,40 @@ module mmu (
     /* verilator lint_off WIDTHTRUNC */
     .addr_b(phymem_addr_b - `MEMBASE),
     /* verilator lint_on WIDTHTRUNC */
-    .mem_read_b(phymem_read_b),
-    .mem_write_b(phymem_write_b),
+    .mem_read_b(phymem_read_b & is_mem_b),
+    .mem_write_b(phymem_write_b & is_mem_b),
     .sign_extend_b(phymem_sign_extend_b),
     .bw_b(phymem_bw_b),
     .data_in_b(phymem_data_in_b),
     .data_out_b(phymem_data_out_b)
   );
+
+  // UART MMIO stuff
+  // only port b can access mmio
+  wire uart_en_b = is_uart_b && (!hard_stall) && (!ext_abort_b);
+  wire `W(`BYTE) uart_out_b;
+
+  /* verilator lint_off WIDTHTRUNC */
+  uart uart_instance (
+    .clk(clk),
+    .rst(rst),
+    .read_en(phymem_read_b & uart_en_b),
+    .write_en(phymem_write_b & uart_en_b),
+    .addr(phymem_addr_b - `UARTBASE),
+    .write_data(data_in_b),
+    .read_data(uart_out_b),
+    .irq(uart_irq),
+    .rx_valid(rx_valid),
+    .rx_data(rx_data)
+  );
+  /* verilator lint_on WIDTHTRUNC */
+
+  /* verilator lint_off WIDTHEXPAND */
+  assign data_out_b = is_mem_b
+    ? phymem_data_out_b
+    : (is_uart_b
+    ? $unsigned(uart_out_b)
+    : 0);
+  /* verilator lint_on WIDTHEXPAND */
+
 endmodule

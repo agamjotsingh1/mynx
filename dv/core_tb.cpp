@@ -16,8 +16,9 @@
 #include <iomanip>
 #include <cassert>
 
-// TODO!
-// figure out a way to do automatic checking
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
@@ -41,8 +42,9 @@ int main(int argc, char** argv) {
 
     std::cout << "====== Starting Core Execution Tests ======\n";
 
-    assert(argc > 1);
+    assert(argc > 2);
     std::string hex_file = argv[1];
+    int logging = std::atoi(argv[2]);
 
     // read the hex file
     std::vector<uint32_t> instructions;
@@ -123,7 +125,28 @@ int main(int argc, char** argv) {
     int loop_counter = 0;
     #define LOOP_THRESHOLD 20
 
+    struct termios old_tio, new_tio;
+    tcgetattr(STDIN_FILENO, &old_tio);
+    new_tio = old_tio;
+    new_tio.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
     while(1){
+        char ch;
+        if (read(STDIN_FILENO, &ch, 1) > 0) {
+            if (ch == 3) { 
+                std::cout << "\n[INFO] Exit requested (Ctrl+C).\n";
+                break;
+            }
+            dut->rx_valid = 1;
+            dut->rx_data = ch;
+        } else {
+            dut->rx_valid = 0;
+            dut->rx_data = 0;
+        }
+
         tick();
 
         uint64_t current_pc = dut->core->___05Fif_pc;
@@ -145,7 +168,21 @@ int main(int argc, char** argv) {
         prev_pc2 = prev_pc1;
         prev_pc1 = current_pc;
     }
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
     /* EXECUTION FINISH */
+
+    if(logging == 0) {
+        dut->eval();
+        tfp->dump(time++);
+        tfp->close();
+        
+        delete dut;
+        delete tfp;
+
+        std::cout << "SUCCESS: Core simulation finished (without log). Check vcd/core_trace.vcd.\n";
+        return 0;
+    }
 
     // riscv abi names mapping
     const char* abi[] = {

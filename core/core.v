@@ -13,7 +13,11 @@
 
 module core (
   input wire clk,
-  input wire rst
+  input wire rst,
+
+  // from verilator (sim only)
+  input wire           rx_valid,
+  input wire `W(`BYTE) rx_data
 );
   reg  `W(`PRIVLEN) priv;
   wire `W(`PRIVLEN) next_priv;
@@ -107,6 +111,7 @@ module core (
   wire `W(`CTL_BUSLEN)  __mem_ctl_bus;
   wire `W(`DLEN)        __mem_mem_res;
   wire `W(`DLEN)        __mem_regw_data;
+  wire                  __mem_uart_irq;
 
   wire                  __wb_valid;
   wire `W(`DLEN)        __wb_pc;
@@ -146,6 +151,11 @@ module core (
 
     .pmpaddr0(__id_pmpaddr0),
     .pmpcfg0(__id_pmpcfg0),
+
+    .uart_irq(__mem_uart_irq),
+
+    .rx_valid(rx_valid),
+    .rx_data(rx_data),
 
     // port a for instr fetch
     .addr_a(__mem_instr_addr),
@@ -240,6 +250,9 @@ module core (
     // pmp handling
     .pmpaddr0(__id_pmpaddr0),
     .pmpcfg0(__id_pmpcfg0),
+
+    // uart irq handling
+    .__mem_uart_irq(__mem_uart_irq),
 
     // trap handling
     .__wb_trap_mode(__wb_trap_mode),

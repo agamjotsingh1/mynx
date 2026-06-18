@@ -1,3 +1,5 @@
+void trap_handler() {}
+
 int main() {
   volatile long arr[5] = {1, 2, 3, 4, 5};
   volatile long sum = 0;

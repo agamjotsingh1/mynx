@@ -86,12 +86,12 @@ test-riscv-all: build-core build-riscv-tests
 	done
 	@echo -e "$(GREEN)All RISC-V tests fully verified against Spike!$(NC)"
 
-tests/c/hex/%.hex: tests/c/%.c tests/c/crt0.S
+tests/c/hex/%.hex: tests/c/%.c tests/c/crt0.S tests/c/trapvec.S
 	@mkdir -p tests/c/hex
-	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S $< -o tests/c/hex/$*_vcore.elf
+	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S tests/c/trapvec.S $< -o tests/c/hex/$*_vcore.elf
 	$(OBJCOPY) -O binary --change-addresses=-0x80000000 tests/c/hex/$*_vcore.elf tests/c/hex/$*.bin
 	hexdump -v -e '/4 "%08x\n"' tests/c/hex/$*.bin > $@
-	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S $< -o tests/c/hex/$*_spike.elf
+	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S tests/c/trapvec.S $< -o tests/c/hex/$*_spike.elf
 	@rm -f tests/c/hex/$*.bin tests/c/hex/$*_vcore.elf
 
 build-ctests:
@@ -102,6 +102,13 @@ build-ctests:
 			$(MAKE) --no-print-directory tests/c/hex/$$prog.hex > /dev/null 2>&1; \
 		fi \
 	done
+
+runc: build-core tests/c/hex/$(PROG).hex
+	./$(OBJ)/core/Vcore tests/c/hex/$(PROG).hex 0
+
+testc: build-core tests/c/hex/$(PROG).hex
+	@python3 dv/verify.py tests/c/hex/$(PROG)_spike.elf tests/c/hex/$(PROG).hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)C Verification failed on $(PROG)!$(NC)"; exit 1; };
+	@echo -e "$(GREEN)C Test $(PROG) verified successfully against Spike!$(NC)"
 
 testc-all: build-core build-ctests
 	@for file in tests/c/*.c; do \

@@ -117,7 +117,7 @@ def get_spike_state():
 
 def get_vcore_state():
     try:
-        res = subprocess.run([vcore_bin, hex_file], text=True, capture_output=True, timeout=timeout)
+        res = subprocess.run([vcore_bin, hex_file, "1"], text=True, capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         print(f"\r\033[K{red('\u2717')} Vcore simulation hung (timeout).")
         sys.exit(1)
