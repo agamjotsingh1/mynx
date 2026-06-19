@@ -10,7 +10,9 @@ typedef unsigned char      uint8_t;
 #define csrs(csr, val) asm volatile ("csrs " #csr ", %0" : : "r"(val))
 #define csrc(csr, val) asm volatile ("csrc " #csr ", %0" : : "r"(val))
 
-#define UARTBASE 0x10000000
-#define MEMBASE  0x80000000
+#define UARTBASE   0x10000000
+#define BLKDEVBASE 0x20000000
+#define PLICBASE   0x30000000
+#define MEMBASE    0x80000000
 
 #endif

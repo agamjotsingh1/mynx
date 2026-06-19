@@ -66,6 +66,8 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Vcore* dut = new Vcore;
 
+    init_disk();
+
     Verilated::traceEverOn(true);
     VerilatedVcdC* tfp = new VerilatedVcdC;
     dut->trace(tfp, 99);
@@ -223,6 +225,7 @@ int main(int argc, char** argv) {
         delete tfp;
 
         std::cout << "SUCCESS: Core simulation finished (without log). Check vcd/core_trace.vcd.\n";
+        close_disk();
         return 0;
     }
 
@@ -314,5 +317,6 @@ int main(int argc, char** argv) {
     delete tfp;
 
     std::cout << "SUCCESS: Core simulation finished. Check vcd/core_trace.vcd.\n";
+    close_disk();
     return 0;
 }

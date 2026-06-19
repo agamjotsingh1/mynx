@@ -149,7 +149,9 @@ module mem (
         .data_out_b(data_out_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
 
         // PORT C
-        .addr_c(dma_addr + i),
+        /* verilator lint_off WIDTHTRUNC */
+        .addr_c(dma_addr >> $clog2(`BYTE)),
+        /* verilator lint_on WIDTHTRUNC */
         .mem_read_c(dma_read_en),
         .mem_write_c(dma_write_en),
         .data_in_c(dma_write_data[(i << $clog2(`BANKLEN)) +: `BANKLEN]),

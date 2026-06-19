@@ -69,6 +69,7 @@ module blkdev (
         irq <= 0;
       end
 
+      /* verilator lint_off CASEINCOMPLETE */
       case(state)
         STATE_IDLE: begin
           dma_write_en <= 0;
@@ -96,10 +97,12 @@ module blkdev (
         STATE_READ_DISK: begin
           if(word_count < `SECTOR_WORDCOUNT) begin
             dma_write_en <= 1;
+            /* verilator lint_off WIDTHEXPAND */
             dma_addr <= mem_addr + {word_count, 3'b000}; // word_count * 8 (64 bit write)
             // fetch (instant) the 64-bit word from cpp 
             // sector address -> word (4 bytes)
             dma_write_data <= host_disk_read_word(sector[`WORD-1:0], $unsigned(word_count));
+            /* verilator lint_on WIDTHEXPAND */
             word_count <= word_count + 1;
           end else begin
             state <= STATE_IDLE;
@@ -114,7 +117,9 @@ module blkdev (
         STATE_WRITE_RAM_REQ: begin
           if (word_count < `SECTOR_WORDCOUNT) begin
             dma_read_en <= 1;
+            /* verilator lint_off WIDTHEXPAND */
             dma_addr <= mem_addr + {word_count, 3'b000};  // word_count * 8 (64 bit write)
+            /* verilator lint_on WIDTHEXPAND */
             state <= STATE_WRITE_RAM_ACK;
           end else begin
             dma_read_en <= 0;
@@ -129,11 +134,14 @@ module blkdev (
         STATE_WRITE_RAM_ACK: begin
           dma_read_en <= 0;
           // send the dma data out to the C++ testbench
+          /* verilator lint_off WIDTHEXPAND */
           host_disk_write_word(sector[`WORD-1:0], $unsigned(word_count), dma_read_data);
+            /* verilator lint_on WIDTHEXPAND */
           word_count <= word_count + 1;
           state <= STATE_WRITE_RAM_REQ;
         end
       endcase
+      /* verilator lint_on CASEINCOMPLETE */
     end
   end
 endmodule
