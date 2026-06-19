@@ -7,6 +7,7 @@
 // DALB is not enabled
 // no tx fifo and tx is instantaneous in sim
 // reference: http://byterunner.com/16550.html
+// TODO! enable fifo triggers (set to default 1)
 module uart (
   input wire clk,
   input wire rst,

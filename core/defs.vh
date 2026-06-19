@@ -406,6 +406,8 @@
 `define MIP_MASK              64'h0000_0000_0000_0022
 `define MIP_MEIP_POS          11
 `define MIP_SEIP_POS          9
+`define MIP_MTIP_POS          7
+`define MIP_STIP_POS          5
 `define SIP_MASK              64'h0000_0000_0000_0002
 `define SIP_READ_MASK         64'h0000_0000_0000_0222
 // get S/M interrupt cause from mip (assumes there is an interrupt, atleast a software one)
@@ -514,5 +516,12 @@
 `define PLIC_IRQ_NONE         64'd0
 `define PLIC_IRQ_UART         64'd1
 `define PLIC_IRQ_BLKDEV       64'd2
+
+// CLINT defs
+`define CLINTBASE             64'h0000_0000_4000_0000
+`define CLINTTOP              64'h0000_0000_4000_0008
+`define CLINT_MTIME           64'h0000_0000_0000_0000
+`define CLINT_MTIMECMP        64'h0000_0000_0000_0008
+
 
 `endif

@@ -64,7 +64,8 @@ module id_stage (
   output wire `W(`DLEN)  pmpcfg0,
 
   // irq
-  input wire __mem_irq,
+  input wire __mem_ext_irq,
+  input wire __mem_timer_irq,
 
   // trap handling ports
   input wire  `W(`TRAPMODELEN) __wb_trap_mode,
@@ -192,8 +193,12 @@ module id_stage (
     .read_pmpcfg0(pmpcfg0),
 
     // ext irq
-    .m_ext_irq(0), // TODO! change to timer interrupt (CLINT)
-    .s_ext_irq(__mem_irq),
+    .m_ext_irq(0),
+    .s_ext_irq(__mem_ext_irq),
+
+    // timer irq
+    .m_timer_irq(__mem_timer_irq),
+    .s_timer_irq(0),
 
     // trap handling ports
     .trap_mode(__wb_trap_mode),

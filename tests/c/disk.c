@@ -97,6 +97,5 @@ int main(){
     __asm__ volatile("nop");
   }
 
-  // puts("written to fs.img\n");
   return 1;
 }

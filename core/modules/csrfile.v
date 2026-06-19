@@ -41,6 +41,10 @@ module csrfile (
   input wire m_ext_irq,
   input wire s_ext_irq,
 
+  // timer interrupt req
+  input wire m_timer_irq,
+  input wire s_timer_irq,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) trap_mode,
   output wire `W(`DLEN)        read_mip,
@@ -173,10 +177,12 @@ module csrfile (
 	end
 
   /* verilator lint_off WIDTHEXPAND */
-  wire `W(`DLEN) mip_ext_irq =
+  wire `W(`DLEN) mip_with_irq =
     mip | 
     ((m_ext_irq) << `MIP_MEIP_POS) |
-    ((s_ext_irq) << `MIP_SEIP_POS);
+    ((s_ext_irq) << `MIP_SEIP_POS) |
+    ((m_timer_irq) << `MIP_MTIP_POS) |
+    ((s_timer_irq) << `MIP_STIP_POS);
   /* verilator lint_on WIDTHEXPAND */
 
   always @(*) begin
@@ -193,7 +199,7 @@ module csrfile (
       `CSR_MEDELEG : read_data = medeleg;
       `CSR_MIDELEG : read_data = mideleg;
       `CSR_MIE     : read_data = mie;
-      `CSR_MIP     : read_data = mip_ext_irq;
+      `CSR_MIP     : read_data = mip_with_irq;
       `CSR_MTVEC   : read_data = mtvec;
       `CSR_STVEC   : read_data = stvec;
       `CSR_MSCRATCH: read_data = mscratch;
@@ -208,7 +214,7 @@ module csrfile (
     endcase
   end
 
-  assign read_mip     = mip_ext_irq;
+  assign read_mip     = mip_with_irq;
   assign read_mstatus = mstatus;
   assign read_mie     = mie;
   assign read_vec     = `TRAP_M(trap_mode) ? mtvec: stvec;

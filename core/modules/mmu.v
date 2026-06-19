@@ -2,6 +2,7 @@
 `include "modules/mem.v"
 `include "modules/uart.v"
 `include "modules/blkdev.v"
+`include "modules/clint.v"
 
 // SIMULATION ONLY
 // true 2 port memory with pagetable
@@ -34,7 +35,8 @@ module mmu (
   input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
 
-  output wire irq,
+  output wire ext_irq,
+  output wire timer_irq,
 
   // from verilator (sim only)
   input wire           rx_valid,
@@ -201,6 +203,7 @@ module mmu (
   wire is_uart_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
   wire is_blkdev_b = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
   wire is_plic_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
+  wire is_clint_b  = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
   wire is_mem_b    = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `MEMBASE): 1;
 
   // for pgtbl walk, sign extend, data in doesnt matter 
@@ -341,7 +344,7 @@ module mmu (
     .irq(blkdev_irq)
   );
 
-  /* MMIO #2 - PLIC */
+  /* MMIO #3 - PLIC */
   // extremely barebones and simple plic
   reg `W(`DLEN) plic;
 
@@ -356,9 +359,26 @@ module mmu (
     else if(phymem_read_b && plic_en_b) plic <= `PLIC_IRQ_NONE;
   end
 
+  /* MMIO #4 - CLINT */
+  wire clint_en_b = is_clint_b && (!hard_stall) && (!ext_abort_b);
+  wire clint_irq;
+  wire `W(`DLEN) clint_out_b;
+
+  clint clint_instance (
+    .clk(clk),
+    .rst(rst),
+    .mmio_read_en(phymem_read_b & clint_en_b),
+    .mmio_write_en(phymem_write_b & clint_en_b),
+    .mmio_addr(phymem_addr_b - `CLINTBASE),
+    .mmio_write_data(data_in_b),
+    .mmio_read_data(clint_out_b),
+    .irq(clint_irq)
+  );
+
   /* MMIO FINISH */
 
-  assign irq = uart_irq | blkdev_irq;
+  assign ext_irq = uart_irq | blkdev_irq;
+  assign timer_irq = clint_irq;
 
   /* verilator lint_off WIDTHEXPAND */
   always @(*) begin
@@ -372,6 +392,8 @@ module mmu (
       data_out_b = blkdev_out_b;
     else if(is_plic_b)
       data_out_b = plic_out_b;
+    else if(is_clint_b)
+      data_out_b = clint_out_b;
   end
   /* verilator lint_on WIDTHEXPAND */
 endmodule
