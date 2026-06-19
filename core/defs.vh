@@ -100,6 +100,9 @@
 `define F3CSRRCI          3'h7
 `define F3NULL            3'h0
 
+// funct7 defs
+`define F7SFENCEVMA       7'h09
+
 // funct12 defs
 `define F12ECALL          12'b000000000000
 `define F12MRET           12'b001100000010
@@ -199,7 +202,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            25
+`define CTL_BUSLEN            26
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -219,7 +222,8 @@
 `define SRET(ctl_bus)         ctl_bus[21]    // 1 if instr is sret
 `define ECALL(ctl_bus)        ctl_bus[22]    // 1 if instr is ecall
 `define EBREAK(ctl_bus)       ctl_bus[23]    // 1 if instr is ebreak
-`define ILLEGAL(ctl_bus)      ctl_bus[24]    // 1 if instr is illegal
+`define SFENCEVMA(ctl_bus)    ctl_bus[24]    // 1 if instr is sfence.vma
+`define ILLEGAL(ctl_bus)      ctl_bus[25]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 // "stall" is wor type bus

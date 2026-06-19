@@ -7,6 +7,7 @@ module ctl (
 );
   wire `W(`OLEN)   opcode  = instr`OSLICE;
   wire `W(`F3LEN)  funct3  = instr`F3SLICE;
+  wire `W(`F7LEN)  funct7  = instr`F7SLICE;
   wire `W(`F12LEN) funct12 = instr`F12SLICE;
   wire `W(`RLEN)   rs1     = instr`RS1SLICE;
   wire `W(`RLEN)   rd      = instr`RDSLICE;
@@ -51,7 +52,10 @@ module ctl (
 
           // ecall/mret/sret
           `F3NULL: begin
-            if(rs1 == 0 && rd == 0) begin
+            if(funct7 == `F7SFENCEVMA) begin
+              `SFENCEVMA(ctl_bus) = 1;
+            end
+            else if(rs1 == 0 && rd == 0) begin
               case(funct12)
                 `F12MRET  : `MRET(ctl_bus) = 1;
                 `F12SRET  : `SRET(ctl_bus) = 1;

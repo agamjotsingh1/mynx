@@ -42,7 +42,7 @@ void trap_handler() {
 
 int main(){
   csrw(mtvec, trapvec);
-  csrs(mie, 1 << 7);     // enable STIP
+  csrs(mie, 1 << 7);     // enable MTIP
   csrs(mstatus, 1 << 3); // enable global M-Mode interrupts
   CLINT_MTIMECMP = 20000;
 

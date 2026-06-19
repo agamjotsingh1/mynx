@@ -44,8 +44,14 @@ module hdu (
     ((__mem_rd == __id_rs1) || (__mem_rd == __id_rs2));
   /* verilator lint_on WIDTHTRUNC */
 
+  wire sfence_barrier_hazard = `SFENCEVMA(__id_ctl_bus) &&
+    (`CSR_WRITE(__ex_ctl_bus) || `CSR_WRITE(__mem_ctl_bus));
+
   wire is_hazard =
-    load_hazard || control_csr_hazard  || control_csr_load_hazard;
+    load_hazard ||
+    control_csr_hazard  || 
+    control_csr_load_hazard || 
+    sfence_barrier_hazard;
 
   assign nopi =
     is_hazard ? `NOPI_ID_EX: `NOPI_NONE;
