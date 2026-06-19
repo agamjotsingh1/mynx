@@ -68,6 +68,10 @@ module csrfile (
   assign illegal_csr =
     invalid_address | ro_violation | priv_violation;
 
+  // always @(posedge clk) begin
+  //   $display("invalidaddr: %d, roviol: %d, privviol: %d, csr: %x", invalid_address, ro_violation, priv_violation, read_csr);
+  // end
+
   // CSRs
   reg `W(`DLEN) mstatus;
   reg `W(`DLEN) mepc;

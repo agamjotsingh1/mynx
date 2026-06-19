@@ -225,33 +225,37 @@ module mmu (
     if(pmp_enforce) begin
       if(phymem_addr_a < pmp_bound) begin
         // Address matches Entry 0, check specific permissions
-        if (phymem_raw_read_a && !`PMPCFG_R(pmpcfg0)) begin
+        if(phymem_raw_read_a && !`PMPCFG_R(pmpcfg0)) begin
           pmp_xcep_cause_a = `XCEP_LOAD_ACCESS_FAULT;
           pmp_fault_a = 1;
         end
-        if (phymem_raw_write_a && !`PMPCFG_W(pmpcfg0)) begin
+        if(phymem_raw_write_a && !`PMPCFG_W(pmpcfg0)) begin
           pmp_xcep_cause_a = `XCEP_STORE_AMO_ACCESS_FAULT;
           pmp_fault_a = 1'b1;
         end
-        if (!`PMPCFG_X(pmpcfg0)) begin
+        if(!`PMPCFG_X(pmpcfg0)) begin
           pmp_xcep_cause_a = `XCEP_INST_ACCESS_FAULT;
           pmp_fault_a = 1'b1;
         end
-      end else begin
+      end
+      else if (phymem_raw_read_a || phymem_raw_write_a) begin
+        pmp_xcep_cause_a = `XCEP_INST_ACCESS_FAULT;
         pmp_fault_a = 1'b1; 
       end
 
       if(phymem_addr_b < pmp_bound) begin
         // Address matches Entry 0, check specific permissions
-        if (phymem_raw_read_b && !`PMPCFG_R(pmpcfg0)) begin
+        if(phymem_raw_read_b && !`PMPCFG_R(pmpcfg0)) begin
           pmp_xcep_cause_b = `XCEP_LOAD_ACCESS_FAULT;
           pmp_fault_b = 1;
         end
-        if (phymem_raw_write_b && !`PMPCFG_W(pmpcfg0)) begin
+        if(phymem_raw_write_b && !`PMPCFG_W(pmpcfg0)) begin
           pmp_xcep_cause_b = `XCEP_STORE_AMO_ACCESS_FAULT;
           pmp_fault_b = 1;
         end
-      end else begin
+      end
+      else if (phymem_raw_read_b || phymem_raw_write_b) begin
+        pmp_xcep_cause_b = phymem_raw_write_b ? `XCEP_STORE_AMO_ACCESS_FAULT : `XCEP_LOAD_ACCESS_FAULT;
         pmp_fault_b = 1;
       end
     end

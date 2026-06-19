@@ -69,19 +69,19 @@ int main(int argc, char** argv) {
     init_disk();
 
     Verilated::traceEverOn(true);
-    VerilatedVcdC* tfp = new VerilatedVcdC;
-    dut->trace(tfp, 99);
-    tfp->open("vcd/core_trace.vcd");
+    // VerilatedVcdC* tfp = new VerilatedVcdC;
+    // dut->trace(tfp, 99);
+    // tfp->open("vcd/core_trace.vcd");
 
     int time = 0;
     auto tick = [&]() {
         dut->clk = 0;
         dut->eval();
-        tfp->dump(time++);
+        // tfp->dump(time++);
         
         dut->clk = 1;
         dut->eval();
-        tfp->dump(time++);
+        // tfp->dump(time++);
     };
 
     std::cout << "====== Starting Core Execution Tests ======\n";
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
     tick();
     dut->clk = 0;
     dut->eval();
-    tfp->dump(time++);
+    // tfp->dump(time++);
 
     // backdoor memory loading with instructions
     // boot adress at 0x0
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     dut->rst = 0;
     dut->clk = 1;
     dut->eval();
-    tfp->dump(time++);
+    // tfp->dump(time++);
 
     /* EXECUTION START */
     std::cout << "Executing pipeline till infinite loop is detected ...\n";
@@ -218,11 +218,11 @@ int main(int argc, char** argv) {
 
     if(logging == 0) {
         dut->eval();
-        tfp->dump(time++);
-        tfp->close();
+        // tfp->dump(time++);
+        // tfp->close();
         
         delete dut;
-        delete tfp;
+        // delete tfp;
 
         std::cout << "SUCCESS: Core simulation finished (without log). Check vcd/core_trace.vcd.\n";
         close_disk();
@@ -310,11 +310,11 @@ int main(int argc, char** argv) {
     std::cout << "==============================================================================\n\n";
 
     dut->eval();
-    tfp->dump(time++);
-    tfp->close();
+    // tfp->dump(time++);
+    // tfp->close();
     
     delete dut;
-    delete tfp;
+    // delete tfp;
 
     std::cout << "SUCCESS: Core simulation finished. Check vcd/core_trace.vcd.\n";
     close_disk();

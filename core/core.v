@@ -46,6 +46,16 @@ module core (
   wire `W(`DLEN)        __if_xcep = 0;
   wire `W(`DLEN)        __if_uxcep;
 
+  // always @(posedge clk) begin
+  //   $display("-------------- PRIV: %x -----------------", priv);
+  //   $display("IF:  pc: %x, instr: %x, uxcep: %x", __if_pc, __if_instr, __if_uxcep);
+  //   $display("ID:  pc: %x, instr: %x, uxcep: %x", __id_pc, __id_instr, __id_uxcep);
+  //   $display("EX:  pc: %x, uxcep: %x", __ex_pc, __ex_uxcep);
+  //   $display("MEM: pc: %x, uxcep: %x", __mem_pc, __mem_uxcep);
+  //   $display("WB:  pc: %x, trap_taken: %b, trap_mode: %x", __wb_pc, __wb_trap_taken, __wb_trap_mode);
+  //   $display("-----------------------------------------\n");
+  // end
+
   wire                  __id_valid;
   wire `W(`DLEN)        __id_pc;
   wire `W(`DLEN)        __id_anchor_pc;

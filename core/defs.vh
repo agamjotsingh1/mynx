@@ -8,7 +8,7 @@
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
-`define DEPTH             524288 // number of 64 bit doublewords
+`define DEPTH             8388608 // number of 64 bit doublewords = 1024*1024*64 bytes
 `define BYTE              8
 `define HALFWORD          16
 `define WORD              32
@@ -146,8 +146,8 @@
 `define BOP_SLTI          17'b0010011_010_zzzzzzz
 `define BOP_SLTIU         17'b0010011_011_zzzzzzz
 `define BOP_SLLI          17'b0010011_001_zzzzzzz
-`define BOP_SRLI          17'b0010011_101_0000000 
-`define BOP_SRAI          17'b0010011_101_0100000
+`define BOP_SRLI          17'b0010011_101_000000z
+`define BOP_SRAI          17'b0010011_101_010000z
 `define BOP_SLLIW         17'b0011011_001_zzzzzzz
 `define BOP_SRLIW         17'b0011011_101_0000000
 `define BOP_SRAIW         17'b0011011_101_0100000

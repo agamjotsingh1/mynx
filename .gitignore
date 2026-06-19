@@ -6,3 +6,17 @@ tests/riscv/hex/
 tests/c/hex/
 spike.cmd
 fs.img
+
+*.o
+*.d
+*.asm
+*.sym
+*.img
+*~
+
+xv6/_*
+xv6/initcode
+xv6/initcode.out
+xv6/kernel/kernel
+xv6/mkfs/mkfs
+xv6/user/usys.S

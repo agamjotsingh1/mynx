@@ -120,6 +120,17 @@ testc-all: build-core build-ctests
 	done
 	@echo -e "$(GREEN)All C tests fully verified against Spike!$(NC)"
 
+runkernel: build-core
+	@echo -e "$(GREEN)Compiling xv6...$(NC)"
+	@$(MAKE) -C xv6 kernel/kernel fs.img
+	@echo -e "$(GREEN)Converting kernel to hex format...$(NC)"
+	$(OBJCOPY) -O binary --change-addresses=-0x80000000 xv6/kernel/kernel xv6/kernel/kernel.bin
+	hexdump -v -e '/4 "%08x\n"' xv6/kernel/kernel.bin > xv6/kernel/kernel.hex
+	@echo -e "$(GREEN)Copying fs.img for block device...$(NC)"
+	@cp xv6/fs.img ./fs.img
+	@echo -e "$(GREEN)Booting xv6 on core...$(NC)"
+	./$(OBJ)/core/Vcore xv6/kernel/kernel.hex 0
+
 clean:
 	rm -rf $(OBJ) $(VCD) tests/hex/ tests/riscv/hex/ tests/c/hex/
 	rm spike.cmd
