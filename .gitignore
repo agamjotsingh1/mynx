@@ -5,3 +5,4 @@ tests/hex/
 tests/riscv/hex/
 tests/c/hex/
 spike.cmd
+fs.img

@@ -104,6 +104,7 @@ build-ctests:
 	done
 
 runc: build-core tests/c/hex/$(PROG).hex
+	touch fs.img
 	./$(OBJ)/core/Vcore tests/c/hex/$(PROG).hex 0
 
 testc: build-core tests/c/hex/$(PROG).hex
@@ -121,4 +122,5 @@ testc-all: build-core build-ctests
 
 clean:
 	rm -rf $(OBJ) $(VCD) tests/hex/ tests/riscv/hex/ tests/c/hex/
+	rm spike.cmd
 	@echo -e "$(GREEN)Cleaned up successfully!$(NC)"

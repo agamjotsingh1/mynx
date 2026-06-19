@@ -19,6 +19,48 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "svdpi.h"
+
+static FILE* disk_file = nullptr;
+
+void init_disk() {
+    disk_file = fopen("fs.img", "r+b");
+
+    if(!disk_file) {
+        std::cerr << "[WARNING] Could not open fs.img! Disk operations will fail." << std::endl;
+    }
+}
+
+void close_disk() {
+    if(disk_file) fclose(disk_file);
+}
+
+extern "C" {
+    long long host_disk_read_word(int sector, int word_offset) {
+        if (!disk_file) return 0;
+        
+        uint64_t data = 0;
+        long offset = (sector * 512) + (word_offset * 8);
+        
+        fseek(disk_file, offset, SEEK_SET);
+        fread(&data, sizeof(uint64_t), 1, disk_file);
+        
+        return data;
+    }
+
+    void host_disk_write_word(int sector, int word_offset, long long data) {
+        if (!disk_file) return;
+        
+        uint64_t out_data = (uint64_t)data;
+        long offset = (sector * 512) + (word_offset * 8);
+        
+        fseek(disk_file, offset, SEEK_SET);
+        fwrite(&out_data, sizeof(uint64_t), 1, disk_file);
+        
+        fflush(disk_file); 
+    }
+
+}
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);

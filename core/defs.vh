@@ -492,4 +492,27 @@
 `define UART_INTRID_DATA_READY      3'b010
 `define UART_INTRID_TX_EMPTY        3'b001
 
+// BLKDEV defs
+`define BLKDEVBASE            64'h0000_0000_2000_0000
+`define BLKDEVTOP             64'h0000_0000_2000_0018
+`define BLKDEV_STATUS         64'h0000_0000_0000_0000
+`define BLKDEV_SECTOR         64'h0000_0000_0000_0008
+`define BLKDEV_MEM_ADDR       64'h0000_0000_0000_0010
+`define BLKDEV_CMD            64'h0000_0000_0000_0018
+`define SECTOR_WORDCOUNT      64 // 512 bytes (64*8 bytes) = 1 sector
+
+`define BLKDEV_IDLE           64'd0
+`define BLKDEV_BUSY           64'd1
+`define BLKDEV_ERROR          64'd2
+
+`define BLKDEV_CMD_READ       64'd1
+`define BLKDEV_CMD_WRITE      64'd2
+
+// PLIC defs
+`define PLICBASE              64'h0000_0000_3000_0000
+`define PLICTOP               64'h0000_0000_3000_0000
+`define PLIC_IRQ_NONE         64'd0
+`define PLIC_IRQ_UART         64'd1
+`define PLIC_IRQ_BLKDEV       64'd2
+
 `endif

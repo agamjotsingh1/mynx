@@ -1,6 +1,7 @@
 `include "defs.vh"
 `include "modules/mem.v"
 `include "modules/uart.v"
+`include "modules/blkdev.v"
 
 // SIMULATION ONLY
 // true 2 port memory with pagetable
@@ -33,7 +34,7 @@ module mmu (
   input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
 
-  output wire uart_irq,
+  output wire irq,
 
   // from verilator (sim only)
   input wire           rx_valid,
@@ -55,7 +56,7 @@ module mmu (
   input wire                sign_extend_b,
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
-  output wire  `W(`DLEN)    data_out_b
+  output reg  `W(`DLEN)     data_out_b
 );
   wire ext_abort_a = `XCEP(xcep_a)  | __wb_trap_taken;
   wire ext_abort_b = `XCEP(xcep_b)  | __wb_trap_taken;
@@ -197,8 +198,10 @@ module mmu (
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl == 0) ? bw_b: `BW_DBLWORD);
 
-  wire is_uart_b = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
-  wire is_mem_b  = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `MEMBASE): 1;
+  wire is_uart_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
+  wire is_blkdev_b = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
+  wire is_plic_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
+  wire is_mem_b    = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `MEMBASE): 1;
 
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_b = sign_extend_b;
@@ -252,6 +255,12 @@ module mmu (
   end
   /* ----------------- */
 
+  wire dma_write_en;
+  wire dma_read_en;
+  wire `W(`DLEN) dma_addr;
+  wire `W(`DLEN) dma_write_data;
+  wire `W(`DLEN) dma_read_data;
+
   mem mem_instance (
     .clk(clk),
 
@@ -275,12 +284,23 @@ module mmu (
     .sign_extend_b(phymem_sign_extend_b),
     .bw_b(phymem_bw_b),
     .data_in_b(phymem_data_in_b),
-    .data_out_b(phymem_data_out_b)
+    .data_out_b(phymem_data_out_b),
+
+    // DMA port
+    .dma_write_en(dma_write_en),
+    .dma_read_en(dma_read_en),
+    /* verilator lint_off WIDTHTRUNC */
+    .dma_addr(dma_addr - `MEMBASE),
+    /* verilator lint_on WIDTHTRUNC */
+    .dma_write_data(dma_write_data),
+    .dma_read_data(dma_read_data)
   );
 
-  // UART MMIO stuff
+  /* MMIO #1 - UART */
+
   // only port b can access mmio
   wire uart_en_b = is_uart_b && (!hard_stall) && (!ext_abort_b);
+  wire uart_irq;
   wire `W(`BYTE) uart_out_b;
 
   /* verilator lint_off WIDTHTRUNC */
@@ -298,12 +318,60 @@ module mmu (
   );
   /* verilator lint_on WIDTHTRUNC */
 
-  /* verilator lint_off WIDTHEXPAND */
-  assign data_out_b = is_mem_b
-    ? phymem_data_out_b
-    : (is_uart_b
-    ? $unsigned(uart_out_b)
-    : 0);
-  /* verilator lint_on WIDTHEXPAND */
+  /* MMIO #2 - BLKDEV */
+  wire blkdev_en_b = is_blkdev_b && (!hard_stall) && (!ext_abort_b);
+  wire blkdev_irq;
+  wire `W(`DLEN) blkdev_out_b;
 
+  blkdev blkdev_instance (
+    .clk(clk),
+    .rst(rst),
+    .mmio_read_en(phymem_read_b & blkdev_en_b),
+    .mmio_write_en(phymem_write_b & blkdev_en_b),
+    .mmio_addr(phymem_addr_b - `BLKDEVBASE),
+    .mmio_write_data(data_in_b),
+    .mmio_read_data(blkdev_out_b),
+
+    .dma_write_en(dma_write_en),
+    .dma_read_en(dma_read_en),
+    .dma_addr(dma_addr),
+    .dma_write_data(dma_write_data),
+    .dma_read_data(dma_read_data),
+
+    .irq(blkdev_irq)
+  );
+
+  /* MMIO #2 - PLIC */
+  // extremely barebones and simple plic
+  reg `W(`DLEN) plic;
+
+  wire plic_en_b = is_plic_b && (!hard_stall) && (!ext_abort_b);
+  wire `W(`DLEN) plic_out_b = plic;
+  
+  always @(posedge clk) begin
+    if(rst) plic <= `PLIC_IRQ_NONE;
+    else if(uart_irq) plic <= `PLIC_IRQ_UART;
+    else if(blkdev_irq) plic <= `PLIC_IRQ_BLKDEV;
+    // clear the PLIC if you read from it
+    else if(phymem_read_b && plic_en_b) plic <= `PLIC_IRQ_NONE;
+  end
+
+  /* MMIO FINISH */
+
+  assign irq = uart_irq | blkdev_irq;
+
+  /* verilator lint_off WIDTHEXPAND */
+  always @(*) begin
+    data_out_b = 0;
+
+    if(is_mem_b)
+      data_out_b = phymem_data_out_b;
+    else if(is_uart_b)
+      data_out_b = $unsigned(uart_out_b);
+    else if(is_blkdev_b)
+      data_out_b = blkdev_out_b;
+    else if(is_plic_b)
+      data_out_b = plic_out_b;
+  end
+  /* verilator lint_on WIDTHEXPAND */
 endmodule

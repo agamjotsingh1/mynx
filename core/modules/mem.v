@@ -7,7 +7,6 @@
 // supports parallel access different bit widths
 
 // TODO! make mem_read and mem_write mutually exclusive
-// BUG! if hard_stall is on and a trap occurs
 module mem (
   input wire clk,
 
@@ -27,7 +26,15 @@ module mem (
   input wire                sign_extend_b,
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
-  output reg  `W(`DLEN)     data_out_b
+  output reg  `W(`DLEN)     data_out_b,
+
+  // DMA access for disk operations
+  // address must be 64 bit aligned
+  input wire dma_write_en,
+  input wire dma_read_en,
+  input wire `W(`DLEN) dma_addr,
+  input wire `W(`DLEN) dma_write_data,
+  output wire `W(`DLEN) dma_read_data
 );
   // --- PORT A ---
   wire `W($clog2(`NBANKS)) start_bank_a    = addr_a[0 +: $clog2(`NBANKS)];
@@ -139,7 +146,14 @@ module mem (
         .mem_read_b(bank_enmask_b[i] & mem_read_b),
         .mem_write_b(bank_enmask_b[i] & mem_write_b),
         .data_in_b(data_in_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
-        .data_out_b(data_out_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN])
+        .data_out_b(data_out_rotated_b[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
+
+        // PORT C
+        .addr_c(dma_addr + i),
+        .mem_read_c(dma_read_en),
+        .mem_write_c(dma_write_en),
+        .data_in_c(dma_write_data[(i << $clog2(`BANKLEN)) +: `BANKLEN]),
+        .data_out_c(dma_read_data[(i << $clog2(`BANKLEN)) +: `BANKLEN])
       );
     end
   endgenerate
