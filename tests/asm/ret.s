@@ -8,9 +8,6 @@ _start:
   la t0, return_target
   csrw mepc, t0
 
-  # Set MPIE (bit 7) = 1
-  # Set MPP (bits 12:11) = 3 (Machine Mode)
-  # Value = (1 << 7) | (3 << 11) = 0x80 | 0x1800 = 0x1880
   li t1, 0x1880
   csrw mstatus, t1
   mret

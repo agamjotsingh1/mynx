@@ -5,7 +5,6 @@ void trap_handler() {}
 
 void print_uart(const char *str) {
   while (*str != '\0') {
-    // Write the current character directly to the UART offset 0
     *UART_THR = *str;
     str++;
   }

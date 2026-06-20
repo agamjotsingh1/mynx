@@ -22,16 +22,19 @@ module ctl (
           `F3CSRRW : begin
             `REG_WRITE(ctl_bus) = 1;
             `CSR_WRITE(ctl_bus) = 1;
+            `USES_RS1(ctl_bus)  = 1;
             `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRW;
           end
           `F3CSRRS : begin 
             `REG_WRITE(ctl_bus) = 1;
             `CSR_WRITE(ctl_bus) = (rs1 != 0);
+            `USES_RS1(ctl_bus)  = 1;
             `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRS;
           end
           `F3CSRRC : begin
             `REG_WRITE(ctl_bus) = 1;
             `CSR_WRITE(ctl_bus) = (rs1 != 0);
+            `USES_RS1(ctl_bus)  = 1;
             `ZICSR_OP(ctl_bus)  = `ZICSR_OP_CSRRC;
           end
           `F3CSRRWI: begin
@@ -73,22 +76,28 @@ module ctl (
 
       `OP_R: begin
         `REG_WRITE(ctl_bus)   = 1;
+        `USES_RS1(ctl_bus)    = 1;
+        `USES_RS2(ctl_bus)    = 1;
       end
 
       `OP_RW: begin
         `REG_WRITE(ctl_bus)   = 1;
         `WORDTRUNC(ctl_bus)   = 1;
+        `USES_RS1(ctl_bus)    = 1;
+        `USES_RS2(ctl_bus)    = 1;
       end
 
       `OP_I: begin
         `ALU_SRC(ctl_bus)     = 1;
         `REG_WRITE(ctl_bus)   = 1;
+        `USES_RS1(ctl_bus)    = 1;
       end
 
       `OP_IW: begin
         `ALU_SRC(ctl_bus)     = 1;
         `REG_WRITE(ctl_bus)   = 1;
         `WORDTRUNC(ctl_bus)   = 1;
+        `USES_RS1(ctl_bus)    = 1;
       end
 
       `OP_I_LOAD: begin
@@ -96,6 +105,7 @@ module ctl (
         `REG_WRITE(ctl_bus)   = 1;
         `MEM_READ(ctl_bus)    = 1;
         `MEM_TO_REG(ctl_bus)  = 1;
+        `USES_RS1(ctl_bus)    = 1;
 
         case(funct3) 
           `F3LB, `F3LBU: `BW(ctl_bus) = `BW_BYTE;
@@ -117,11 +127,14 @@ module ctl (
         `ALU_SRC(ctl_bus)     = 1;
         `REG_WRITE(ctl_bus)   = 1;
         `JALR(ctl_bus)        = 1;
+        `USES_RS1(ctl_bus)    = 1;
       end
 
       `OP_S: begin
         `ALU_SRC(ctl_bus)     = 1;
         `MEM_WRITE(ctl_bus)   = 1;
+        `USES_RS1(ctl_bus)    = 1;
+        `USES_RS2(ctl_bus)    = 1;
 
         case(funct3) 
           `F3SB:   `BW(ctl_bus) = `BW_BYTE;
@@ -133,6 +146,8 @@ module ctl (
       end
 
       `OP_B: begin
+        `USES_RS1(ctl_bus)    = 1;
+        `USES_RS2(ctl_bus)    = 1;
         case(funct3)
           `F3BEQ:  `BR(ctl_bus) = `BR_BEQ;
           `F3BNE:  `BR(ctl_bus) = `BR_BNE;

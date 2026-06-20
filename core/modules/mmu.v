@@ -14,10 +14,10 @@
 // TODO! remove requirement for ports being assigned to isntr/memory
 // TODO! conservatively we finish the walk for one port even though second port has aborted
 module mmu (
-  input wire clk,
-  input wire rst,
-  output wor hard_stall,
-  input wire __wb_trap_taken,
+  input wire  clk,
+  input wire  rst,
+  output wire hard_stall,
+  input wire  __wb_trap_taken,
 
   input wire  `W(`PRIVLEN)  priv,
 
@@ -66,7 +66,6 @@ module mmu (
   wire mmu_abort_b = `XCEP(uxcep_b) | ext_abort_b;
 
   /* verilator lint_off WIDTHTRUNC */
-  // TODO! have seperate pbtl_en for a and b
   wire pgtbl_en_glbl = 
     (priv != `PRIVM) &&
     (`SATP_MODE(satp) == `SATP_MODE_SV39);

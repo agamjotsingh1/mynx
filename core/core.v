@@ -27,16 +27,15 @@ module core (
     else if(__wb_trap_taken) priv <= next_priv;
   end
 
-  // TODO! change hard_stall, nop and stall to wires instead of wors
-  wor hard_stall; // stall the entire pipeline
+  wire hard_stall; // stall the entire pipeline
 
-  wor `W(`STLEN)        trap_stall;
-  wor `W(`STLEN)        hazard_stall;
-  wor `W(`STLEN)        stall = trap_stall | hazard_stall;
+  wire `W(`STLEN)        trap_stall;
+  wire `W(`STLEN)        hazard_stall;
+  wire `W(`STLEN)        stall = trap_stall | hazard_stall;
 
-  wor `W(`NOPILEN)      trap_nopi;
-  wor `W(`NOPILEN)      hazard_nopi;
-  wor `W(`NOPILEN)      nopi = trap_nopi | hazard_nopi;
+  wire `W(`NOPILEN)      trap_nopi;
+  wire `W(`NOPILEN)      hazard_nopi;
+  wire `W(`NOPILEN)      nopi = trap_nopi | hazard_nopi;
 
   wire `W(`DLEN)        satp;
 
@@ -375,7 +374,6 @@ module core (
   );
 
   /* ----- MEM STAGE ------ */
-  // TODO!
   assign __mem_regw_data = __mem_ex_res;
   // goes through mmu
   // assign __mem_uxcep = __mem_xcep; 

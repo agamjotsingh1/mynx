@@ -5,8 +5,6 @@
 // 2 port memory
 // dynamic interleaved design
 // supports parallel access different bit widths
-
-// TODO! make mem_read and mem_write mutually exclusive
 module mem (
   input wire clk,
 

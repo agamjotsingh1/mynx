@@ -1,3 +1,5 @@
+/* LEGACY TEST! please do not use
+*/
 // WARNING: legacy test, is not complete
 #include "Valu_ctl.h"
 #include "verilated.h"

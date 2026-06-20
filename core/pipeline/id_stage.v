@@ -8,13 +8,13 @@
 module id_stage (
   input wire clk,
   input wire rst,
-  input wor  hard_stall,
+  input wire  hard_stall,
   input wire `W(`PRIVLEN) priv,
 
   input wire  `W(`DLEN)   pc,
   output wire `W(`DLEN)   anchor_pc,
   input wire  `W(`ILEN)   instr,
-  input wor   `W(`STLEN)  stall,
+  input wire  `W(`STLEN)  stall,
 
   // parsing results
   output wire `W(`RLEN)   rs1,
@@ -212,7 +212,6 @@ module id_stage (
     .write_epc(__wb_write_epc)
   );
 
-  // TODO! optimize this to take the alu output instead of an extra adder here
   // shift is implicitly added in the immgen block
   assign next_pc = (`JALR(ctl_bus) ? regdata1_fwded: pc) + imm;
 

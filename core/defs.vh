@@ -73,7 +73,6 @@
 `define OP_J              7'b1101111
 `define OP_NULL           7'b0000000
 
-// TODO! add underscore as im kinda getting triggered
 // funct3 defs
 `define F3LB              3'h0
 `define F3LH              3'h1
@@ -202,7 +201,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            26
+`define CTL_BUSLEN            28
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -223,10 +222,11 @@
 `define ECALL(ctl_bus)        ctl_bus[22]    // 1 if instr is ecall
 `define EBREAK(ctl_bus)       ctl_bus[23]    // 1 if instr is ebreak
 `define SFENCEVMA(ctl_bus)    ctl_bus[24]    // 1 if instr is sfence.vma
-`define ILLEGAL(ctl_bus)      ctl_bus[25]    // 1 if instr is illegal
+`define USES_RS1(ctl_bus)     ctl_bus[25]    // 1 if rs1 is used in the instr
+`define USES_RS2(ctl_bus)     ctl_bus[26]    // 1 if rs2 is used in the instr
+`define ILLEGAL(ctl_bus)      ctl_bus[27]    // 1 if instr is illegal
 
 // Pipeline stalling signals
-// "stall" is wor type bus
 `define STLEN                 7
 `define STALL_PC              7'b0000001
 `define STALL_IF_ID           7'b0000010
@@ -239,7 +239,6 @@
 `define STALL_NONE            7'b0000000
 
 // Pipeline nop inserting signals
-// "nopi" is wor type bus
 `define NOPILEN               5
 `define NOPI_PC               5'b00001
 `define NOPI_IF_ID            5'b00010

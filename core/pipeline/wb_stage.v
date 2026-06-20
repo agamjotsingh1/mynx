@@ -1,7 +1,7 @@
 `include "defs.vh"
 
 module wb_stage (
-  output wor `W(`STLEN) stall,
+  output wire `W(`STLEN) stall,
 
   input wire clk,
   input wire rst,
@@ -20,7 +20,7 @@ module wb_stage (
   input wire  `W(`DLEN)      anchor_pc,
   input wire  `W(`PRIVLEN)   priv,
   input wire  `W(`DLEN)      xcep,
-  output wor  `W(`NOPILEN)   nopi,
+  output wire `W(`NOPILEN)   nopi,
   output wire                trap_taken,
   output wire `W(`DLEN)      next_pc,
   output reg  `W(`PRIVLEN)   next_priv,

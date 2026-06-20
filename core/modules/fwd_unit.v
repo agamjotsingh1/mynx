@@ -1,6 +1,5 @@
 `include "defs.vh"
 
-// TODO! optimize by eliminating some forwards to ID stage
 // forwarding unit
 module fwd_unit (
   input wire `W(`RLEN)       __id_rs1,

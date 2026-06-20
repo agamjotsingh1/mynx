@@ -1,3 +1,5 @@
+/* AI GENERATED TESTBENCH */
+
 .global _start
 .section .text
 

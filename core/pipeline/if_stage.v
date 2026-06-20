@@ -2,10 +2,10 @@
 
 // memory lies outside this stage
 module if_stage (
-  input wor hard_stall,
+  input wire hard_stall,
 
-  input wor `W(`STLEN)   stall,
-  input wor `W(`NOPILEN) nopi,
+  input wire `W(`STLEN)   stall,
+  input wire `W(`NOPILEN) nopi,
 
   input wire clk,
   input wire rst,

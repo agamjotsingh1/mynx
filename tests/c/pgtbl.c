@@ -1,3 +1,5 @@
+/* AI GENERATED TESTBENCH */
+
 // Typedefs to replace stdint.h
 typedef unsigned long long uint64_t;
 typedef unsigned int       uint32_t;

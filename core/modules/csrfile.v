@@ -13,12 +13,12 @@
 module csrfile (
 	input wire  clk,
   input wire  rst,
-  input wor   hard_stall,
+  input wire  hard_stall,
   output wire illegal_csr,
 
   input wire `W(`PRIVLEN) priv,
 
-  input wor `W(`STLEN) stall,
+  input wire `W(`STLEN) stall,
 
 	// standard read port
 	input wire `W(`CSRLEN) read_csr,

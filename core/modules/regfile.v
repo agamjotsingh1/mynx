@@ -3,8 +3,8 @@
 module regfile (
 	input wire clk,
   input wire rst,
-  input wor  hard_stall,
-  input wor `W(`STLEN) stall,
+  input wire  hard_stall,
+  input wire `W(`STLEN) stall,
 
 	// read port #1
 	input wire `W(`RLEN)  read_addr1,

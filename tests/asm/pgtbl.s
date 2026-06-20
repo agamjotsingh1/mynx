@@ -1,5 +1,4 @@
-# RISC-V 64-bit Assembly Testbench for Sv39 MMU
-# Assumes boot happens at physical address 0x8000_0000 in M-Mode (SATP = 0)
+/* AI GENERATED TESTBENCH */
 
 .section .text
 .globl _start
