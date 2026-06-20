@@ -1,19 +1,11 @@
 # mynx
-> **⚠️ WORK IN PROGRESS:** This project is actively under development. Features may be missing, broken, or change drastically without notice.
+> **⚠️ WORK IN PROGRESS:** This project is actively under development. Features may be missing, broken, or change drastically without notice. It is not put on the Pynq Z2 board yet!
 
 Extensible RISC-V core with xv6 on PYNQ Z2 FPGA board.
 
-> AI Usage Note: You may see usage of AI in tests or verify scripts but most code in core/ folder is human written. Dont let the alignments throw you off I kinda like those.
-
-### BIG TODOS!
-- add PMP support
-- add mmio support 
-- clean up tests, its a mess rn
-
-
 ## Prerequisites
 
-* **Verilator:** Verilog simulation
+* **Verilator:** verilog simulation
 * **RISC-V GNU Toolchain:** `riscv64-elf-gcc` for bare-metal tests and kernel compilation
 * **Python 3:** running automated verification scripts
 * **Spike** (`riscv-isa-sim`): reference simulator for test verification
@@ -80,3 +72,10 @@ void trap_handler() {...}
 ```
 
 > NOTE: All the programs are loaded at address `0x80000000` in memory, so please maintain that addressing.
+
+> AI Usage Note: You may see usage of AI in tests or verify scripts but most code in core/ folder is human written.
+
+## TODO
+- improve performance by limiting benign hazards
+- add TLB for increased paging performance
+- put on the PYNQ Z2 board
