@@ -1,7 +1,7 @@
 obj_dir/
 vcd/
 .vscode/
-tests/hex/
+tests/asm/hex/
 tests/riscv/hex/
 tests/c/hex/
 spike.cmd

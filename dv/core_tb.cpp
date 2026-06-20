@@ -57,7 +57,7 @@ extern "C" {
         fseek(disk_file, offset, SEEK_SET);
         fwrite(&out_data, sizeof(uint64_t), 1, disk_file);
         
-        fflush(disk_file); 
+        // fflush(disk_file); 
     }
 
 }
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
     init_disk();
 
-    Verilated::traceEverOn(true);
+    // Verilated::traceEverOn(true);
     // VerilatedVcdC* tfp = new VerilatedVcdC;
     // dut->trace(tfp, 99);
     // tfp->open("vcd/core_trace.vcd");
@@ -176,19 +176,24 @@ int main(int argc, char** argv) {
     tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    uint32_t sim_cycle = 0;
 
     while(1){
-        char ch;
-        if (read(STDIN_FILENO, &ch, 1) > 0) {
-            if (ch == 3) { 
-                std::cout << "\n[INFO] Exit requested (Ctrl+C).\n";
-                break;
+        if (sim_cycle % 10000 == 0) {
+            char ch;
+            if (read(STDIN_FILENO, &ch, 1) > 0) {
+                if (ch == 3) { 
+                    std::cout << "\n[INFO] Exit requested (Ctrl+C).\n";
+                    break;
+                }
+                dut->rx_valid = 1;
+                dut->rx_data = ch;
+            } else {
+                dut->rx_valid = 0;
+                dut->rx_data = 0;
             }
-            dut->rx_valid = 1;
-            dut->rx_data = ch;
         } else {
-            dut->rx_valid = 0;
-            dut->rx_data = 0;
+            dut->rx_valid = 0; 
         }
 
         tick();

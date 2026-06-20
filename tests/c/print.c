@@ -1,6 +1,8 @@
 #define UART_BASE 0x10000000 
 #define UART_THR  ((volatile unsigned char *)(UART_BASE + 0x00))
 
+void trap_handler() {}
+
 void print_uart(const char *str) {
   while (*str != '\0') {
     // Write the current character directly to the UART offset 0

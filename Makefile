@@ -1,137 +1,104 @@
-TARGET  ?= riscv64-elf-
+TARGET  = riscv64-elf-
 CC      = $(TARGET)gcc
 AS      = $(TARGET)as
 LD      = $(TARGET)ld
 OBJCOPY = $(TARGET)objcopy
-
-ARCH    = -march=rv64i_zicsr -mabi=lp64
-ASFLAGS = $(ARCH)
-CFLAGS  = $(ARCH) -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
-
-# compiler flags
-C_CFLAGS = $(ARCH) -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
-
-VERILATOR = verilator
-VFLAGS    = -Wall --trace --cc --exe --build -I$(CORE)
+HEXDUMP = hexdump
 
 CORE    = core
 MODULES = modules
 DV      = dv
 OBJ     = obj_dir
 VCD     = vcd
-PROG    ?= deadbeef
+TEST    ?= deadbeef
 
+CORE_TOP  = $(CORE)/core.v
+CORE_TB   = $(DV)/core_tb.cpp
+CORE_BIN  = $(OBJ)/core/Vcore
+CORE_SRCS = $(shell find $(CORE) -name '*.v')
+
+TEST_DIR = tests
+ASMTEST_DIR = $(TEST_DIR)/asm
+CTEST_DIR = $(TEST_DIR)/c
+RISCVTEST_DIR = $(TEST_DIR)/riscv
+ASMTEST_HEX_DIR = $(ASMTEST_DIR)/hex
+CTEST_HEX_DIR = $(CTEST_DIR)/hex
+RISCVTEST_HEX_DIR = $(RISCVTEST_DIR)/hex
+CENV_DIR = $(CTEST_DIR)/env
+
+# asm tests
+ASMLINKER = $(TEST_DIR)/link.ld
+ASMTEST_SRCS = $(wildcard $(ASMTEST_DIR)/*.s)
+ASMTEST_HEX  = $(patsubst $(ASMTEST_DIR)/%.s, $(ASMTEST_HEX_DIR)/%.hex, $(ASMTEST_SRCS))
+
+# c tests
+CLINKER = $(TEST_DIR)/linkc.ld
+CRUNTIME = $(CENV_DIR)/crt0.S
+CSOFTMATH = $(CENV_DIR)/softmath.c
+CTRAPVEC = $(CENV_DIR)/trapvec.S
+CTEST_SRCS = $(wildcard $(CTEST_DIR)/*.c)
+CTEST_HEX  = $(patsubst $(CTEST_DIR)/%.c, $(CTEST_HEX_DIR)/%.hex, $(CTEST_SRCS))
+
+ARCHFLAGS = -march=rv64i_zicsr -mabi=lp64
+ASFLAGS  = $(ARCHFLAGS)
+
+# ASM_CFLAGS are for macro and .S file compilation
+ASM_CFLAGS = $(ARCHFLAGS) -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
+# CFLAGS are for proper C compilation
+CFLAGS = $(ARCHFLAGS) -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments
+
+LDFLAGS = -N -T
+OBJCOPYFLAGS = -O binary --change-addresses=-0x80000000 
+HEXDUMPFLAGS = -v -e '/4 "%08x\n"'
+
+# verilator flags
+VERILATOR = verilator
+VFLAGS    = -Wall --trace --cc --exe --build -I$(CORE)
+
+# colors for display
 GREEN   = \033[1;32m
 RED     = \033[1;31m
 NC      = \033[0m
 
-.PHONY: clean build-tests build-riscv-tests run-all test test-all test-riscv-all build-core build-ctests testc-all
+# --- targets ---
 
-tests/hex/%.hex: tests/asm/%.s
-	@mkdir -p tests/hex
-	$(AS) $(ASFLAGS) $< -o tests/hex/$*.o
-	$(LD) -N -T tests/link.ld tests/hex/$*.o -o tests/hex/$*_vcore.elf
-	$(OBJCOPY) -O binary --change-addresses=-0x80000000 tests/hex/$*_vcore.elf tests/hex/$*.bin
-	hexdump -v -e '/4 "%08x\n"' tests/hex/$*.bin > $@
-	$(LD) -N -T tests/link.ld tests/hex/$*.o -o tests/hex/$*_spike.elf
-	@rm -f tests/hex/$*.o tests/hex/$*.bin tests/hex/$*_vcore.elf
-
-build-tests:
-	@for file in tests/asm/*.s; do \
-		$(MAKE) --no-print-directory tests/hex/$$(basename $$file .s).hex > /dev/null 2>&1; \
-	done
-
-build-riscv-tests:
-	@mkdir -p tests/riscv/hex
-	@for file in tests/riscv/asm/*.S; do \
-		prog=$$(basename $$file .S); \
-		$(CC) $(CFLAGS) -I./tests/riscv/env -I./tests/riscv/macros/ -T./tests/riscv/env/link.ld $$file -o tests/riscv/hex/$$prog.elf; \
-		$(OBJCOPY) -O binary tests/riscv/hex/$$prog.elf tests/riscv/hex/$$prog.bin; \
-		hexdump -v -e '1/4 "%08x\n"' tests/riscv/hex/$$prog.bin > tests/riscv/hex/$$prog.hex; \
-	done
-
-build-core:
+# core verilator binary
+$(CORE_BIN): $(CORE_SRCS) $(CORE_TB)
 	@mkdir -p $(OBJ) $(VCD)
-	$(VERILATOR) $(VFLAGS) $(CORE)/core.v $(DV)/core_tb.cpp --Mdir $(OBJ)/core
+	$(VERILATOR) $(VFLAGS) $(CORE_TOP) $(CORE_TB) --Mdir $(dir $@)
 
-core: build-core tests/hex/$(PROG).hex
-	./$(OBJ)/core/Vcore tests/hex/$(PROG).hex
+build-core: $(CORE_BIN)
 
-%: $(CORE)/$(MODULES)/%.v $(DV)/%_tb.cpp
-	@mkdir -p $(OBJ) $(VCD)
-	$(VERILATOR) $(VFLAGS) $< $(word 2,$^) --Mdir $(OBJ)/$@
-	./$(OBJ)/$@/V$@
+# asm tests
+$(ASMTEST_HEX_DIR)/%.hex: $(ASMTEST_DIR)/%.s
+	@mkdir -p $(ASMTEST_HEX_DIR)
+	$(AS) $(ASFLAGS) $< -o $(ASMTEST_HEX_DIR)/$*.o
+	$(LD) $(LDFLAGS) $(ASMLINKER) $(ASMTEST_HEX_DIR)/$*.o -o $(ASMTEST_HEX_DIR)/$*.elf
+	$(OBJCOPY) $(OBJCOPYFLAGS) $(ASMTEST_HEX_DIR)/$*.elf $(ASMTEST_HEX_DIR)/$*.bin
+	$(HEXDUMP) $(HEXDUMPFLAGS) $(ASMTEST_HEX_DIR)/$*.bin > $@
 
-run-all: build-core build-tests
-	@for file in tests/hex/*.hex; do \
-		./$(OBJ)/core/Vcore $$file || { echo -e "$(RED)Run failed on $$file!$(NC)"; exit 1; }; \
-	done
-	@echo -e "$(GREEN)All basic runs completed successfully!$(NC)"
+build-asm-test: $(ASMTEST_HEX_DIR)/$(TEST).hex
+	@echo -e "$(GREEN)Compiled asm test $(TEST) successfully!$(NC)"
 
-test: build-core tests/hex/$(PROG).hex
-	@python3 dv/verify.py tests/hex/$(PROG)_spike.elf tests/hex/$(PROG).hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)Test $(PROG) failed!$(NC)"; exit 1; }
-	@echo -e "$(GREEN)Test $(PROG) verified successfully!$(NC)"
+build-asm-tests: $(ASMTEST_HEX)
+	@echo -e "$(GREEN)All asm tests compiled successfully!$(NC)"
 
-test-all: build-core build-tests
-	@for file in tests/asm/*.s; do \
-		prog=$$(basename $$file .s); \
-		python3 dv/verify.py tests/hex/$${prog}_spike.elf tests/hex/$${prog}.hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)Verification failed on $${prog}!$(NC)"; exit 1; }; \
-	done
-	@echo -e "$(GREEN)All tests fully verified against Spike!$(NC)"
+# c tests
+$(CTEST_HEX_DIR)/%.hex: $(CTEST_DIR)/%.c $(CRUNTIME) $(CTRAPVEC) $(CSOFTMATH)
+	@mkdir -p $(CTEST_HEX_DIR)
+	$(CC) $(CFLAGS) -T $(CLINKER) $(CRUNTIME) $(CTRAPVEC) $(CSOFTMATH) $< -o $(CTEST_HEX_DIR)/$*.elf
+	$(OBJCOPY) $(OBJCOPYFLAGS) $(CTEST_HEX_DIR)/$*.elf $(CTEST_HEX_DIR)/$*.bin
+	$(HEXDUMP) $(HEXDUMPFLAGS) $(CTEST_HEX_DIR)/$*.bin > $@
 
-test-riscv-all: build-core build-riscv-tests
-	@for file in tests/riscv/asm/*.S; do \
-		prog=$$(basename $$file .S); \
-		python3 dv/verify.py tests/riscv/hex/$${prog}.elf tests/riscv/hex/$${prog}.hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)RISC-V verification failed on $${prog}!$(NC)"; exit 1; }; \
-	done
-	@echo -e "$(GREEN)All RISC-V tests fully verified against Spike!$(NC)"
+build-c-test: $(CTEST_HEX_DIR)/$(TEST).hex
+	@echo -e "$(GREEN)Compiled C test $(TEST) successfully!$(NC)"
 
-tests/c/hex/%.hex: tests/c/%.c tests/c/crt0.S tests/c/trapvec.S
-	@mkdir -p tests/c/hex
-	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S tests/c/trapvec.S tests/c/softmath.c $< -o tests/c/hex/$*_vcore.elf
-	$(OBJCOPY) -O binary --change-addresses=-0x80000000 tests/c/hex/$*_vcore.elf tests/c/hex/$*.bin
-	hexdump -v -e '/4 "%08x\n"' tests/c/hex/$*.bin > $@
-	$(CC) $(C_CFLAGS) -T tests/linkc.ld tests/c/crt0.S tests/c/trapvec.S tests/c/softmath.c $< -o tests/c/hex/$*_spike.elf
-	@rm -f tests/c/hex/$*.bin tests/c/hex/$*_vcore.elf
+build-c-tests: $(CTEST_HEX)
+	@echo -e "$(GREEN)All C tests compiled successfully!$(NC)"
 
-build-ctests:
-	@mkdir -p tests/c/hex
-	@for file in tests/c/*.c; do \
-		if [ -f "$$file" ]; then \
-			prog=$$(basename $$file .c); \
-			$(MAKE) --no-print-directory tests/c/hex/$$prog.hex > /dev/null 2>&1; \
-		fi \
-	done
+# generate a git diff
+diff:
+	@git status
+	@git diff --stat
 
-runc: build-core tests/c/hex/$(PROG).hex
-	touch fs.img
-	./$(OBJ)/core/Vcore tests/c/hex/$(PROG).hex 0
-
-testc: build-core tests/c/hex/$(PROG).hex
-	@python3 dv/verify.py tests/c/hex/$(PROG)_spike.elf tests/c/hex/$(PROG).hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)C Verification failed on $(PROG)!$(NC)"; exit 1; };
-	@echo -e "$(GREEN)C Test $(PROG) verified successfully against Spike!$(NC)"
-
-testc-all: build-core build-ctests
-	@for file in tests/c/*.c; do \
-		if [ -f "$$file" ]; then \
-			prog=$$(basename $$file .c); \
-			python3 dv/verify.py tests/c/hex/$${prog}_spike.elf tests/c/hex/$${prog}.hex ./$(OBJ)/core/Vcore || { echo -e "$(RED)C Verification failed on $${prog}!$(NC)"; exit 1; }; \
-		fi \
-	done
-	@echo -e "$(GREEN)All C tests fully verified against Spike!$(NC)"
-
-runkernel: build-core
-	@echo -e "$(GREEN)Compiling xv6...$(NC)"
-	@$(MAKE) -C xv6 kernel/kernel fs.img
-	@echo -e "$(GREEN)Converting kernel to hex format...$(NC)"
-	$(OBJCOPY) -O binary --change-addresses=-0x80000000 xv6/kernel/kernel xv6/kernel/kernel.bin
-	hexdump -v -e '/4 "%08x\n"' xv6/kernel/kernel.bin > xv6/kernel/kernel.hex
-	@echo -e "$(GREEN)Copying fs.img for block device...$(NC)"
-	@cp xv6/fs.img ./fs.img
-	@echo -e "$(GREEN)Booting xv6 on core...$(NC)"
-	./$(OBJ)/core/Vcore xv6/kernel/kernel.hex 0
-
-clean:
-	rm -rf $(OBJ) $(VCD) tests/hex/ tests/riscv/hex/ tests/c/hex/
-	rm spike.cmd
-	@echo -e "$(GREEN)Cleaned up successfully!$(NC)"
+.PHONY: build-core build-asm-test build-asm-tests build-c-test build-c-tests diff

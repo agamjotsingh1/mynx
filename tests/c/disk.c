@@ -1,4 +1,4 @@
-#include "macros/macros.h"
+#include "env/encoding.h"
 
 #define BLKDEV_STATUS        (*(volatile uint64_t *) (BLKDEVBASE + 0x00))
 #define BLKDEV_SECTOR        (*(volatile uint64_t *) (BLKDEVBASE + 0x08))

@@ -1,4 +1,4 @@
-#include "macros/macros.h"
+#include "env/encoding.h"
 
 #define UART_RHR (*((volatile uint8_t *)(UARTBASE + 0x00)))
 #define UART_THR (*((volatile uint8_t *)(UARTBASE + 0x00)))
