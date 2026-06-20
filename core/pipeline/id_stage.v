@@ -46,6 +46,7 @@ module id_stage (
   input wire `W(`CTL_BUSLEN) __wb_ctl_bus,
   /* verilator lint_on UNUSEDSIGNAL */
   input wire `W(`DLEN)       __wb_csr_write_data,
+  input wire `W(`DLEN)       __wb_write_data,
 
   // fwd controls
   input wire `W(`FWDLEN)  fwd1,
@@ -53,8 +54,6 @@ module id_stage (
 
   // fwd inputs
   input wire `W(`DLEN)    __mem_ex_res,
-  // TODO! you dont really need this forward from WB stage hehe
-  input wire `W(`DLEN)    __wb_write_data,
 
   input wire `W(`DLEN)   xcep,
   output reg `W(`DLEN)   uxcep,
@@ -148,13 +147,8 @@ module id_stage (
     .ctl_bus(ctl_bus)
   );
 
-  wire `W(`DLEN) regdata1_fwded = 
-    (fwd1 == `FWD_EX_MEM) ? __mem_ex_res:
-    ((fwd1 == `FWD_MEM_WB) ? __wb_write_data: regdata1);
-
-  wire `W(`DLEN) regdata2_fwded = 
-    (fwd2 == `FWD_EX_MEM) ? __mem_ex_res:
-    ((fwd2 == `FWD_MEM_WB) ? __wb_write_data: regdata2);
+  wire `W(`DLEN) regdata1_fwded = (fwd1 == `FWD_EX_MEM) ? __mem_ex_res: regdata1;
+  wire `W(`DLEN) regdata2_fwded = (fwd2 == `FWD_EX_MEM) ? __mem_ex_res: regdata2;
 
   // branching logic comparator
   wire zero = (regdata1_fwded == regdata2_fwded);

@@ -28,7 +28,7 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o \
+  $K/blkdev.o \
   $K/softmath.o \
 
 TOOLPREFIX = riscv64-elf-

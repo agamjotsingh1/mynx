@@ -2,7 +2,7 @@
 // N bytes with each element being 1 byte
 // basically a ring buffer with r/w pointers
 module byte_fifo #(
-  // NOTE: N must be a power of 2
+  // N must be a power of 2
   parameter N = 16
 ) (
   input  wire  clk,

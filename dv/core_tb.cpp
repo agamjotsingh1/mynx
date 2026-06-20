@@ -18,48 +18,53 @@
 
 #include <termios.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include "svdpi.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-static FILE* disk_file = nullptr;
+static uint8_t* disk_data = nullptr;
+static size_t disk_size = 0;
 
 void init_disk() {
-    disk_file = fopen("fs.img", "r+b");
-
-    if(!disk_file) {
-        std::cerr << "[WARNING] Could not open fs.img! Disk operations will fail." << std::endl;
+    int fd = open("fs.img", O_RDWR);
+    if (fd < 0) {
+        std::cerr << "[WARNING] Could not open fs.img! Disk operations will fail.\n";
+        return;
     }
+    
+    struct stat st;
+    fstat(fd, &st);
+    disk_size = st.st_size;
+    
+    disk_data = (uint8_t*)mmap(NULL, disk_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    close(fd);
 }
 
 void close_disk() {
-    if(disk_file) fclose(disk_file);
+    if (disk_data && disk_data != MAP_FAILED) {
+        munmap(disk_data, disk_size);
+    }
 }
 
 extern "C" {
     long long host_disk_read_word(int sector, int word_offset) {
-        if (!disk_file) return 0;
+        if (!disk_data || disk_data == MAP_FAILED) return 0;
         
-        uint64_t data = 0;
         long offset = (sector * 512) + (word_offset * 8);
+        if (offset + 8 > disk_size) return 0; // bounds check
         
-        fseek(disk_file, offset, SEEK_SET);
-        fread(&data, sizeof(uint64_t), 1, disk_file);
-        
-        return data;
+        return *(uint64_t*)(disk_data + offset);
     }
 
     void host_disk_write_word(int sector, int word_offset, long long data) {
-        if (!disk_file) return;
+        if (!disk_data || disk_data == MAP_FAILED) return;
         
-        uint64_t out_data = (uint64_t)data;
         long offset = (sector * 512) + (word_offset * 8);
-        
-        fseek(disk_file, offset, SEEK_SET);
-        fwrite(&out_data, sizeof(uint64_t), 1, disk_file);
-        
-        // fflush(disk_file); 
+        if (offset + 8 <= disk_size) {
+            *(uint64_t*)(disk_data + offset) = data;
+        }
     }
-
 }
 
 int main(int argc, char** argv) {
@@ -126,7 +131,7 @@ int main(int argc, char** argv) {
     // backdoor memory loading with instructions
     // boot adress at 0x0
     std::cout << "Loading " << instructions.size() << " instructions from " << hex_file << " into memory...\n";
-    const uint32_t MAX_DEPTH = 524288; 
+    const uint32_t MAX_DEPTH = 4194304; 
 
     for (size_t i = 0; i < instructions.size(); i++) {
         uint32_t instr = instructions[i];
@@ -195,6 +200,8 @@ int main(int argc, char** argv) {
         } else {
             dut->rx_valid = 0; 
         }
+
+        sim_cycle++;
 
         tick();
 

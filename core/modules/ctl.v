@@ -119,12 +119,6 @@ module ctl (
         `JALR(ctl_bus)        = 1;
       end
 
-      // TODO!
-      // `OP_I_ECALL: begin
-      //   ALU_SRC(ctl_bus)     = 1;
-      //   REG_WRITE(ctl_bus)   = 1;
-      // end
-
       `OP_S: begin
         `ALU_SRC(ctl_bus)     = 1;
         `MEM_WRITE(ctl_bus)   = 1;

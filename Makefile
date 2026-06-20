@@ -68,7 +68,11 @@ OBJCOPYFLAGS_NOCHANGEADDR = -O binary
 HEXDUMPFLAGS = -v -e '/4 "%08x\n"'
 
 # verilator flags
-VFLAGS    = -Wall --trace --cc --exe --build -I$(CORE)
+VFLAGS = -Wall --cc --exe --build -I$(CORE) -O3 \
+         --x-assign fast --x-initial fast --noassert \
+         -CFLAGS "-O3 -march=native -flto -DNDEBUG" \
+         -LDFLAGS "-flto"
+# VFLAGS_TRACE = -Wall --trace --cc --exe --build -I$(CORE) -O3 -CFLAGS "-O3"
 
 # verification scripts
 PY_VERIFY_SCRIPT = $(DV)/verify.py

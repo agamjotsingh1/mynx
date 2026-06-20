@@ -37,16 +37,13 @@ module fwd_unit (
   wire __id_fwd2_ex_mem = is_write_ex_mem && (__mem_rd == __id_rs2); 
 
   // MEM Hazard
-  wire __id_fwd1_mem_wb = is_write_mem_wb && (__wb_rd == __id_rs1); 
-  wire __id_fwd2_mem_wb = is_write_mem_wb && (__wb_rd == __id_rs2); 
+  // not needed as regfile is negedge
 
   always @(*) begin
     if(__id_fwd1_ex_mem) __id_fwd1 = `FWD_EX_MEM;
-    else if(__id_fwd1_mem_wb) __id_fwd1 = `FWD_MEM_WB;
     else __id_fwd1 = `FWD_NONE;
 
     if(__id_fwd2_ex_mem) __id_fwd2 = `FWD_EX_MEM;
-    else if(__id_fwd2_mem_wb) __id_fwd2 = `FWD_MEM_WB;
     else __id_fwd2 = `FWD_NONE;
   end
 

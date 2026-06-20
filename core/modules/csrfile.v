@@ -152,7 +152,6 @@ module csrfile (
       else if(write_en && (!(stall & `STALL_CSRFILE))) begin
       /* verilator lint_on WIDTHTRUNC */
       /* verilator lint_off CASEINCOMPLETE */
-      // TODO! port over do csrmask module
       // any changes made below have to be reproduced in csrmask.v
         case(write_csr)
           `CSR_MSTATUS : mstatus  <= (write_data & `MSTATUS_MASK)  | (mstatus  & (~`MSTATUS_MASK));

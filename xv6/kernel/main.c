@@ -17,13 +17,9 @@ main()
     printf("xv6 kernel is booting\n");
     printf("\n");
     kinit();         // physical page allocator
-    // printf("kinit done\n");
     kvminit();       // create kernel page table
-    // printf("kvminit done\n");
     kvminithart();   // turn on paging
-    // printf("kvminithart done\n");
     procinit();      // process table
-    // printf("procinit done\n");
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector
     plicinit();      // set up interrupt controller
@@ -31,7 +27,7 @@ main()
     binit();         // buffer cache
     iinit();         // inode cache
     fileinit();      // file table
-    virtio_disk_init(); // emulated hard disk
+    blkdev_init(); // emulated hard disk
     userinit();      // first user process
     // __sync_synchronize();
     started = 1;
