@@ -7,6 +7,7 @@ tests/c/hex/
 spike.cmd
 fs.img
 
+# xv6 ignores
 *.o
 *.d
 *.asm
@@ -18,5 +19,7 @@ xv6/_*
 xv6/initcode
 xv6/initcode.out
 xv6/kernel/kernel
+xv6/kernel/kernel.bin
+xv6/kernel/kernel.hex
 xv6/mkfs/mkfs
 xv6/user/usys.S
