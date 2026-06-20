@@ -23,3 +23,5 @@ xv6/kernel/kernel.bin
 xv6/kernel/kernel.hex
 xv6/mkfs/mkfs
 xv6/user/usys.S
+xv6/user/initcode
+xv6/user/initcode.out
