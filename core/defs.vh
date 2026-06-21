@@ -526,5 +526,11 @@
 `define CLINT_MTIME           64'h0000_0000_0000_0000
 `define CLINT_MTIMECMP        64'h0000_0000_0000_0008
 
+// TLB defs
+`define TLB_ENTRIES           64
+`define TLB_INDEXLEN          $clog2(`TLB_ENTRIES)
+`define TLB_TAGLEN            21
+`define TLB_INDEX(va)         va[38 -: `TLB_INDEXLEN]
+`define TLB_TAG(va)           va[12 +: `TLB_TAGLEN]
 
 `endif

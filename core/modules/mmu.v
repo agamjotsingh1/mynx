@@ -1,8 +1,9 @@
 `include "defs.vh"
-`include "modules/mem.v"
 `include "modules/uart.v"
 `include "modules/blkdev.v"
 `include "modules/clint.v"
+`include "modules/tlb.v"
+`include "modules/mem.v"
 
 // SIMULATION ONLY
 // true 2 port memory with pagetable
@@ -34,6 +35,9 @@ module mmu (
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
+
+  // tlb flushing using sfence.vma
+  input wire tlb_flush,
 
   output wire ext_irq,
   output wire timer_irq,
@@ -73,13 +77,45 @@ module mmu (
 
   wire pgtbl_en_a = (mem_read_a | mem_write_a) && pgtbl_en_glbl && (!ext_abort_a);
   wire pgtbl_en_b = (mem_read_b | mem_write_b) && pgtbl_en_glbl && (!ext_abort_b);
-  wire walk_en    = (pgtbl_en_a | pgtbl_en_b); 
+  wire walk_en    = ((pgtbl_en_a & !tlb_hit_a) | pgtbl_en_b); 
 
   // counter for lvl counting
   reg `W($clog2(`PGTBL_LVLS)) lvl;
 
-  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a);
-  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b);
+  /* verilator lint_off UNUSEDSIGNAL */
+  reg `W(`PTELEN) pte_a, pte_b;
+  /* verilator lint_on UNUSEDSIGNAL */
+
+  wire tlb_hit_a, tlb_hit_b;
+  wire `W(`PTELEN) tlb_pte_a, tlb_pte_b;
+
+  // check for tlb hit
+  tlb tlb_a_instance (
+    .clk(clk),
+    .rst(rst),
+    .flush(tlb_flush),
+    .pgtbl_en(pgtbl_en_a),
+    .update_en(pgtbl_en_a && (lvl == 0) && (~mmu_abort_a) && (~tlb_hit_a)),
+    .pte_update(pte_a),
+    .va(addr_a),
+    .hit(tlb_hit_a),
+    .pte(tlb_pte_a)
+  );
+
+  tlb tlb_b_instance (
+    .clk(clk),
+    .rst(rst),
+    .flush(tlb_flush),
+    .pgtbl_en(pgtbl_en_b),
+    .update_en(pgtbl_en_b && (lvl == 0) && (~mmu_abort_b) && (~tlb_hit_b)),
+    .pte_update(pte_b),
+    .va(addr_b),
+    .hit(tlb_hit_b),
+    .pte(tlb_pte_b)
+  );
+
+  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a) & (~tlb_hit_a);
+  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b) & (~tlb_hit_b);
 
   always @(posedge clk) begin
     if(rst || !(stall_req_a | stall_req_b)) begin
@@ -91,10 +127,7 @@ module mmu (
   end
 
   assign hard_stall = (stall_req_a | stall_req_b) && (lvl != 0);
-
-  /* verilator lint_off UNUSEDSIGNAL */
-  reg `W(`PTELEN) pte_a, pte_b;
-  /* verilator lint_on UNUSEDSIGNAL */
+  
   wire `W(`DLEN) phymem_data_out_a, phymem_data_out_b;
 
   wire `W(`PALEN) pte_addr_a = (lvl == `PGTBL_LVLS)
@@ -106,7 +139,7 @@ module mmu (
     : `PTE2PA(pte_b, `VA2VPN(addr_b, lvl));
 
   always @(posedge clk) begin
-    if(rst || mmu_abort_a || pmp_fault_a) 
+    if(rst || mmu_abort_a || pmp_fault_a || tlb_hit_a) 
       pte_a <= 0;
     else if(pgtbl_en_a) 
       pte_a <= phymem_data_out_a;
@@ -117,6 +150,17 @@ module mmu (
       pte_b <= phymem_data_out_b;
   end
 
+  /* verilator lint_off UNUSEDSIGNAL */
+  wire `W(`PTELEN) eval_pte_a  = tlb_hit_a ? tlb_pte_a : pte_a;
+  wire `W(`PTELEN) eval_pte_b  = tlb_hit_b ? tlb_pte_b : pte_b;
+  /* verilator lint_on UNUSEDSIGNAL */
+
+  wire             eval_en_a   = tlb_hit_a || (pgtbl_en_a && lvl < `PGTBL_LVLS);
+  wire             eval_leaf_a = tlb_hit_a || (lvl == 0);
+
+  wire             eval_en_b   = tlb_hit_b || (pgtbl_en_b && lvl < `PGTBL_LVLS);
+  wire             eval_leaf_b = tlb_hit_b || (lvl == 0);
+
   always @(*) begin
     uxcep_a = 0;
     uxcep_b = 0;
@@ -125,31 +169,32 @@ module mmu (
     // a port -> instr fetch
     if(`XCEP(xcep_a)) 
       uxcep_a = xcep_a;
-    else if (pgtbl_en_a && lvl < `PGTBL_LVLS) begin
+    else if(eval_en_a) begin
       // invalid pte and write only pte are faults
-      if(!(`PTEF(pte_a) & `PTEF_V) || (!(`PTEF(pte_a) & `PTEF_R) && (`PTEF(pte_a) & `PTEF_W)))
+      if(!(`PTEF(eval_pte_a) & `PTEF_V) || (!(`PTEF(eval_pte_a) & `PTEF_R) && (`PTEF(eval_pte_a) & `PTEF_W)))
         uxcep_a = {1'b1, `XCEP_INST_PAGE_FAULT}; 
-      else if(lvl == 0) begin
-        if(!(`PTEF(pte_a) & `PTEF_X) || (!(`PTEF(pte_a) & `PTEF_U) && priv == `PRIVU))
+      else if(eval_leaf_a) begin
+        if(!(`PTEF(eval_pte_a) & `PTEF_X) || (!(`PTEF(eval_pte_a) & `PTEF_U) && priv == `PRIVU))
           uxcep_a = {1'b1, `XCEP_INST_PAGE_FAULT};
       end
     end
+    // BUG! pmp bug, if pte is valid but still a pmp fault occurs
     else if(pmp_fault_a)
       uxcep_a = {1'b1, pmp_xcep_cause_a};
 
     // b port -> mem fetch
     if(`XCEP(xcep_b)) 
       uxcep_b = xcep_b;
-    else if (pgtbl_en_b && lvl < `PGTBL_LVLS) begin
+    else if (eval_en_b) begin
       // invalid pte and write only pte are faults
-      if(!(`PTEF(pte_b) & `PTEF_V) || (!(`PTEF(pte_b) & `PTEF_R) && (`PTEF(pte_b) & `PTEF_W)))
+      if(!(`PTEF(eval_pte_b) & `PTEF_V) || (!(`PTEF(eval_pte_b) & `PTEF_R) && (`PTEF(eval_pte_b) & `PTEF_W)))
         uxcep_b = {1'b1, mem_write_b ? `XCEP_STORE_AMO_PAGE_FAULT : `XCEP_LOAD_PAGE_FAULT};
 
-      else if(lvl == 0) begin
+      else if(eval_leaf_b) begin
         if(
-          (mem_read_b && !(`PTEF(pte_b) & `PTEF_R))    ||
-          (mem_write_b && !(`PTEF(pte_b) & `PTEF_W))   ||
-          (!(`PTEF(pte_b) & `PTEF_U) && priv == `PRIVU)
+          (mem_read_b && !(`PTEF(eval_pte_b) & `PTEF_R))    ||
+          (mem_write_b && !(`PTEF(eval_pte_b) & `PTEF_W))   ||
+          (!(`PTEF(eval_pte_b) & `PTEF_U) && priv == `PRIVU)
         ) uxcep_b = {1'b1, mem_write_b ? `XCEP_STORE_AMO_PAGE_FAULT : `XCEP_LOAD_PAGE_FAULT};
       end
     end
@@ -161,20 +206,21 @@ module mmu (
   // Port A
   /* verilator lint_off WIDTHEXPAND */
   wire `W(`DLEN) phymem_addr_a = (!pgtbl_en_a) ? addr_a 
-    :((lvl == 0) ? `PTE2PA(pte_a, `VA2OFF(addr_a)): pte_addr_a);
+    :(tlb_hit_a ? `PTE2PA(tlb_pte_a, `VA2OFF(addr_a))
+    :((lvl == 0) ? `PTE2PA(pte_a, `VA2OFF(addr_a)): pte_addr_a));
   /* verilator lint_on WIDTHEXPAND */
 
   wire phymem_raw_read_a = (!pgtbl_en_a) ? mem_read_a
-    :((lvl == 0) ? mem_read_a: 1);
+    :((lvl == 0 || tlb_hit_a) ? mem_read_a: 1);
 
   wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
-    :((lvl == 0) ? mem_write_a: 0);
+    :((lvl == 0 || tlb_hit_a) ? mem_write_a: 0);
 
   wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a) & (~mmu_abort_a);
   wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a) & (~mmu_abort_a);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
-    :((lvl == 0) ? bw_a: `BW_DBLWORD);
+    :((lvl == 0 || tlb_hit_a) ? bw_a: `BW_DBLWORD);
 
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_a = sign_extend_a;
@@ -184,26 +230,27 @@ module mmu (
   // Port B
   /* verilator lint_off WIDTHEXPAND */
   wire `W(`DLEN) phymem_addr_b = (!pgtbl_en_b) ? addr_b
-    :((lvl == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b);
+    :(tlb_hit_b ? `PTE2PA(tlb_pte_b, `VA2OFF(addr_b))
+    : ((lvl == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b));
   /* verilator lint_on WIDTHEXPAND */
 
   wire phymem_raw_read_b = (!pgtbl_en_b) ? mem_read_b
-    :((lvl == 0) ? mem_read_b: 1);
+    :((lvl == 0 || tlb_hit_b) ? mem_read_b: 1);
 
   wire phymem_raw_write_b = (!pgtbl_en_b) ? mem_write_b
-    :((lvl == 0) ? mem_write_b: 0);
+    :((lvl == 0 || tlb_hit_b) ? mem_write_b: 0);
 
   wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b) & (~mmu_abort_b);
   wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b) & (~mmu_abort_b);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
-    :((lvl == 0) ? bw_b: `BW_DBLWORD);
+    :((lvl == 0 || tlb_hit_b) ? bw_b: `BW_DBLWORD);
 
-  wire is_uart_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
-  wire is_blkdev_b = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
-  wire is_plic_b   = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
-  wire is_clint_b  = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
-  wire is_mem_b    = (!pgtbl_en_b || lvl == 0) ? (phymem_addr_b >= `MEMBASE): 1;
+  wire is_uart_b   = (!pgtbl_en_b || lvl == 0 || tlb_hit_b) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
+  wire is_blkdev_b = (!pgtbl_en_b || lvl == 0 || tlb_hit_b) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
+  wire is_plic_b   = (!pgtbl_en_b || lvl == 0 || tlb_hit_b) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
+  wire is_clint_b  = (!pgtbl_en_b || lvl == 0 || tlb_hit_b) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
+  wire is_mem_b    = (!pgtbl_en_b || lvl == 0 || tlb_hit_b) ? (phymem_addr_b >= `MEMBASE): 1;
 
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_b = sign_extend_b;

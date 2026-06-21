@@ -28,6 +28,7 @@ module core (
   end
 
   wire hard_stall; // stall the entire pipeline
+  wire tlb_flush = `SFENCEVMA(__id_ctl_bus);  // flush tlb for sfence instructions
 
   wire `W(`STLEN)        trap_stall;
   wire `W(`STLEN)        hazard_stall;
@@ -44,16 +45,6 @@ module core (
   wire `W(`ILEN)        __if_instr;
   wire `W(`DLEN)        __if_xcep = 0;
   wire `W(`DLEN)        __if_uxcep;
-
-  // always @(posedge clk) begin
-  //   $display("-------------- PRIV: %x -----------------", priv);
-  //   $display("IF:  pc: %x, instr: %x, uxcep: %x", __if_pc, __if_instr, __if_uxcep);
-  //   $display("ID:  pc: %x, instr: %x, uxcep: %x", __id_pc, __id_instr, __id_uxcep);
-  //   $display("EX:  pc: %x, uxcep: %x", __ex_pc, __ex_uxcep);
-  //   $display("MEM: pc: %x, uxcep: %x", __mem_pc, __mem_uxcep);
-  //   $display("WB:  pc: %x, trap_taken: %b, trap_mode: %x", __wb_pc, __wb_trap_taken, __wb_trap_mode);
-  //   $display("-----------------------------------------\n");
-  // end
 
   wire                  __id_valid;
   wire `W(`DLEN)        __id_pc;
@@ -151,6 +142,7 @@ module core (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    .tlb_flush(tlb_flush),
     .priv(priv),
     .satp(satp),
     .xcep_a(__if_xcep),
