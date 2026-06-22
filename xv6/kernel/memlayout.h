@@ -21,7 +21,7 @@
 #define BLKDEV_IRQ 2
 
 // local interrupt controller, which contains the timer.
-#define CLINT          0x4000000L
+#define CLINT          0x40000000L
 #define CLINT_MTIME    (CLINT + 0x00)
 #define CLINT_MTIMECMP (CLINT + 0x08)
 

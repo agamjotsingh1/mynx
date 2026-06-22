@@ -60,7 +60,7 @@ timeout = 100
 
 def get_spike_state():
     cmds = f"r {max_instructions}\nreg 0\n"
-    MAX_DEPTH = 524288;
+    MAX_DEPTH = int(16777216/4);
     for offset in range(0, MAX_DEPTH, 8):
         cmds += f"mem {0x80000000 + offset:x}\n"
     cmds += "q\n"
@@ -117,7 +117,7 @@ def get_spike_state():
 
 def get_vcore_state():
     try:
-        res = subprocess.run([vcore_bin, hex_file, "1"], text=True, capture_output=True, timeout=timeout)
+        res = subprocess.run([vcore_bin, hex_file, "1", "1"], text=True, capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         print(f"\r\033[K{red('\u2717')} Vcore simulation hung (timeout).")
         sys.exit(1)

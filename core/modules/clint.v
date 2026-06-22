@@ -4,7 +4,9 @@ module clint (
 
   // MMIO 
   input wire mmio_write_en,
+  /* verilator lint_off UNUSEDSIGNAL */
   input wire mmio_read_en,
+  /* verilator lint_on UNUSEDSIGNAL */
   input wire `W(`DLEN) mmio_addr,
   input wire `W(`DLEN) mmio_write_data,
   output reg `W(`DLEN) mmio_read_data,
@@ -19,9 +21,7 @@ module clint (
       mtimecmp <= 0;
     end
     else begin
-      if(irq && mmio_read_en) mtime <= 0;
-
-      else if(mmio_write_en) begin
+      if(mmio_write_en) begin
         /* verilator lint_off CASEINCOMPLETE */
         case(mmio_addr)
           `CLINT_MTIME   : mtime    <= mmio_write_data;
@@ -46,4 +46,8 @@ module clint (
   end
 
   assign irq = (mtime >= mtimecmp) && (mtimecmp != 0);
+
+  // always @(posedge clk) begin
+  //   $display("%d", irq);
+  // end
 endmodule

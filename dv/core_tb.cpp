@@ -51,7 +51,7 @@ extern "C" {
     long long host_disk_read_word(int sector, int word_offset) {
         if (!disk_data || disk_data == MAP_FAILED) return 0;
         
-        long offset = (sector * 512) + (word_offset * 8);
+        long offset = (sector * 1024) + (word_offset * 8);
         if (offset + 8 > disk_size) return 0; // bounds check
         
         return *(uint64_t*)(disk_data + offset);
@@ -60,7 +60,7 @@ extern "C" {
     void host_disk_write_word(int sector, int word_offset, long long data) {
         if (!disk_data || disk_data == MAP_FAILED) return;
         
-        long offset = (sector * 512) + (word_offset * 8);
+        long offset = (sector * 1024) + (word_offset * 8);
         if (offset + 8 <= disk_size) {
             *(uint64_t*)(disk_data + offset) = data;
         }
@@ -91,9 +91,10 @@ int main(int argc, char** argv) {
 
     std::cout << "====== Starting Core Execution Tests ======\n";
 
-    assert(argc > 2);
+    assert(argc > 3);
     std::string hex_file = argv[1];
     int logging = std::atoi(argv[2]);
+    int verify  = std::atoi(argv[3]);
 
     // read the hex file
     std::vector<uint32_t> instructions;
@@ -131,7 +132,7 @@ int main(int argc, char** argv) {
     // backdoor memory loading with instructions
     // boot adress at 0x0
     std::cout << "Loading " << instructions.size() << " instructions from " << hex_file << " into memory...\n";
-    const uint32_t MAX_DEPTH = 4194304; 
+    const uint32_t MAX_DEPTH = 16777216; 
 
     for (size_t i = 0; i < instructions.size(); i++) {
         uint32_t instr = instructions[i];
@@ -211,7 +212,7 @@ int main(int argc, char** argv) {
         // or alternating between two instructions
         if (current_pc == prev_pc1 || current_pc == prev_pc2) {
             loop_counter++;
-            if (loop_counter > LOOP_THRESHOLD) {
+            if (loop_counter > LOOP_THRESHOLD && verify != 0) {
                 std::cout << "\n[INFO] Infinite loop detected at PC 0x" 
                           << std::hex << current_pc << std::dec 
                           << ".\n";

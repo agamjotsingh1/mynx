@@ -110,6 +110,8 @@ UPROGS=\
 	$U/_rm\
 	$U/_sh\
 	$U/_wc\
+	$U/_stressfs\
+	$U/_usertests\
 	$U/_zombie\
 
 fs.img: mkfs/mkfs README $(UEXTRA) $(UPROGS)

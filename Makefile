@@ -154,15 +154,15 @@ build-riscv-test-all: $(RISCVTEST_HEX)
 # --- running ---
 run-asm: $(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running ASM test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex $(LOGGING)
+	./$(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
 run-c: $(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running C test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex $(LOGGING)
+	./$(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
 run-riscv: $(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running RISC-V test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex $(LOGGING)
+	./$(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
 run: $(CORE_BIN)
 	@echo -e "$(YELLOW)Booting core with $(FILE)...$(NC)"
@@ -170,7 +170,7 @@ run: $(CORE_BIN)
 		echo -e "$(RED)Hex file '$(FILE)' does not exist! Compile it first.$(NC)"; \
 		exit 1; \
 	fi
-	./$(CORE_BIN) $(FILE) $(LOGGING)
+	./$(CORE_BIN) $(FILE) $(LOGGING) 1
 
 .PHONY: run run-asm run-c run-riscv
 
@@ -232,7 +232,7 @@ build-kernel:
 # -- xv6 boot ---
 boot: $(CORE_BIN) build-kernel
 	@echo -e "$(YELLOW)Booting xv6 on core...$(NC)"
-	./$(CORE_BIN) $(XV6_KERNEL_HEX) $(LOGGING)
+	./$(CORE_BIN) $(XV6_KERNEL_HEX) $(LOGGING) 0
 
 .PHONY: boot
 

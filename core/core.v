@@ -45,6 +45,8 @@ module core (
   wire `W(`ILEN)        __if_instr;
   wire `W(`DLEN)        __if_xcep = 0;
   wire `W(`DLEN)        __if_uxcep;
+  wire `W(`DLEN)        __if_predicted_pc;
+  wire                  __if_bpt_mispredict;
 
   wire                  __id_valid;
   wire `W(`DLEN)        __id_pc;
@@ -75,6 +77,7 @@ module core (
   wire `W(`DLEN)        __id_medeleg;
   wire `W(`DLEN)        __id_pmpaddr0;
   wire `W(`DLEN)        __id_pmpcfg0;
+  wire `W(`DLEN)        __id_predicted_pc;
 
   wire                  __ex_valid;
   wire `W(`DLEN)        __ex_pc;
@@ -192,10 +195,17 @@ module core (
     .clk(clk),
     .rst(rst),
     .pc(__if_pc),
+    .instr(__if_instr),
+    .__id_valid(__id_valid),
+    .__id_predicted_pc(__id_predicted_pc),
     .__id_branch_taken(__id_branch_taken),
     .__wb_trap_taken(__wb_trap_taken),
     .__id_next_pc(__id_next_pc),
-    .__wb_next_pc(__wb_next_pc)
+    .__wb_next_pc(__wb_next_pc),
+    .__id_ctl_bus(__id_ctl_bus),
+    .__id_pc(__id_pc),
+    .predicted_pc(__if_predicted_pc),
+    .bpt_mispredict(__if_bpt_mispredict)
   );
   /* -------------------- */
 
@@ -209,11 +219,13 @@ module core (
     .in_pc(__if_pc),
     .in_instr(__if_instr),
     .in_xcep(__if_uxcep),
+    .in_predicted_pc(__if_predicted_pc),
 
     .out_valid(__id_valid),
     .out_pc(__id_pc),
     .out_instr(__id_instr),
-    .out_xcep(__id_xcep)
+    .out_xcep(__id_xcep),
+    .out_predicted_pc(__id_predicted_pc)
   );
 
   /* ----- ID STAGE ------ */
@@ -461,7 +473,7 @@ module core (
     .nopi(hazard_nopi),
     .__id_rs1(__id_rs1),
     .__id_rs2(__id_rs2),
-    .__id_branch_taken(__id_branch_taken),
+    .__if_bpt_mispredict(__if_bpt_mispredict),
     .__id_ctl_bus(__id_ctl_bus),
     .__ex_rd(__ex_rd),
     .__ex_ctl_bus(__ex_ctl_bus),

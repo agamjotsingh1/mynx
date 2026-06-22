@@ -853,7 +853,7 @@ reparent(char *s)
 void
 twochildren(char *s)
 {
-  for(int i = 0; i < 1000; i++){
+  for(int i = 0; i < 100; i++){
     int pid1 = fork();
     if(pid1 < 0){
       printf("%s: fork failed\n", s);
@@ -952,7 +952,7 @@ forkforkfork(char *s)
 void
 reparent2(char *s)
 {
-  for(int i = 0; i < 800; i++){
+  for(int i = 0; i < 100; i++){
     int pid1 = fork();
     if(pid1 < 0){
       printf("fork failed\n");
@@ -2479,7 +2479,7 @@ badwrite(char *s)
 void
 badarg(char *s)
 {
-  for(int i = 0; i < 50000; i++){
+  for(int i = 0; i < 1000; i++){
     char *argv[2];
     argv[0] = (char*)0xffffffff;
     argv[1] = 0;

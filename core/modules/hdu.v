@@ -5,7 +5,7 @@ module hdu (
 
   input wire `W(`RLEN)       __id_rs1,
   input wire `W(`RLEN)       __id_rs2,
-  input wire                 __id_branch_taken,
+  input wire                 __if_bpt_mispredict,
   input wire `W(`RLEN)       __ex_rd,
   input wire `W(`RLEN)       __mem_rd,
   /* verilator lint_off UNUSEDSIGNAL */
@@ -61,7 +61,7 @@ module hdu (
   // only insert if there is no load hazard
   // or control load hazard or control hazard
   wire `W(`NOPILEN) branch_nopi =
-    __id_branch_taken && !is_hazard
+    __if_bpt_mispredict && !is_hazard
     ? `NOPI_IF_ID: `NOPI_NONE;
 
   assign nopi = branch_nopi | hazard_nopi;

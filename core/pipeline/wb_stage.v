@@ -96,9 +96,9 @@ module wb_stage (
       trap_mode = `TRAPMODE_SRET;
 
     // intrs
-    else if((pending_m_intr != 0) && m_intr_en)
+    else if((pending_m_intr != 0) && m_intr_en && valid)
       trap_mode = `TRAPMODE_MINTR;
-    else if((pending_s_intr != 0) && s_intr_en)
+    else if((pending_s_intr != 0) && s_intr_en && valid)
       trap_mode = `TRAPMODE_SINTR;
   end
   /* ----------------------------- */

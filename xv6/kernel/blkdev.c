@@ -10,16 +10,16 @@
 #include "blkdev.h"
 
 struct {
-  struct spinlock vdisk_lock;
+  struct spinlock blkdev_lock;
   struct buf *b; // Active buffer
 } disk;
 
 void blkdev_init(void) {
-  initlock(&disk.vdisk_lock, "blkdev");
+  initlock(&disk.blkdev_lock, "blkdev");
 }
 
 void blkdev_rw(struct buf *b, int write) {
-  acquire(&disk.vdisk_lock);
+  acquire(&disk.blkdev_lock);
   disk.b = b;
   b->disk = 1;
 
@@ -33,15 +33,15 @@ void blkdev_rw(struct buf *b, int write) {
 
   // sleep the process until the blkdev IRQ raises
   while(b->disk == 1) {
-    sleep(b, &disk.vdisk_lock);
+    sleep(b, &disk.blkdev_lock);
   }
 
   disk.b = 0;
-  release(&disk.vdisk_lock);
+  release(&disk.blkdev_lock);
 }
 
 void blkdev_intr(void) {
-  acquire(&disk.vdisk_lock);
+  acquire(&disk.blkdev_lock);
   
   // must read STATUS to clear the hardware IRQ flag
   volatile uint64 status __attribute__((unused)) = *(uint64*)BLKDEV_STATUS;
@@ -51,5 +51,5 @@ void blkdev_intr(void) {
     wakeup(disk.b);     // wake the sleeping process
   }
   
-  release(&disk.vdisk_lock);
+  release(&disk.blkdev_lock);
 }

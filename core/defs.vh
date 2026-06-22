@@ -8,7 +8,7 @@
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
 `define NBANKS            8    // number of banks (bytes per word)
 `define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
-`define DEPTH             4194304 // number of 64 bit doublewords = 1024*1024*64 bytes
+`define DEPTH             16777216 // number of 64 bit doublewords = 1024*1024*64 bytes
 `define BYTE              8
 `define HALFWORD          16
 `define WORD              32
@@ -417,12 +417,14 @@
 // FIXME! add other s-mode interrupt causes
 `define MIP_GET_MICAUSE(mip) \
   (mip[11] ? `MICAUSE_EXT : \
-  (mip[9]  ? `SICAUSE_EXT : \
-  (mip[3]  ? `MICAUSE_SOFT: `MICAUSE_TIMER)))
+  (mip[3]  ? `MICAUSE_SOFT : \
+  (mip[7]  ? `MICAUSE_TIMER : \
+  (mip[9]  ? `SICAUSE_EXT : 63'd0))))
 
 `define MIP_GET_SICAUSE(mip) \
-  (mip[9]  ? `SICAUSE_EXT : \
-  (mip[1]  ? `SICAUSE_SOFT: `SICAUSE_TIMER))
+  (mip[9] ? `SICAUSE_EXT : \
+  (mip[5] ? `SICAUSE_TIMER : \
+  (mip[1] ? `SICAUSE_SOFT : 63'd0)))
 
 // (S/M)TVEC defs
 `define MTVEC_RST             `RSTPC
@@ -504,7 +506,7 @@
 `define BLKDEV_SECTOR         64'h0000_0000_0000_0008
 `define BLKDEV_MEM_ADDR       64'h0000_0000_0000_0010
 `define BLKDEV_CMD            64'h0000_0000_0000_0018
-`define SECTOR_WORDCOUNT      64 // 512 bytes (64*8 bytes) = 1 sector
+`define SECTOR_WORDCOUNT      128 // 1024 bytes (64*8 bytes) = 1 sector
 
 `define BLKDEV_IDLE           64'd0
 `define BLKDEV_BUSY           64'd1
@@ -529,8 +531,19 @@
 // TLB defs
 `define TLB_ENTRIES           64
 `define TLB_INDEXLEN          $clog2(`TLB_ENTRIES)
+`define TLB_INDEX(va)         va[12 +: `TLB_INDEXLEN]
 `define TLB_TAGLEN            21
-`define TLB_INDEX(va)         va[38 -: `TLB_INDEXLEN]
-`define TLB_TAG(va)           va[12 +: `TLB_TAGLEN]
+`define TLB_TAG(va)           va[38 -: `TLB_TAGLEN]
+
+// BPU defs
+`define LHT_INDEXLEN           10
+`define LHT_INDEX(pc)          pc[2 +: `LHT_INDEXLEN]
+`define LHT_ELEN               10 // LHTE -> Local History Table Entry
+`define LHT_DEPTH              2**(`LHT_INDEXLEN)
+`define LPT_ELEN               5  // LPTE -> Local Predictor Table Entry
+`define LPT_DEPTH              2**(`LHT_ELEN)
+`define STATE_TOP              5'b11111
+`define STATE_BOTTOM           5'b00000
+`define TAKEN(state)           state[4]
 
 `endif
