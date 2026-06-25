@@ -1,10 +1,3 @@
-`include "defs.vh"
-`include "modules/regfile.v"
-`include "modules/immgen.v"
-`include "modules/alu_ctl.v"
-`include "modules/ctl.v"
-`include "modules/csrfile.v"
-
 module id_stage (
   input wire clk,
   input wire rst,
@@ -37,7 +30,7 @@ module id_stage (
   output reg  branch_taken,
 
   // next pc (for branching/jal)
-  output reg `W(`DLEN) next_pc,
+  output wire `W(`DLEN) next_pc,
 
   // (reg/csr)writes from wb stage
   input wire `W(`RLEN)       __wb_rd,
@@ -168,7 +161,7 @@ module id_stage (
       default:  branch_taken = 0;
     endcase
 
-    branch_taken |= (`JAL(ctl_bus) | `JALR(ctl_bus));
+    branch_taken = branch_taken | (`JAL(ctl_bus) | `JALR(ctl_bus));
   end
 
   csrfile csrfile_instance (

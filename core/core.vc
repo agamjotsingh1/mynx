@@ -1,0 +1,7 @@
+# global defs
+core/defs.vh
+
+# module autoincludes
+-y core/modules/
++incdir+core/pipeline/
++libext+.v+.sv

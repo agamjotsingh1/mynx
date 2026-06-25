@@ -1,10 +1,3 @@
-`include "defs.vh"
-`include "modules/uart.v"
-`include "modules/blkdev.v"
-`include "modules/clint.v"
-`include "modules/tlb.v"
-`include "modules/mem.v"
-
 // SIMULATION ONLY
 // true 2 port memory with pagetable
 // a port -> instr fetch
@@ -314,6 +307,7 @@ module mmu (
   wire `W(`DLEN) dma_write_data;
   wire `W(`DLEN) dma_read_data;
 
+  `ifdef __SIM__
   mem mem_instance (
     .clk(clk),
 
@@ -348,6 +342,7 @@ module mmu (
     .dma_write_data(dma_write_data),
     .dma_read_data(dma_read_data)
   );
+  `endif
 
   /* MMIO #1 - UART */
 
@@ -357,6 +352,7 @@ module mmu (
   wire `W(`BYTE) uart_out_b;
 
   /* verilator lint_off WIDTHTRUNC */
+  `ifdef __SIM__
   uart uart_instance (
     .clk(clk),
     .rst(rst),
@@ -369,6 +365,7 @@ module mmu (
     .rx_valid(rx_valid),
     .rx_data(rx_data)
   );
+  `endif
   /* verilator lint_on WIDTHTRUNC */
 
   /* MMIO #2 - BLKDEV */
@@ -376,6 +373,7 @@ module mmu (
   wire blkdev_irq;
   wire `W(`DLEN) blkdev_out_b;
 
+  `ifdef __SIM__
   blkdev blkdev_instance (
     .clk(clk),
     .rst(rst),
@@ -393,6 +391,7 @@ module mmu (
 
     .irq(blkdev_irq)
   );
+  `endif
 
   /* MMIO #3 - PLIC */
   // extremely barebones and simple plic

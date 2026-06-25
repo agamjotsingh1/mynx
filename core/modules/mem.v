@@ -1,6 +1,3 @@
-`include "defs.vh"
-`include "modules/mem_bank.v"
-
 // SIMULATION ONLY
 // 2 port memory
 // dynamic interleaved design

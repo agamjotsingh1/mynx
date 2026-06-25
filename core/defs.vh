@@ -2,7 +2,7 @@
 `define DEFS_VH
 
 // WARNING! comment while generating bitstream
-`define SIM
+`define __SIM__
 
 // Memory defs
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 

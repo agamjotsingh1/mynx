@@ -1,5 +1,3 @@
-`include "defs.vh"
-
 module regfile (
 	input wire clk,
   input wire rst,

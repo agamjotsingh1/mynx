@@ -1,23 +1,11 @@
-`include "defs.vh"
-`include "modules/mmu.v"
-`include "modules/fwd_unit.v"
-`include "modules/hdu.v"
-`include "pipeline/if_stage.v"
-`include "pipeline/if_id_reg.v"
-`include "pipeline/id_stage.v"
-`include "pipeline/id_ex_reg.v"
-`include "pipeline/ex_stage.v"
-`include "pipeline/ex_mem_reg.v"
-`include "pipeline/mem_wb_reg.v"
-`include "pipeline/wb_stage.v"
-
 module core (
   input wire clk,
   input wire rst,
 
   // from verilator (sim only)
-  input wire           rx_valid,
-  input wire `W(`BYTE) rx_data
+  input wire       rx_valid,
+  input wire [7:0] rx_data
+  // input wire `W(`BYTE) rx_data
 );
   reg  `W(`PRIVLEN) priv;
   wire `W(`PRIVLEN) next_priv;
@@ -135,7 +123,6 @@ module core (
   wire `W(`DLEN)        __wb_write_cause;
   wire `W(`DLEN)        __wb_write_epc;
 
-  `ifdef SIM
   /* verilator lint_off UNUSEDSIGNAL */
   wire `W(`DLEN) __mem_instr_addr = __if_pc;
   wire `W(`DLEN) __mem_data_addr = __mem_ex_res;
@@ -184,8 +171,6 @@ module core (
     .data_in_b(__mem_mem_data),
     .data_out_b(__mem_mem_res)
   );
-
-  `endif
 
   /* ----- IF STAGE ------ */
   if_stage if_stage_instance (

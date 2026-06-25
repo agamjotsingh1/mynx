@@ -1,6 +1,3 @@
-`include "defs.vh"
-`include "modules/bpt.v"
-
 // memory lies outside this stage
 module if_stage (
   input wire hard_stall,

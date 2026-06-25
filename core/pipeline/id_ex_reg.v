@@ -1,5 +1,3 @@
-`include "defs.vh"
-
 module id_ex_reg (
   input wire hard_stall,
 

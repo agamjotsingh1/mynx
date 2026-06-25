@@ -1,7 +1,3 @@
-`include "defs.vh"
-`include "modules/alu.v"
-`include "modules/csrmask.v"
-
 module ex_stage (
   input wire `W(`DLEN)       pc,
   input wire `W(`CSRLEN)     csr,

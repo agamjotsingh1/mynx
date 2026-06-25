@@ -1,6 +1,3 @@
-`include "defs.vh"
-`include "modules/byte_fifo.v"
-
 // SIMULATION ONLY
 // mocks uart 16650 hardware
 // registers are byte sized

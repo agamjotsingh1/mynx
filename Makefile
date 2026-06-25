@@ -9,6 +9,7 @@ PY      = python3
 
 CORE    = core
 MODULES = modules
+PIPELINE = pipeline
 DV      = dv
 OBJ     = obj_dir
 VCD     = vcd
@@ -67,12 +68,18 @@ OBJCOPYFLAGS = -O binary --change-addresses=-0x80000000
 OBJCOPYFLAGS_NOCHANGEADDR = -O binary
 HEXDUMPFLAGS = -v -e '/4 "%08x\n"'
 
+# verilator conf file
+VCONF = $(CORE)/core.vc
+
 # verilator flags
-VFLAGS = -Wall --cc --exe --build -I$(CORE) -O3 \
+VFLAGS = -f $(VCONF) --top-module core --prefix Vcore \
+	 -Wall --cc --exe --build -I$(CORE) -O3 \
          --x-assign fast --x-initial fast --noassert \
          -CFLAGS "-O3 -march=native -flto -DNDEBUG" \
          -LDFLAGS "-flto"
-# VFLAGS_TRACE = -Wall --trace --cc --exe --build -I$(CORE) -O3 -CFLAGS "-O3"
+
+# old code w/ vcd dump
+# VFLAGS = -Wall --trace --cc --exe --build -I$(CORE) -O3 -CFLAGS "-O3"
 
 # verification scripts
 PY_VERIFY_SCRIPT = $(DV)/verify.py

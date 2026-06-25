@@ -1,5 +1,3 @@
-`include "defs.vh"
-
 // branch predictor table
 // correlating branch prediction
 module bpt (

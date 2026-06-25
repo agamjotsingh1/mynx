@@ -1,5 +1,3 @@
-`include "defs.vh"
-
 // forwarding unit
 module fwd_unit (
   input wire `W(`RLEN)       __id_rs1,
