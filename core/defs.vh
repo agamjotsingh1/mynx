@@ -586,9 +586,37 @@
 `define AXI_WSTRB              8'hFF
 `define AXI_WID                `AXI_ARID
 
-`define AXI_RESP_OKAY         2'b00
-`define AXI_RESP_EXOKAY       2'b01
-`define AXI_RESP_SLVERR       2'b10
-`define AXI_RESP_DECERR       2'b11
+`define AXI_RESP_OKAY          2'b00
+`define AXI_RESP_EXOKAY        2'b01
+`define AXI_RESP_SLVERR        2'b10
+`define AXI_RESP_DECERR        2'b11
+
+// BRAM defs
+`define BRAM_ADDRLEN           14
+`define BRAM_WEALEN            8
+`define BRAM_DLEN              64
+`define BRAM_DEPTH             16384 // depth of 64 bit entries
+`define BRAM_DEPTH_BYTES       (`BRAM_DEPTH * `BRAM_DLEN / `BYTE)
+
+`define BRAM_WEA_NONE          8'b00000000
+`define BRAM_WEA_BYTE          8'b00000001
+`define BRAM_WEA_HALFWORD      8'b00000011
+`define BRAM_WEA_WORD          8'b00001111
+`define BRAM_WEA_DBLWORD       8'b11111111
+
+// Cache defs
+`define CACHE_LINESZ           64 // bytes
+`define CACHE_DEPTH            `BRAM_DEPTH_BYTES/`CACHE_LINESZ // how many total lines in cache
+`define CACHE_OFFLEN           $clog2(`CACHE_LINESZ)
+`define CACHE_OFF(addr)        addr[0 +: `CACHE_OFFLEN]
+`define CACHE_INDEXLEN         $clog2(`CACHE_DEPTH)
+`define CACHE_INDEX(addr)      addr[`CACHE_OFFLEN +: `CACHE_INDEXLEN]
+`define CACHE_TAGLEN           `ADDRLEN - (`CACHE_OFFLEN + `CACHE_INDEXLEN)
+`define CACHE_TAG(addr)        addr[`CACHE_INDEXLEN +: `CACHE_TAGLEN]
+// cache metadata
+`define CACHE_METALEN          11
+`define CACHE_META_V(meta)     meta[10] // valid
+`define CACHE_META_D(meta)     meta[9]  // dirty
+`define CACHE_META_TAG(meta)   meta[8:0]  // tag
 
 `endif
