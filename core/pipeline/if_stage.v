@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // memory lies outside this stage
 module if_stage (
   input wire hard_stall,

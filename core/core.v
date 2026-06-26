@@ -1,22 +1,17 @@
+`include "defs.vh"
+
 module core (
   input wire clk,
   input wire rst,
 
   // from verilator (sim only)
   input wire       rx_valid,
-  input wire [7:0] rx_data
-  // input wire `W(`BYTE) rx_data
+  input wire `W(`BYTE) rx_data
 );
   reg  `W(`PRIVLEN) priv;
   wire `W(`PRIVLEN) next_priv;
 
-  always @(posedge clk) begin
-    if(rst) priv <= `PRIVM;
-    else if(__wb_trap_taken) priv <= next_priv;
-  end
-
   wire hard_stall; // stall the entire pipeline
-  wire tlb_flush = `SFENCEVMA(__id_ctl_bus);  // flush tlb for sfence instructions
 
   wire `W(`STLEN)        trap_stall;
   wire `W(`STLEN)        hazard_stall;
@@ -122,6 +117,13 @@ module core (
   wire `W(`DLEN)        __wb_write_mstatus;
   wire `W(`DLEN)        __wb_write_cause;
   wire `W(`DLEN)        __wb_write_epc;
+
+  wire tlb_flush = `SFENCEVMA(__id_ctl_bus);  // flush tlb for sfence instructions
+
+  always @(posedge clk) begin
+    if(rst) priv <= `PRIVM;
+    else if(__wb_trap_taken) priv <= next_priv;
+  end
 
   /* verilator lint_off UNUSEDSIGNAL */
   wire `W(`DLEN) __mem_instr_addr = __if_pc;

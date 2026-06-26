@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module id_stage (
   input wire clk,
   input wire rst,

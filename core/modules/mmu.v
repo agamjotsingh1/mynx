@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // SIMULATION ONLY
 // true 2 port memory with pagetable
 // a port -> instr fetch

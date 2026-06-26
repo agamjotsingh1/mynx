@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // CSR Fields
 // 1. WARL -> Write Any, Read Legal
 // ..Ignore all illegal writes, preserve the values in these fields

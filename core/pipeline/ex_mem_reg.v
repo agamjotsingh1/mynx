@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module ex_mem_reg (
   input wire hard_stall,
   input wire `W(`STLEN)   stall,

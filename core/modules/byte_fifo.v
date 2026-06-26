@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // standard Nx8 buffer
 // N bytes with each element being 1 byte
 // basically a ring buffer with r/w pointers

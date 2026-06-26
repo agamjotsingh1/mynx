@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module csrmask (
   input wire `W(`CSRLEN) csr,
   input wire `W(`DLEN)   csr_read_data,

@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // defined in verilator cpp code
 import "DPI-C" context function longint host_disk_read_word (input int sector, input int word_offset);
 import "DPI-C" context function void    host_disk_write_word(input int sector, input int word_offset, input longint data);

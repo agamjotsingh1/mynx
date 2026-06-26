@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // SIMULATION ONLY
 // mocks uart 16650 hardware
 // registers are byte sized

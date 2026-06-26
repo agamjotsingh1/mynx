@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module wb_stage (
   output wire `W(`STLEN) stall,
 

@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // SIMULATION ONLY
 // 2 port memory
 // dynamic interleaved design

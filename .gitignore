@@ -25,3 +25,6 @@ xv6/mkfs/mkfs
 xv6/user/usys.S
 xv6/user/initcode
 xv6/user/initcode.out
+
+# vivado
+mynx_vivado/

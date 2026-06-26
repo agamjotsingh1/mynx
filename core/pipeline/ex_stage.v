@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module ex_stage (
   input wire `W(`DLEN)       pc,
   input wire `W(`CSRLEN)     csr,

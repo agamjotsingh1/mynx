@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module tlb (
   input wire clk,
   input wire rst,

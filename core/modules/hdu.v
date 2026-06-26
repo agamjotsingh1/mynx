@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // hazard detection unit
 module hdu (
   output wire `W(`STLEN)   stall,

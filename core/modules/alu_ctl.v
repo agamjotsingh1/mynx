@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 /* verilator lint_off UNUSEDSIGNAL */
 module alu_ctl (
   input wire `W(`ILEN)      instr,

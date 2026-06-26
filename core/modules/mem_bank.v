@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 // SIMULATION ONLY
 // zero cycle delay, true dual port
 // results in no pipeline stalls

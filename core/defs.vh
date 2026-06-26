@@ -2,7 +2,7 @@
 `define DEFS_VH
 
 // WARNING! comment while generating bitstream
-`define __SIM__
+// `define __SIM__
 
 // Memory defs
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
@@ -545,5 +545,50 @@
 `define STATE_TOP              5'b11111
 `define STATE_BOTTOM           5'b00000
 `define TAKEN(state)           state[4]
+
+// AXI MEM CONTROLLER defs
+`define AXI_DATALEN            64
+`define AXI_BURSTLEN           2
+`define AXI_ADDRLEN            32
+`define AXI_LOCKLEN            2
+`define AXI_SIZELEN            3
+`define AXI_PROTLEN            3
+`define AXI_CACHELEN           4
+`define AXI_LENLEN             4
+`define AXI_QOSLEN             4
+`define AXI_IDLEN              6
+`define AXI_RESPLEN            2
+`define AXI_STRBLEN            8
+
+// AR config
+`define AXI_ARQOS              4'b0000 
+`define AXI_ARLEN              4'b0111 // 8 beats (64 bytes)
+`define AXI_ARLOCK             2'b00
+`define AXI_ARID               6'b000000
+`define AXI_ARPROT             3'b000
+`define AXI_ARCACHE            4'b0011 // non cacheable
+`define AXI_ARBURST            2'b01   // increment burst
+`define AXI_ARSIZE             3'b011  // 8 byte beat
+
+// AW config
+`define AXI_AWQOS              `AXI_ARQOS
+`define AXI_AWLEN              `AXI_ARLEN
+`define AXI_AWLOCK             `AXI_ARLOCK
+`define AXI_AWID               `AXI_ARID
+`define AXI_AWPROT             `AXI_ARPROT
+`define AXI_AWCACHE            `AXI_ARCACHE
+`define AXI_AWBURST            `AXI_ARBURST
+`define AXI_AWSIZE             `AXI_ARSIZE
+
+// W config
+// enable all 8-byte writes
+// as this is interfacing with the cache
+`define AXI_WSTRB              8'hFF
+`define AXI_WID                `AXI_ARID
+
+`define AXI_RRESP_OKAY         2'b00
+`define AXI_RRESP_EXOKAY       2'b01
+`define AXI_RRESP_SLVERR       2'b10
+`define AXI_RRESP_DECERR       2'b11
 
 `endif

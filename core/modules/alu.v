@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module alu (
   input wire `W(`ALU_OPLEN) alu_op,
   input wire `W(`DLEN)      in1,

@@ -1,3 +1,5 @@
+`include "defs.vh"
+
 module clint (
   input wire clk,
   input wire rst,
