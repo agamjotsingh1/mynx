@@ -27,56 +27,58 @@ module axi_mem_controller (
   output reg                busy,
   output reg                err,
 
-  /* AXI interface */
-  // exposed to the AXI HP ports
 
+  /* AXI interface */
+
+  input wire `W(`AXI_ADDRLEN) phy_ps_addr,
+  // exposed to the AXI HP ports
   // AR - Address Read
   output reg  __axi_arvalid,
   input  wire __axi_arready,
-  output reg  `W(AXI_ADDRLEN)  __axi_araddr,
-  output wire `W(AXI_BURSTLEN) __axi_arburst,
-  output wire `W(AXI_LOCKLEN)  __axi_arlock,
-  output wire `W(AXI_SIZELEN)  __axi_arsize,
-  output wire `W(AXI_PROTLEN)  __axi_arprot,
-  output wire `W(AXI_CACHELEN) __axi_arcache,
-  output wire `W(AXI_LENLEN)   __axi_arlen,
-  output wire `W(AXI_QOSLEN)   __axi_arqos,
-  output wire `W(AXI_IDLEN)    __axi_arid,
+  output reg  `W(`AXI_ADDRLEN)  __axi_araddr,
+  output wire `W(`AXI_BURSTLEN) __axi_arburst,
+  output wire `W(`AXI_LOCKLEN)  __axi_arlock,
+  output wire `W(`AXI_SIZELEN)  __axi_arsize,
+  output wire `W(`AXI_PROTLEN)  __axi_arprot,
+  output wire `W(`AXI_CACHELEN) __axi_arcache,
+  output wire `W(`AXI_LENLEN)   __axi_arlen,
+  output wire `W(`AXI_QOSLEN)   __axi_arqos,
+  output wire `W(`AXI_IDLEN)    __axi_arid,
 
   // R - Read
   input  wire  __axi_rlast,
   input  wire  __axi_rvalid,
   output reg   __axi_rready,
-  input  wire `W(AXI_DATALEN) __axi_rdata,
-  input  wire `W(AXI_RESPLEN) __axi_rresp,
-  input  wire `W(AXI_IDLEN)   __axi_rid,
+  input  wire `W(`AXI_DATALEN) __axi_rdata,
+  input  wire `W(`AXI_RESPLEN) __axi_rresp,
+  input  wire `W(`AXI_IDLEN)   __axi_rid,
 
   // AW - Address Write
   output reg  __axi_awvalid,
   input  wire __axi_awready,
-  output reg  `W(AXI_ADDRLEN)  __axi_awaddr,
-  output wire `W(AXI_BURSTLEN) __axi_awburst,
-  output wire `W(AXI_LOCKLEN)  __axi_awlock,
-  output wire `W(AXI_SIZELEN)  __axi_awsize,
-  output wire `W(AXI_PROTLEN)  __axi_awprot,
-  output wire `W(AXI_CACHELEN) __axi_awcache,
-  output wire `W(AXI_LENLEN)   __axi_awlen,
-  output wire `W(AXI_QOSLEN)   __axi_awqos,
-  output wire `W(AXI_IDLEN)    __axi_awid,
+  output reg  `W(`AXI_ADDRLEN)  __axi_awaddr,
+  output wire `W(`AXI_BURSTLEN) __axi_awburst,
+  output wire `W(`AXI_LOCKLEN)  __axi_awlock,
+  output wire `W(`AXI_SIZELEN)  __axi_awsize,
+  output wire `W(`AXI_PROTLEN)  __axi_awprot,
+  output wire `W(`AXI_CACHELEN) __axi_awcache,
+  output wire `W(`AXI_LENLEN)   __axi_awlen,
+  output wire `W(`AXI_QOSLEN)   __axi_awqos,
+  output wire `W(`AXI_IDLEN)    __axi_awid,
 
   // W - Write
   output wire __axi_wlast,
   output reg  __axi_wvalid,
   input  wire __axi_wready,
-  output reg  `W(AXI_DATALEN) __axi_wdata,
-  output wire `W(AXI_RESPLEN) __axi_wstrb,
-  output wire `W(AXI_IDLEN)   __axi_wid,
+  output wire `W(`AXI_DATALEN) __axi_wdata,
+  output wire `W(`AXI_STRBLEN) __axi_wstrb,
+  output wire `W(`AXI_IDLEN)   __axi_wid,
 
   // B - Write Response
   input  wire __axi_bvalid,
   output reg  __axi_bready,
-  input  wire `W(AXI_RESPLEN) __axi_bresp,
-  input  wire `W(AXI_IDLEN)   __axi_bid
+  input  wire `W(`AXI_RESPLEN) __axi_bresp,
+  input  wire `W(`AXI_IDLEN)   __axi_bid
 );
   // AR config
   assign __axi_arqos   = `AXI_ARQOS;
@@ -123,23 +125,24 @@ module axi_mem_controller (
 
       __axi_arvalid <= 0;
       __axi_awvalid <= 0;
+      __axi_wvalid  <= 0;
       __axi_rready  <= 0;
+      __axi_bready  <= 0;
     end
     else begin
       case(state)
         IDLE: begin
-          // TODO set the offset according to what the PS says
           if(mem_read) begin
             state <= AR_TXN;
             busy  <= 1;
             __axi_arvalid <= 1;
-            __axi_araddr  <= $unsigned(addr);
+            __axi_araddr  <= $unsigned(addr) + phy_ps_addr;
           end
           else if(mem_write) begin
             state <= AW_TXN;
             busy  <= 1;
             __axi_awvalid <= 1;
-            __axi_awaddr  <= $unsigned(addr);
+            __axi_awaddr  <= $unsigned(addr) + phy_ps_addr;
           end
 
           err <= 0;
@@ -159,7 +162,7 @@ module axi_mem_controller (
               busy <= 0;
             end
 
-            if(__axi_rresp != `AXI_RRESP_OKAY) begin
+            if(__axi_rresp != `AXI_RESP_OKAY) begin
               err <= 1;
             end
           end
@@ -167,10 +170,8 @@ module axi_mem_controller (
         AW_TXN: begin
           if(__axi_awready && __axi_awvalid) begin
             state <= W_TXN;
-            wcntr <= wcntr + 1;
             __axi_awvalid <= 0;
             __axi_wvalid  <= 1;
-            __axi_wdata   <= data_in;
           end
         end
         W_TXN: begin
@@ -183,7 +184,6 @@ module axi_mem_controller (
             end
             else begin
               wcntr <= wcntr + 1;
-              __axi_wdata <= data_in;
             end
           end
         end
@@ -206,6 +206,7 @@ module axi_mem_controller (
   end
 
   assign __axi_wlast = (&wcntr);
+  assign __axi_wdata = data_in;
 
   assign data_out = __axi_rdata;
 
@@ -219,6 +220,5 @@ module axi_mem_controller (
     __axi_rlast;
 
   assign data_in_index = wcntr;
-  assign data_in_last  = __axi_wlast;
-  
+  assign data_in_last  = __axi_wlast && __axi_wready && __axi_wvalid;
 endmodule

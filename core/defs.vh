@@ -586,9 +586,9 @@
 `define AXI_WSTRB              8'hFF
 `define AXI_WID                `AXI_ARID
 
-`define AXI_RRESP_OKAY         2'b00
-`define AXI_RRESP_EXOKAY       2'b01
-`define AXI_RRESP_SLVERR       2'b10
-`define AXI_RRESP_DECERR       2'b11
+`define AXI_RESP_OKAY         2'b00
+`define AXI_RESP_EXOKAY       2'b01
+`define AXI_RESP_SLVERR       2'b10
+`define AXI_RESP_DECERR       2'b11
 
 `endif
