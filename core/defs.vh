@@ -591,6 +591,9 @@
 `define AXI_RESP_SLVERR        2'b10
 `define AXI_RESP_DECERR        2'b11
 
+// AMC defs
+`define AMC_INDEX2ADDR(addr)  (addr << $clog2(`DLEN/`BYTE))
+
 // BRAM defs
 `define BRAM_ADDRLEN           14
 `define BRAM_WELEN             8
