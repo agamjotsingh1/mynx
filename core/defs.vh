@@ -593,16 +593,17 @@
 
 // BRAM defs
 `define BRAM_ADDRLEN           14
-`define BRAM_WEALEN            8
+`define BRAM_WELEN             9
 `define BRAM_DLEN              64
+`define BRAM_DATA_BYTELEN      (`BRAM_DLEN/`BYTE)
 `define BRAM_DEPTH             16384 // depth of 64 bit entries
 `define BRAM_DEPTH_BYTES       (`BRAM_DEPTH * `BRAM_DLEN / `BYTE)
 
-`define BRAM_WEA_NONE          8'b00000000
-`define BRAM_WEA_BYTE          8'b00000001
-`define BRAM_WEA_HALFWORD      8'b00000011
-`define BRAM_WEA_WORD          8'b00001111
-`define BRAM_WEA_DBLWORD       8'b11111111
+`define BRAM_WE_NONE           8'b00000000
+`define BRAM_WE_BYTE           8'b00000001
+`define BRAM_WE_HALFWORD       8'b00000011
+`define BRAM_WE_WORD           8'b00001111
+`define BRAM_WE_DBLWORD        8'b11111111
 
 // Cache defs
 `define CACHE_LINESZ           64 // bytes
@@ -612,11 +613,13 @@
 `define CACHE_INDEXLEN         $clog2(`CACHE_DEPTH)
 `define CACHE_INDEX(addr)      addr[`CACHE_OFFLEN +: `CACHE_INDEXLEN]
 `define CACHE_TAGLEN           `ADDRLEN - (`CACHE_OFFLEN + `CACHE_INDEXLEN)
-`define CACHE_TAG(addr)        addr[`CACHE_INDEXLEN +: `CACHE_TAGLEN]
+`define CACHE_TAG(addr)        addr[(`CACHE_OFFLEN + `CACHE_INDEXLEN) +: `CACHE_TAGLEN]
 // cache metadata
-`define CACHE_METALEN          11
-`define CACHE_META_V(meta)     meta[10] // valid
-`define CACHE_META_D(meta)     meta[9]  // dirty
-`define CACHE_META_TAG(meta)   meta[8:0]  // tag
+`define CACHE_METALEN          (`CACHE_TAGLEN + 2) // valid + dirty + tag
+`define CACHE_META_VALID(meta) meta[`CACHE_METALEN - 1]
+`define CACHE_META_DIRTY(meta) meta[`CACHE_METALEN - 2]
+`define CACHE_META_TAG(meta)   meta[`CACHE_TAGLEN - 1 : 0]
+`define CACHE_OFFMASK          {{(`ADDRLEN - `CACHE_OFFLEN){1'b0}}, {{`CACHE_OFFLEN{1'b1}}}}
+`define CACHE_LINE(addr)    (addr & (~`CACHE_OFFMASK))
 
 `endif

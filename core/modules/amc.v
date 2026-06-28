@@ -1,5 +1,6 @@
 `include "defs.vh"
 
+// Axi Memory Controller (AMC)
 // ARM AMBA AXI overview: https://www.youtube.com/watch?v=LTNz8xNhBpg
 // AXI Burst has to be used with one cache line being read/written
 //
@@ -11,7 +12,7 @@
 //..........until data_in_last is active (for the last written value)
 //
 // err returns if there was any sort of hardware txn error (of any type)
-module axi_mem_controller (
+module amc (
   input wire clk,
   input wire rst,
 
@@ -21,14 +22,15 @@ module axi_mem_controller (
   input wire  `W(`DLEN)     data_in,
   output wire `W($clog2(`AXI_AWLEN)) data_in_index,
   output wire               data_in_last,
+  output wire               data_in_valid,
   output wire `W(`DLEN)     data_out,
+  output wire `W($clog2(`AXI_AWLEN)) data_out_index,
   output wire               data_out_valid,
   output wire               data_out_last,
   output reg                busy,
   output reg                err,
 
-
-  /* AXI interface */
+  /* -- AXI interface -- */
 
   input wire `W(`AXI_ADDRLEN) phy_ps_addr,
   // exposed to the AXI HP ports
@@ -114,14 +116,14 @@ module axi_mem_controller (
   localparam B_TXN  = 3'b111;
 
   // write counter for sending serial write data
-  reg `W($clog2(`AXI_AWLEN)) wcntr;
+  reg `W($clog2(`AXI_AWLEN)) cntr;
 
   always @(posedge clk) begin
     if(rst) begin
       state <= IDLE;
       busy  <= 0;
       err   <= 0;
-      wcntr <= 0;
+      cntr <= 0;
 
       __axi_arvalid <= 0;
       __axi_awvalid <= 0;
@@ -160,6 +162,10 @@ module axi_mem_controller (
               state <= IDLE;
               __axi_rready <= 0;
               busy <= 0;
+              cntr <= 0;
+            end
+            else begin
+              cntr <= cntr + 1;
             end
 
             if(__axi_rresp != `AXI_RESP_OKAY) begin
@@ -178,12 +184,12 @@ module axi_mem_controller (
           if(__axi_wready && __axi_wvalid) begin
             if(__axi_wlast) begin
               state <= B_TXN;
-              wcntr <= 0;
+              cntr <= 0;
               __axi_wvalid <= 0;
               __axi_bready <= 1;
             end
             else begin
-              wcntr <= wcntr + 1;
+              cntr <= cntr + 1;
             end
           end
         end
@@ -205,7 +211,7 @@ module axi_mem_controller (
     end
   end
 
-  assign __axi_wlast = (&wcntr);
+  assign __axi_wlast = (&cntr);
   assign __axi_wdata = data_in;
 
   assign data_out = __axi_rdata;
@@ -219,6 +225,8 @@ module axi_mem_controller (
     data_out_valid &&
     __axi_rlast;
 
-  assign data_in_index = wcntr;
+  assign data_in_index = cntr;
+  assign data_out_index = cntr;
   assign data_in_last  = __axi_wlast && __axi_wready && __axi_wvalid;
+  assign data_in_valid = (state == W_TXN) && __axi_wready && __axi_wvalid;
 endmodule
