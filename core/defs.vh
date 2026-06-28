@@ -593,7 +593,7 @@
 
 // BRAM defs
 `define BRAM_ADDRLEN           14
-`define BRAM_WELEN             9
+`define BRAM_WELEN             8
 `define BRAM_DLEN              64
 `define BRAM_DATA_BYTELEN      (`BRAM_DLEN/`BYTE)
 `define BRAM_DEPTH             16384 // depth of 64 bit entries
