@@ -93,44 +93,42 @@ module csrfile (
   reg `W(`DLEN)        epc_buf;
   
   always @(posedge clk) begin
-    if(!hard_stall) begin
-      if(rst || (trap_mode == `TRAPMODE_NONE)) begin
-        trap_mode_buf <= 0;
-        mstatus_buf <= 0;
-        cause_buf <= 0;
-        epc_buf <= 0;
-      end
-      else begin
-        trap_mode_buf <= trap_mode;
-        mstatus_buf <= write_mstatus;
-        cause_buf <= write_cause;
-        epc_buf <= write_epc;
-      end
+    if(rst || (trap_mode == `TRAPMODE_NONE && (!hard_stall))) begin
+      trap_mode_buf <= 0;
+      mstatus_buf <= 0;
+      cause_buf <= 0;
+      epc_buf <= 0;
+    end
+    else if(!hard_stall) begin
+      trap_mode_buf <= trap_mode;
+      mstatus_buf <= write_mstatus;
+      cause_buf <= write_cause;
+      epc_buf <= write_epc;
     end
   end
 
 	always @(negedge clk) begin
-    if(!hard_stall) begin
-      if(rst) begin
-        mstatus <= `MSTATUS_RST;
-        mepc <= `MEPC_RST;
-        sepc <= `SEPC_RST;
-        mhartid <= `MHARTID_RST;
-        medeleg <= `MEDELEG_RST;
-        mideleg <= `MIDELEG_RST;
-        mie <= `MIE_RST;
-        mip <= `MIP_RST;
-        mtvec <= `MTVEC_RST;
-        stvec <= `MTVEC_RST;
-        mscratch <= `MSCRATCH_RST;
-        sscratch <= `SSCRATCH_RST;
-        mcause <= `MCAUSE_RST;
-        scause <= `SCAUSE_RST;
-        pmpcfg0 <= `PMPCFG0_RST;
-        pmpaddr0 <= `PMPADDR0_RST;
-        satp <= `SATP_RST;
-      end
-      else if(trap_mode_buf != `TRAPMODE_NONE) begin
+    if(rst) begin
+      mstatus <= `MSTATUS_RST;
+      mepc <= `MEPC_RST;
+      sepc <= `SEPC_RST;
+      mhartid <= `MHARTID_RST;
+      medeleg <= `MEDELEG_RST;
+      mideleg <= `MIDELEG_RST;
+      mie <= `MIE_RST;
+      mip <= `MIP_RST;
+      mtvec <= `MTVEC_RST;
+      stvec <= `MTVEC_RST;
+      mscratch <= `MSCRATCH_RST;
+      sscratch <= `SSCRATCH_RST;
+      mcause <= `MCAUSE_RST;
+      scause <= `SCAUSE_RST;
+      pmpcfg0 <= `PMPCFG0_RST;
+      pmpaddr0 <= `PMPADDR0_RST;
+      satp <= `SATP_RST;
+    end
+    else if(!hard_stall) begin
+      if(trap_mode_buf != `TRAPMODE_NONE) begin
         // trust all buffers
         // as hardware will write it
         mstatus  <= mstatus_buf;

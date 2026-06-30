@@ -48,9 +48,9 @@ module if_stage (
 
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(!hard_stall) begin
-      if(rst || (nopi & `NOPI_PC)) pc <= `RSTPC;
-      else if(__wb_trap_taken) pc <= __wb_next_pc;
+    if(rst || ((nopi & `NOPI_PC) && (!hard_stall))) pc <= `RSTPC;
+    else if(!hard_stall) begin
+      if(__wb_trap_taken) pc <= __wb_next_pc;
       else if(!(stall & `STALL_PC)) begin
         if(bpt_mispredict) pc <= __id_actual_next_pc;
         else pc <= predicted_pc;

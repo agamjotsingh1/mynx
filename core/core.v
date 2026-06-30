@@ -1,12 +1,46 @@
 `include "defs.vh"
 
+// (* DONT_TOUCH = "yes" *)
 module core (
   input wire clk,
   input wire rst,
 
   // from verilator (sim only)
   input wire       rx_valid,
-  input wire `W(`BYTE) rx_data
+  input wire `W(`BYTE) rx_data,
+
+  output wire `W(`DLEN) __dbg_pc,
+
+  `ifndef __SIM__ // synth (vivado)
+  // AMC exposed ports
+  output wire  `W(`ADDRLEN)  __amc_addr_a,
+  output wire                __amc_mem_read_a,
+  output wire                __amc_mem_write_a,
+  output wire  `W(`DLEN)     __amc_data_in_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_a,
+  input  wire               __amc_data_in_last_a,
+  input  wire               __amc_data_in_valid_a,
+  input  wire `W(`DLEN)     __amc_data_out_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_a,
+  input  wire               __amc_data_out_valid_a,
+  input  wire               __amc_data_out_last_a,
+  input  wire               __amc_busy_a,
+  input  wire               __amc_err_a,
+
+  output wire  `W(`ADDRLEN)  __amc_addr_b,
+  output wire                __amc_mem_read_b,
+  output wire                __amc_mem_write_b,
+  output wire  `W(`DLEN)     __amc_data_in_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_b,
+  input  wire               __amc_data_in_last_b,
+  input  wire               __amc_data_in_valid_b,
+  input  wire `W(`DLEN)     __amc_data_out_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_b,
+  input  wire               __amc_data_out_valid_b,
+  input  wire               __amc_data_out_last_b,
+  input  wire               __amc_busy_b,
+  input  wire               __amc_err_b
+  `endif
 );
   reg  `W(`PRIVLEN) priv;
   wire `W(`PRIVLEN) next_priv;
@@ -30,6 +64,8 @@ module core (
   wire `W(`DLEN)        __if_uxcep;
   wire `W(`DLEN)        __if_predicted_pc;
   wire                  __if_bpt_mispredict;
+
+  assign __dbg_pc = __if_pc;
 
   wire                  __id_valid;
   wire `W(`DLEN)        __id_pc;
@@ -171,7 +207,37 @@ module core (
     .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
     .bw_b(`BW(__mem_ctl_bus)),
     .data_in_b(__mem_mem_data),
-    .data_out_b(__mem_mem_res)
+    .data_out_b(__mem_mem_res),
+
+    // AMC port A
+    .__amc_addr_a(__amc_addr_a),
+    .__amc_mem_read_a(__amc_mem_read_a),
+    .__amc_mem_write_a(__amc_mem_write_a),
+    .__amc_data_in_a(__amc_data_in_a),
+    .__amc_data_in_index_a(__amc_data_in_index_a),
+    .__amc_data_in_last_a(__amc_data_in_last_a),
+    .__amc_data_in_valid_a(__amc_data_in_valid_a),
+    .__amc_data_out_a(__amc_data_out_a),
+    .__amc_data_out_index_a(__amc_data_out_index_a),
+    .__amc_data_out_valid_a(__amc_data_out_valid_a),
+    .__amc_data_out_last_a(__amc_data_out_last_a),
+    .__amc_busy_a(__amc_busy_a),
+    .__amc_err_a(__amc_err_a),
+
+    // AMC port B
+    .__amc_addr_b(__amc_addr_b),
+    .__amc_mem_read_b(__amc_mem_read_b),
+    .__amc_mem_write_b(__amc_mem_write_b),
+    .__amc_data_in_b(__amc_data_in_b),
+    .__amc_data_in_index_b(__amc_data_in_index_b),
+    .__amc_data_in_last_b(__amc_data_in_last_b),
+    .__amc_data_in_valid_b(__amc_data_in_valid_b),
+    .__amc_data_out_b(__amc_data_out_b),
+    .__amc_data_out_index_b(__amc_data_out_index_b),
+    .__amc_data_out_valid_b(__amc_data_out_valid_b),
+    .__amc_data_out_last_b(__amc_data_out_last_b),
+    .__amc_busy_b(__amc_busy_b),
+    .__amc_err_b(__amc_err_b)
   );
 
   /* ----- IF STAGE ------ */

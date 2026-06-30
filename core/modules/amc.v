@@ -35,76 +35,76 @@ module amc (
   input wire `W(`AXI_ADDRLEN) phy_ps_addr,
   // exposed to the AXI HP ports
   // AR - Address Read
-  output reg  __axi_arvalid,
-  input  wire __axi_arready,
-  output reg  `W(`AXI_ADDRLEN)  __axi_araddr,
-  output wire `W(`AXI_BURSTLEN) __axi_arburst,
-  output wire `W(`AXI_LOCKLEN)  __axi_arlock,
-  output wire `W(`AXI_SIZELEN)  __axi_arsize,
-  output wire `W(`AXI_PROTLEN)  __axi_arprot,
-  output wire `W(`AXI_CACHELEN) __axi_arcache,
-  output wire `W(`AXI_LENLEN)   __axi_arlen,
-  output wire `W(`AXI_QOSLEN)   __axi_arqos,
-  output wire `W(`AXI_IDLEN)    __axi_arid,
+  output reg  m_axi_arvalid,
+  input  wire m_axi_arready,
+  output reg  `W(`AXI_ADDRLEN)  m_axi_araddr,
+  output wire `W(`AXI_BURSTLEN) m_axi_arburst,
+  output wire `W(`AXI_LOCKLEN)  m_axi_arlock,
+  output wire `W(`AXI_SIZELEN)  m_axi_arsize,
+  output wire `W(`AXI_PROTLEN)  m_axi_arprot,
+  output wire `W(`AXI_CACHELEN) m_axi_arcache,
+  output wire `W(`AXI_LENLEN)   m_axi_arlen,
+  output wire `W(`AXI_QOSLEN)   m_axi_arqos,
+  output wire `W(`AXI_IDLEN)    m_axi_arid,
 
   // R - Read
-  input  wire  __axi_rlast,
-  input  wire  __axi_rvalid,
-  output reg   __axi_rready,
-  input  wire `W(`AXI_DATALEN) __axi_rdata,
-  input  wire `W(`AXI_RESPLEN) __axi_rresp,
-  input  wire `W(`AXI_IDLEN)   __axi_rid,
+  input  wire  m_axi_rlast,
+  input  wire  m_axi_rvalid,
+  output reg   m_axi_rready,
+  input  wire `W(`AXI_DATALEN) m_axi_rdata,
+  input  wire `W(`AXI_RESPLEN) m_axi_rresp,
+  input  wire `W(`AXI_IDLEN)   m_axi_rid,
 
   // AW - Address Write
-  output reg  __axi_awvalid,
-  input  wire __axi_awready,
-  output reg  `W(`AXI_ADDRLEN)  __axi_awaddr,
-  output wire `W(`AXI_BURSTLEN) __axi_awburst,
-  output wire `W(`AXI_LOCKLEN)  __axi_awlock,
-  output wire `W(`AXI_SIZELEN)  __axi_awsize,
-  output wire `W(`AXI_PROTLEN)  __axi_awprot,
-  output wire `W(`AXI_CACHELEN) __axi_awcache,
-  output wire `W(`AXI_LENLEN)   __axi_awlen,
-  output wire `W(`AXI_QOSLEN)   __axi_awqos,
-  output wire `W(`AXI_IDLEN)    __axi_awid,
+  output reg  m_axi_awvalid,
+  input  wire m_axi_awready,
+  output reg  `W(`AXI_ADDRLEN)  m_axi_awaddr,
+  output wire `W(`AXI_BURSTLEN) m_axi_awburst,
+  output wire `W(`AXI_LOCKLEN)  m_axi_awlock,
+  output wire `W(`AXI_SIZELEN)  m_axi_awsize,
+  output wire `W(`AXI_PROTLEN)  m_axi_awprot,
+  output wire `W(`AXI_CACHELEN) m_axi_awcache,
+  output wire `W(`AXI_LENLEN)   m_axi_awlen,
+  output wire `W(`AXI_QOSLEN)   m_axi_awqos,
+  output wire `W(`AXI_IDLEN)    m_axi_awid,
 
   // W - Write
-  output wire __axi_wlast,
-  output reg  __axi_wvalid,
-  input  wire __axi_wready,
-  output wire `W(`AXI_DATALEN) __axi_wdata,
-  output wire `W(`AXI_STRBLEN) __axi_wstrb,
-  output wire `W(`AXI_IDLEN)   __axi_wid,
+  output wire m_axi_wlast,
+  output reg  m_axi_wvalid,
+  input  wire m_axi_wready,
+  output wire `W(`AXI_DATALEN) m_axi_wdata,
+  output wire `W(`AXI_STRBLEN) m_axi_wstrb,
+  output wire `W(`AXI_IDLEN)   m_axi_wid,
 
   // B - Write Response
-  input  wire __axi_bvalid,
-  output reg  __axi_bready,
-  input  wire `W(`AXI_RESPLEN) __axi_bresp,
-  input  wire `W(`AXI_IDLEN)   __axi_bid
+  input  wire m_axi_bvalid,
+  output reg  m_axi_bready,
+  input  wire `W(`AXI_RESPLEN) m_axi_bresp,
+  input  wire `W(`AXI_IDLEN)   m_axi_bid
 );
   // AR config
-  assign __axi_arqos   = `AXI_ARQOS;
-  assign __axi_arlen   = `AXI_ARLEN;
-  assign __axi_arlock  = `AXI_ARLOCK;
-  assign __axi_arid    = `AXI_ARID;
-  assign __axi_arprot  = `AXI_ARPROT;
-  assign __axi_arcache = `AXI_ARCACHE;
-  assign __axi_arburst = `AXI_ARBURST;
-  assign __axi_arsize  = `AXI_ARSIZE;
+  assign m_axi_arqos   = `AXI_ARQOS;
+  assign m_axi_arlen   = `AXI_ARLEN;
+  assign m_axi_arlock  = `AXI_ARLOCK;
+  assign m_axi_arid    = `AXI_ARID;
+  assign m_axi_arprot  = `AXI_ARPROT;
+  assign m_axi_arcache = `AXI_ARCACHE;
+  assign m_axi_arburst = `AXI_ARBURST;
+  assign m_axi_arsize  = `AXI_ARSIZE;
 
   // AW config
-  assign __axi_awqos   = `AXI_AWQOS;
-  assign __axi_awlen   = `AXI_AWLEN;
-  assign __axi_awlock  = `AXI_AWLOCK;
-  assign __axi_awid    = `AXI_AWID;
-  assign __axi_awprot  = `AXI_AWPROT;
-  assign __axi_awcache = `AXI_AWCACHE;
-  assign __axi_awburst = `AXI_AWBURST;
-  assign __axi_awsize  = `AXI_AWSIZE;
+  assign m_axi_awqos   = `AXI_AWQOS;
+  assign m_axi_awlen   = `AXI_AWLEN;
+  assign m_axi_awlock  = `AXI_AWLOCK;
+  assign m_axi_awid    = `AXI_AWID;
+  assign m_axi_awprot  = `AXI_AWPROT;
+  assign m_axi_awcache = `AXI_AWCACHE;
+  assign m_axi_awburst = `AXI_AWBURST;
+  assign m_axi_awsize  = `AXI_AWSIZE;
 
   // W config
-  assign __axi_wstrb   = `AXI_WSTRB;
-  assign __axi_wid     = `AXI_WID;
+  assign m_axi_wstrb   = `AXI_WSTRB;
+  assign m_axi_wid     = `AXI_WID;
 
   // states - gray code as im feeling fancy
   reg [2:0] state;
@@ -125,11 +125,11 @@ module amc (
       err   <= 0;
       cntr <= 0;
 
-      __axi_arvalid <= 0;
-      __axi_awvalid <= 0;
-      __axi_wvalid  <= 0;
-      __axi_rready  <= 0;
-      __axi_bready  <= 0;
+      m_axi_arvalid <= 0;
+      m_axi_awvalid <= 0;
+      m_axi_wvalid  <= 0;
+      m_axi_rready  <= 0;
+      m_axi_bready  <= 0;
     end
     else begin
       case(state)
@@ -137,30 +137,30 @@ module amc (
           if(mem_read) begin
             state <= AR_TXN;
             busy  <= 1;
-            __axi_arvalid <= 1;
-            __axi_araddr  <= $unsigned(addr) + phy_ps_addr;
+            m_axi_arvalid <= 1;
+            m_axi_araddr  <= $unsigned(addr) + phy_ps_addr;
           end
           else if(mem_write) begin
             state <= AW_TXN;
             busy  <= 1;
-            __axi_awvalid <= 1;
-            __axi_awaddr  <= $unsigned(addr) + phy_ps_addr;
+            m_axi_awvalid <= 1;
+            m_axi_awaddr  <= $unsigned(addr) + phy_ps_addr;
           end
 
           err <= 0;
         end
         AR_TXN: begin
-          if(__axi_arready && __axi_arvalid) begin
+          if(m_axi_arready && m_axi_arvalid) begin
             state <= R_TXN;
-            __axi_arvalid <= 0;
-            __axi_rready  <= 1;
+            m_axi_arvalid <= 0;
+            m_axi_rready  <= 1;
           end
         end
         R_TXN: begin
-          if(__axi_rready && __axi_rvalid) begin
-            if(__axi_rlast) begin
+          if(m_axi_rready && m_axi_rvalid) begin
+            if(m_axi_rlast) begin
               state <= IDLE;
-              __axi_rready <= 0;
+              m_axi_rready <= 0;
               busy <= 0;
               cntr <= 0;
             end
@@ -168,25 +168,25 @@ module amc (
               cntr <= cntr + 1;
             end
 
-            if(__axi_rresp != `AXI_RESP_OKAY) begin
+            if(m_axi_rresp != `AXI_RESP_OKAY) begin
               err <= 1;
             end
           end
         end
         AW_TXN: begin
-          if(__axi_awready && __axi_awvalid) begin
+          if(m_axi_awready && m_axi_awvalid) begin
             state <= W_TXN;
-            __axi_awvalid <= 0;
-            __axi_wvalid  <= 1;
+            m_axi_awvalid <= 0;
+            m_axi_wvalid  <= 1;
           end
         end
         W_TXN: begin
-          if(__axi_wready && __axi_wvalid) begin
-            if(__axi_wlast) begin
+          if(m_axi_wready && m_axi_wvalid) begin
+            if(m_axi_wlast) begin
               state <= B_TXN;
               cntr <= 0;
-              __axi_wvalid <= 0;
-              __axi_bready <= 1;
+              m_axi_wvalid <= 0;
+              m_axi_bready <= 1;
             end
             else begin
               cntr <= cntr + 1;
@@ -194,12 +194,12 @@ module amc (
           end
         end
         B_TXN: begin
-          if(__axi_bready && __axi_bvalid) begin
+          if(m_axi_bready && m_axi_bvalid) begin
             state <= IDLE;
             busy <= 0;
-            __axi_bready <= 0;
+            m_axi_bready <= 0;
 
-            if(__axi_bresp != `AXI_RESP_OKAY) begin
+            if(m_axi_bresp != `AXI_RESP_OKAY) begin
               err <= 1;
             end
           end
@@ -211,22 +211,22 @@ module amc (
     end
   end
 
-  assign __axi_wlast = (&cntr);
-  assign __axi_wdata = data_in;
+  assign m_axi_wlast = (&cntr);
+  assign m_axi_wdata = data_in;
 
-  assign data_out = __axi_rdata;
+  assign data_out = m_axi_rdata;
 
   assign data_out_valid =
     (state == R_TXN) &&
-    __axi_rready &&
-    __axi_rvalid;
+    m_axi_rready &&
+    m_axi_rvalid;
 
   assign data_out_last =
     data_out_valid &&
-    __axi_rlast;
+    m_axi_rlast;
 
   assign data_in_index = cntr;
   assign data_out_index = cntr;
-  assign data_in_last  = __axi_wlast && __axi_wready && __axi_wvalid;
-  assign data_in_valid = (state == W_TXN) && __axi_wready && __axi_wvalid;
+  assign data_in_last  = m_axi_wlast && m_axi_wready && m_axi_wvalid;
+  assign data_in_valid = (state == W_TXN) && m_axi_wready && m_axi_wvalid;
 endmodule

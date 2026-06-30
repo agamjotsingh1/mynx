@@ -24,6 +24,7 @@ module mem (
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
   output reg  `W(`DLEN)     data_out_b,
+  output wire               busy_b,
 
   // DMA access for disk operations
   // address must be 64 bit aligned
@@ -48,10 +49,9 @@ module mem (
   input  wire               __amc_busy_a,
   input  wire               __amc_err_a
 );
-
-`ifdef __SIM__
   // never busy in simulation
   assign busy_a = 0;
+  assign busy_b = 0;
 
   // FIXME too overcomplicated for no reason
   // this is too overcomplicated, please bare with me i have to fix this
@@ -178,7 +178,5 @@ module mem (
       );
     end
   endgenerate
-`else  // synth (vivado)
-`endif
 endmodule
 

@@ -39,26 +39,24 @@ module bpt (
 
   integer i;
   always @(posedge clk) begin
-    if(!hard_stall) begin
-      if(rst) begin
-        for(i = 0; i < `LHT_DEPTH; i = i + 1) lht[i] <= 0;
-        for(i = 0; i < `LPT_DEPTH; i = i + 1) lpt[i] <= 0;
-      end
-      /* verilator lint_off WIDTHTRUNC */
-      else if(__id_branch != `BR_NONE && !(stall & `STALL_IF_ID)) begin
-      /* verilator lint_on WIDTHTRUNC */
-        // shift the actual branch taken into the lht
-        lht[`LHT_INDEX(__id_pc)] <= {__id_branch_taken, lht[`LHT_INDEX(__id_pc)][`LHT_ELEN-1:1]};
+    if(rst) begin
+      for(i = 0; i < `LHT_DEPTH; i = i + 1) lht[i] <= 0;
+      for(i = 0; i < `LPT_DEPTH; i = i + 1) lpt[i] <= 0;
+    end
+    /* verilator lint_off WIDTHTRUNC */
+    else if(__id_branch != `BR_NONE && !(stall & `STALL_IF_ID) && (!hard_stall)) begin
+    /* verilator lint_on WIDTHTRUNC */
+      // shift the actual branch taken into the lht
+      lht[`LHT_INDEX(__id_pc)] <= {__id_branch_taken, lht[`LHT_INDEX(__id_pc)][`LHT_ELEN-1:1]};
 
-        // update the lpt with the result of branch prediction
-        if(!__id_branch_taken) begin
-          if(lpt[lht[`LHT_INDEX(__id_pc)]] != `STATE_BOTTOM)
-            lpt[lht[`LHT_INDEX(__id_pc)]] <= lpt[lht[`LHT_INDEX(__id_pc)]] - 1;
-        end
-        else begin
-          if(lpt[lht[`LHT_INDEX(__id_pc)]] != `STATE_TOP)
-            lpt[lht[`LHT_INDEX(__id_pc)]] <= lpt[lht[`LHT_INDEX(__id_pc)]] + 1;
-        end
+      // update the lpt with the result of branch prediction
+      if(!__id_branch_taken) begin
+        if(lpt[lht[`LHT_INDEX(__id_pc)]] != `STATE_BOTTOM)
+          lpt[lht[`LHT_INDEX(__id_pc)]] <= lpt[lht[`LHT_INDEX(__id_pc)]] - 1;
+      end
+      else begin
+        if(lpt[lht[`LHT_INDEX(__id_pc)]] != `STATE_TOP)
+          lpt[lht[`LHT_INDEX(__id_pc)]] <= lpt[lht[`LHT_INDEX(__id_pc)]] + 1;
       end
     end
   end

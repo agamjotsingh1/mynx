@@ -17,19 +17,34 @@ typedef unsigned char      uint8_t;
 
 #define PA2PTE(pa) ((((uint64_t)(pa) >> 12) << 10))
 
+// Designated memory locations for status and cache eviction
+#define STATUS_ADDR  0x80060000
+#define EVICT_ADDR   0x80080000 // STATUS_ADDR + (1 << 17)
+
 void __attribute__((naked)) trap_handler() {
     __asm__ volatile (
         "csrr t0, mcause \n"
-        "li t1, 15 \n"         // 15 = Store/AMO Page Fault
+        "li t1, 15 \n"               // 15 = Store/AMO Page Fault
+        
+        // Load target memory addresses
+        "li t2, %0 \n"               // t2 = STATUS_ADDR
+        "li t3, %1 \n"               // t3 = EVICT_ADDR
+        
         "bne t0, t1, test_fail \n"
 
         "test_pass: \n"
-        "li x31, 0xBABE \n"
+        "li t4, 0xBABE \n"
+        "sd t4, 0(t2) \n"            // Store 0xBABE to known memory location
+        "sd zero, 0(t3) \n"          // Evict by writing garbage (zero) to different tag
         "1: j 1b \n"
 
         "test_fail: \n"
-        "li x31, 0xDEAD \n"
+        "li t4, 0xDEAD \n"
+        "sd t4, 0(t2) \n"            // Store 0xDEAD to known memory location
+        "sd zero, 0(t3) \n"          // Evict by writing garbage (zero) to different tag
         "2: j 2b \n"
+        : 
+        : "i"(STATUS_ADDR), "i"(EVICT_ADDR)
     );
 }
 
@@ -67,6 +82,11 @@ void main() {
     *(uint64_t*)0x80050000 = 0xDEADBEEFCAFEBABE;
     char *dest = (char *)0x80040000;
     for(int i=0; i < (payload_end - payload_start); i++) dest[i] = payload_start[i];
+
+    volatile uint64_t *dummy = (volatile uint64_t *)0x81000000;
+    for (int i = 0; i < (128 * 1024) / 8; i++) {
+        (void)dummy[i];
+    }
 
     // Enable MMU and MRET
     uint64_t satp = SATP_MODE_SV39 | ((uint64_t)root >> 12);

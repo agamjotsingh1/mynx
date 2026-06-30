@@ -31,31 +31,29 @@ module mem_wb_reg (
 );
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(!hard_stall) begin
-      if(rst || (nopi & `NOPI_MEM_WB)) begin
-        out_valid <= 0;
-        out_pc <= `RSTPC;
-        out_anchor_pc <= `RSTPC;
-        out_rd        <= 0;
-        out_mem_res   <= 0;
-        out_regw_data <= 0;
-        out_ctl_bus   <= 0;
-        out_csr <= 0;
-        out_csr_write_data <= 0;
-        out_xcep <= 0;
-      end
-      else if (!(stall & `STALL_MEM_WB)) begin
-        out_valid <= in_valid;
-        out_pc <= in_pc;
-        out_anchor_pc <= in_anchor_pc;
-        out_rd        <= in_rd;
-        out_mem_res   <= in_mem_res;
-        out_regw_data <= in_regw_data;
-        out_ctl_bus   <= in_ctl_bus;
-        out_csr <= in_csr;
-        out_csr_write_data <= in_csr_write_data;
-        out_xcep <= in_xcep;
-      end
+    if(rst || ((nopi & `NOPI_MEM_WB) && (!hard_stall))) begin
+      out_valid <= 0;
+      out_pc <= `RSTPC;
+      out_anchor_pc <= `RSTPC;
+      out_rd        <= 0;
+      out_mem_res   <= 0;
+      out_regw_data <= 0;
+      out_ctl_bus   <= 0;
+      out_csr <= 0;
+      out_csr_write_data <= 0;
+      out_xcep <= 0;
+    end
+    else if (!(stall & `STALL_MEM_WB) && (!hard_stall)) begin
+      out_valid <= in_valid;
+      out_pc <= in_pc;
+      out_anchor_pc <= in_anchor_pc;
+      out_rd        <= in_rd;
+      out_mem_res   <= in_mem_res;
+      out_regw_data <= in_regw_data;
+      out_ctl_bus   <= in_ctl_bus;
+      out_csr <= in_csr;
+      out_csr_write_data <= in_csr_write_data;
+      out_xcep <= in_xcep;
     end
   end
   /* verilator lint_on WIDTHTRUNC */

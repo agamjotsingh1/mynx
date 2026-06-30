@@ -23,21 +23,19 @@ module if_id_reg (
 );
   /* verilator lint_off WIDTHTRUNC */
   always @(posedge clk) begin
-    if(!hard_stall) begin
-      if(rst || (nopi & `NOPI_IF_ID)) begin
-        out_valid <= 0;
-        out_pc <= `RSTPC;
-        out_instr <= `RSTINSTR;
-        out_xcep <= 0;
-        out_predicted_pc <= `RSTPC;
-      end
-      else if (!(stall & `STALL_IF_ID)) begin
-        out_valid <= in_valid;
-        out_pc <= in_pc;
-        out_instr <= in_instr;
-        out_xcep <= in_xcep;
-        out_predicted_pc <= in_predicted_pc;
-      end
+    if(rst || ((nopi & `NOPI_IF_ID) && (!hard_stall))) begin
+      out_valid <= 0;
+      out_pc <= `RSTPC;
+      out_instr <= `RSTINSTR;
+      out_xcep <= 0;
+      out_predicted_pc <= `RSTPC;
+    end
+    else if (!(stall & `STALL_IF_ID) && !(hard_stall)) begin
+      out_valid <= in_valid;
+      out_pc <= in_pc;
+      out_instr <= in_instr;
+      out_xcep <= in_xcep;
+      out_predicted_pc <= in_predicted_pc;
     end
   end
   /* verilator lint_on WIDTHTRUNC */

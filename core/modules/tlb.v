@@ -21,9 +21,10 @@ module tlb (
   reg `W(`TLB_TAGLEN) tlb_tag   [0:`TLB_ENTRIES-1];
   reg `W(`PTELEN)     tlb_pte   [0:`TLB_ENTRIES-1];
 
+  integer i;
   always @(posedge clk) begin
     if (rst || flush) begin
-      for(integer i = 0; i < `TLB_ENTRIES; i = i + 1)
+      for(i = 0; i < `TLB_ENTRIES; i = i + 1)
         tlb_valid[i] <= 0;
     end
     else if(update_en) begin

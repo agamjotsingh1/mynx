@@ -24,20 +24,18 @@ module regfile (
 	reg `W(`DLEN) reg_array [(2**(`RLEN)- 1):0];
 	
 	always @(negedge clk) begin
-		if(!hard_stall) begin
-			if(rst) begin
-				for(i = 0; i < 2**(`RLEN); i = i + 1) begin
-					reg_array[i] <= 0;
-				end
-			end
-			// dont write if write_en is low
-			// or if writing to x0 (always 0)
-			/* verilator lint_off WIDTHTRUNC */
-			else if(write_en && (write_addr != 0) && (!(stall & `STALL_REGFILE))) begin
-			/* verilator lint_on WIDTHTRUNC */
-				reg_array[write_addr] <= write_data;
-			end
-		end
+    if(rst) begin
+      for(i = 0; i < 2**(`RLEN); i = i + 1) begin
+        reg_array[i] <= 0;
+      end
+    end
+    // dont write if write_en is low
+    // or if writing to x0 (always 0)
+    /* verilator lint_off WIDTHTRUNC */
+    else if(write_en && (write_addr != 0) && (!(stall & `STALL_REGFILE)) && (!hard_stall)) begin
+    /* verilator lint_on WIDTHTRUNC */
+      reg_array[write_addr] <= write_data;
+    end
 	end
 
 	assign read_data1 = reg_array[read_addr1];

@@ -13,7 +13,7 @@ module submem (
   input wire  `W(`BWLEN)    bw,
   input wire  `W(`DLEN)     data_in,
   output wire `W(`DLEN)     data_out,
-  output wire               busy,
+  output reg                busy,
 
   // AMC ports
   output wire  `W(`ADDRLEN)  __amc_addr,
@@ -44,13 +44,15 @@ module submem (
   reg `W(`ADDRLEN) evict_addr, spill_evict_addr;
 
   wire cache_dirty, cache_hit;
+  wire cache_spill_dirty, cache_spill_hit;
   reg cache_mem_read, cache_mem_write, cache_entry;
   reg `W(`ADDRLEN) cache_addr;
-  wire `W(`ADDRLEN) cache_evict_addr;
+  wire `W(`ADDRLEN) cache_evict_addr, cache_spill_evict_addr;
   reg `W(`DLEN) cache_data_in;
   reg `W(`BWLEN) cache_bw;
+  wire cache_line_spill;
 
-  wire cache_miss = !cache_hit || !(cache_line_spill & cache_spill_hit);
+  wire cache_miss = !cache_hit || (cache_line_spill & !cache_spill_hit);
 
   wire cache_last_entry = __amc_data_out_last;
 
@@ -147,7 +149,7 @@ module submem (
               if(cache_dirty) state <= DIRTY;
               else if(cache_line_spill && cache_spill_dirty) state <= DIRTY_SPILL;
               else if(!cache_hit) state <= LOAD;
-              else if(!(cache_line_spill & cache_spill_hit)) state <= LOAD_SPILL;
+              else if(cache_line_spill & !cache_spill_hit) state <= LOAD_SPILL;
             end
             else busy <= 0;
           end
@@ -162,12 +164,12 @@ module submem (
         DIRTY_SPILL: begin
           if(__amc_data_in_last) begin
             if(!hit) state <= LOAD;
-            else if(!(line_spill & spill_hit)) state <= LOAD_SPILL;
+            else if(line_spill & !spill_hit) state <= LOAD_SPILL;
           end
         end
         LOAD: begin
           if(__amc_data_out_last) begin
-            if(!(line_spill & spill_hit)) state <= LOAD_SPILL;
+            if(line_spill & !spill_hit) state <= LOAD_SPILL;
             else state <= AMC_WAIT;
           end
         end

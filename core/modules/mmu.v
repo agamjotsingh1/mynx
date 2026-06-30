@@ -57,8 +57,41 @@ module mmu (
   input wire                sign_extend_b,
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
-  output reg  `W(`DLEN)     data_out_b
+  output reg  `W(`DLEN)     data_out_b,
+
+  `ifndef __SIM__ // synth (vivado)
+  // AMC exposed ports
+  output wire  `W(`ADDRLEN)  __amc_addr_a,
+  output wire                __amc_mem_read_a,
+  output wire                __amc_mem_write_a,
+  output wire  `W(`DLEN)     __amc_data_in_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_a,
+  input  wire               __amc_data_in_last_a,
+  input  wire               __amc_data_in_valid_a,
+  input  wire `W(`DLEN)     __amc_data_out_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_a,
+  input  wire               __amc_data_out_valid_a,
+  input  wire               __amc_data_out_last_a,
+  input  wire               __amc_busy_a,
+  input  wire               __amc_err_a,
+
+  output wire  `W(`ADDRLEN)  __amc_addr_b,
+  output wire                __amc_mem_read_b,
+  output wire                __amc_mem_write_b,
+  output wire  `W(`DLEN)     __amc_data_in_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_b,
+  input  wire               __amc_data_in_last_b,
+  input  wire               __amc_data_in_valid_b,
+  input  wire `W(`DLEN)     __amc_data_out_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_b,
+  input  wire               __amc_data_out_valid_b,
+  input  wire               __amc_data_out_last_b,
+  input  wire               __amc_busy_b,
+  input  wire               __amc_err_b
+  `endif
 );
+  wire busy_a, busy_b;
+
   wire ext_abort_a = `XCEP(xcep_a)  | __wb_trap_taken;
   wire ext_abort_b = `XCEP(xcep_b)  | __wb_trap_taken;
   wire mmu_abort_a = `XCEP(uxcep_a) | ext_abort_a;
@@ -110,18 +143,42 @@ module mmu (
   wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a) & (~tlb_hit_a);
   wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b) & (~tlb_hit_b);
 
+  reg done_a, done_b;
+
+  always @(posedge clk) begin
+    if(rst || !hard_stall) begin
+      done_a <= 1'b0;
+      done_b <= 1'b0;
+    end
+    else begin
+      // only update at the end of walk
+      if (mem_en_a && !busy_a && !(stall_req_a && (lvl_a != 0))) done_a <= 1'b1;
+      if (mem_en_b && !busy_b && !(stall_req_b && (lvl_b != 0))) done_b <= 1'b1;
+    end
+  end
+
   reg `W($clog2(`PGTBL_LVLS)) lvl_a;
   reg `W($clog2(`PGTBL_LVLS)) lvl_b;
 
   always @(posedge clk) begin
     if (rst || !stall_req_a) lvl_a <= `PGTBL_LVLS;
-    else if (walk_en_a)      lvl_a <= (lvl_a == 0) ? `PGTBL_LVLS : (lvl_a - 1);
+    else if (walk_en_a && (!busy_a)) lvl_a <= (lvl_a == 0) ? `PGTBL_LVLS : (lvl_a - 1);
 
     if (rst || !stall_req_b) lvl_b <= `PGTBL_LVLS;
-    else if (walk_en_b)      lvl_b <= (lvl_b == 0) ? `PGTBL_LVLS : (lvl_b - 1);
+    else if (walk_en_b && (!busy_b)) lvl_b <= (lvl_b == 0) ? `PGTBL_LVLS : (lvl_b - 1);
   end
 
-  assign hard_stall = ((stall_req_a && (lvl_a != 0)) || (stall_req_b && (lvl_b != 0)));
+  wire mem_en_a = phymem_read_a | phymem_write_a;
+  wire mem_en_b = (phymem_read_b | phymem_write_b) & is_mem_b;
+
+  wire waiting_a = mem_en_a && !done_a && busy_a;
+  wire waiting_b = mem_en_b && !done_b && busy_b;
+
+  assign hard_stall =
+    (stall_req_a && (lvl_a != 0)) ||
+    (stall_req_b && (lvl_b != 0)) ||
+    (waiting_a) ||
+    (waiting_b);
   
   wire `W(`DLEN) phymem_data_out_a, phymem_data_out_b;
 
@@ -136,12 +193,12 @@ module mmu (
   always @(posedge clk) begin
     if(rst || mmu_abort_a || pmp_fault_a || tlb_hit_a) 
       pte_a <= 0;
-    else if(pgtbl_en_a) 
+    else if(pgtbl_en_a && (!busy_a)) 
       pte_a <= phymem_data_out_a;
       
-    if(rst || mmu_abort_b || pmp_fault_b) 
+    if(rst || mmu_abort_b || pmp_fault_b || tlb_hit_b) 
       pte_b <= 0;
-    else if(pgtbl_en_b) 
+    else if(pgtbl_en_b && (!busy_b))
       pte_b <= phymem_data_out_b;
   end
 
@@ -150,11 +207,11 @@ module mmu (
   wire `W(`PTELEN) eval_pte_b  = tlb_hit_b ? tlb_pte_b : pte_b;
   /* verilator lint_on UNUSEDSIGNAL */
 
-  wire             eval_en_a   = tlb_hit_a || (pgtbl_en_a && lvl_a < `PGTBL_LVLS);
-  wire             eval_leaf_a = tlb_hit_a || (lvl_a == 0);
+  wire eval_en_a   = tlb_hit_a || (pgtbl_en_a && lvl_a < `PGTBL_LVLS);
+  wire eval_leaf_a = tlb_hit_a || (lvl_a == 0);
 
-  wire             eval_en_b   = tlb_hit_b || (pgtbl_en_b && lvl_b < `PGTBL_LVLS);
-  wire             eval_leaf_b = tlb_hit_b || (lvl_b == 0);
+  wire eval_en_b   = tlb_hit_b || (pgtbl_en_b && lvl_b < `PGTBL_LVLS);
+  wire eval_leaf_b = tlb_hit_b || (lvl_b == 0);
 
   always @(*) begin
     uxcep_a = 0;
@@ -241,12 +298,6 @@ module mmu (
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl_b == 0 || tlb_hit_b) ? bw_b: `BW_DBLWORD);
 
-  wire is_uart_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
-  wire is_blkdev_b = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
-  wire is_plic_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
-  wire is_clint_b  = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
-  wire is_mem_b    = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `MEMBASE): 1;
-
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_b = sign_extend_b;
   wire `W(`DLEN) phymem_data_in_b = data_in_b;
@@ -303,6 +354,12 @@ module mmu (
   end
   /* ----------------- */
 
+  wire is_uart_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
+  wire is_blkdev_b = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
+  wire is_plic_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
+  wire is_clint_b  = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
+  wire is_mem_b    = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `MEMBASE): 1;
+
   wire dma_write_en;
   wire dma_read_en;
   wire `W(`DLEN) dma_addr;
@@ -323,6 +380,7 @@ module mmu (
     .bw_a(phymem_bw_a),
     .data_in_a(phymem_data_in_a),
     .data_out_a(phymem_data_out_a),
+    .busy_a(busy_a),
 
     // port B
     /* verilator lint_off WIDTHTRUNC */
@@ -334,6 +392,7 @@ module mmu (
     .bw_b(phymem_bw_b),
     .data_in_b(phymem_data_in_b),
     .data_out_b(phymem_data_out_b),
+    .busy_b(busy_b),
 
     // DMA port
     .dma_write_en(dma_write_en),
@@ -343,6 +402,58 @@ module mmu (
     /* verilator lint_on WIDTHTRUNC */
     .dma_write_data(dma_write_data),
     .dma_read_data(dma_read_data)
+  );
+  `else // synth (vivado)
+  submem submem_a_instance (
+    .clk(clk),
+    .rst(rst),
+    .addr(phymem_addr_a - `MEMBASE),
+    .mem_read(phymem_read_a),
+    .mem_write(phymem_write_a),
+    .sign_extend(phymem_sign_extend_a),
+    .bw(phymem_bw_a),
+    .data_in(phymem_data_in_a),
+    .data_out(phymem_data_out_a),
+    .busy(busy_a),
+    .__amc_addr(__amc_addr_a),
+    .__amc_mem_read(__amc_mem_read_a),
+    .__amc_mem_write(__amc_mem_write_a),
+    .__amc_data_in(__amc_data_in_a),
+    .__amc_data_in_index(__amc_data_in_index_a),
+    .__amc_data_in_last(__amc_data_in_last_a),
+    .__amc_data_in_valid(__amc_data_in_valid_a),
+    .__amc_data_out(__amc_data_out_a),
+    .__amc_data_out_index(__amc_data_out_index_a),
+    .__amc_data_out_valid(__amc_data_out_valid_a),
+    .__amc_data_out_last(__amc_data_out_last_a),
+    .__amc_busy(__amc_busy_a),
+    .__amc_err(__amc_err_a)
+  );
+
+  submem submem_b_instance (
+    .clk(clk),
+    .rst(rst),
+    .addr(phymem_addr_b - `MEMBASE),
+    .mem_read(phymem_read_b & is_mem_b),
+    .mem_write(phymem_write_b & is_mem_b),
+    .sign_extend(phymem_sign_extend_b),
+    .bw(phymem_bw_b),
+    .data_in(phymem_data_in_b),
+    .data_out(phymem_data_out_b),
+    .busy(busy_b),
+    .__amc_addr(__amc_addr_b),
+    .__amc_mem_read(__amc_mem_read_b),
+    .__amc_mem_write(__amc_mem_write_b),
+    .__amc_data_in(__amc_data_in_b),
+    .__amc_data_in_index(__amc_data_in_index_b),
+    .__amc_data_in_last(__amc_data_in_last_b),
+    .__amc_data_in_valid(__amc_data_in_valid_b),
+    .__amc_data_out(__amc_data_out_b),
+    .__amc_data_out_index(__amc_data_out_index_b),
+    .__amc_data_out_valid(__amc_data_out_valid_b),
+    .__amc_data_out_last(__amc_data_out_last_b),
+    .__amc_busy(__amc_busy_b),
+    .__amc_err(__amc_err_b)
   );
   `endif
 
@@ -367,6 +478,8 @@ module mmu (
     .rx_valid(rx_valid),
     .rx_data(rx_data)
   );
+  `else
+  assign uart_irq = 0;
   `endif
   /* verilator lint_on WIDTHTRUNC */
 
@@ -393,6 +506,8 @@ module mmu (
 
     .irq(blkdev_irq)
   );
+  `else
+  assign blkdev_irq = 0;
   `endif
 
   /* MMIO #3 - PLIC */

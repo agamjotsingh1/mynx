@@ -173,39 +173,103 @@ module cache (
   end
   /* ----------------------------- */
 
-  // slices are not assigned because of distributed ram not being inferred
-  always @(posedge clk) begin
-    // outer module is supposed to handle evictions and dirty block writing
-    if(entry && last_entry) begin
-      if(index[0]) begin
-        // valid, not dirty
-        meta_odd[index_top] <= {1'b1, 1'b0, tag};
-      end
-      else begin
-        // valid, not dirty
-        meta_even[index_top] <= {1'b1, 1'b0, tag};
+  reg meta_even_we;
+  reg `W(`CACHE_INDEXLEN-1) meta_even_waddr;
+  reg `W(`CACHE_METALEN) meta_even_wdata;
+
+  reg meta_odd_we;
+  reg `W(`CACHE_INDEXLEN-1) meta_odd_waddr;
+  reg `W(`CACHE_METALEN) meta_odd_wdata;
+
+  always @(*) begin
+    meta_even_we = 1'b0;
+    meta_even_waddr = 0;
+    meta_even_wdata = 0;
+
+    meta_odd_we = 1'b0;
+    meta_odd_waddr = 0;
+    meta_odd_wdata = 0;
+
+    if (entry && last_entry) begin
+      if (index[0]) begin
+        meta_odd_we = 1'b1;
+        meta_odd_waddr = index_top;
+        meta_odd_wdata = {1'b1, 1'b0, tag};
+      end else begin
+        meta_even_we = 1'b1;
+        meta_even_waddr = index_top;
+        meta_even_wdata = {1'b1, 1'b0, tag};
       end
     end
-    else if(mem_write) begin
-      if(hit) begin
-        if(index[0])
-          // valid, dirty
-          meta_odd[index_top] <= {1'b1, 1'b1, tag};
-        else
-          // valid, dirty
-          meta_even[index_top] <= {1'b1, 1'b1, tag};
+    else if (mem_write) begin
+      if (hit) begin
+        if (index[0]) begin
+          meta_odd_we = 1'b1;
+          meta_odd_waddr = index_top;
+          meta_odd_wdata = {1'b1, 1'b1, tag};
+        end else begin
+          meta_even_we = 1'b1;
+          meta_even_waddr = index_top;
+          meta_even_wdata = {1'b1, 1'b1, tag};
+        end
       end
 
-      if(spill_hit && line_spill) begin
-        if(spill_index[0])
-          // valid, dirty
-          meta_odd[spill_index_top] <= {1'b1, 1'b1, spill_tag};
-        else
-          // valid, dirty
-          meta_even[spill_index_top] <= {1'b1, 1'b1, spill_tag};
+      if (spill_hit && line_spill) begin
+        if (spill_index[0]) begin
+          meta_odd_we = 1'b1;
+          meta_odd_waddr = spill_index_top;
+          meta_odd_wdata = {1'b1, 1'b1, spill_tag};
+        end else begin
+          meta_even_we = 1'b1;
+          meta_even_waddr = spill_index_top;
+          meta_even_wdata = {1'b1, 1'b1, spill_tag};
+        end
       end
     end
   end
+
+  always @(posedge clk) begin
+    if (meta_odd_we) begin
+      meta_odd[meta_odd_waddr] <= meta_odd_wdata;
+    end
+    if (meta_even_we) begin
+      meta_even[meta_even_waddr] <= meta_even_wdata;
+    end
+  end
+
+  // // slices are not assigned because of distributed ram not being inferred
+  // always @(posedge clk) begin
+  //   // outer module is supposed to handle evictions and dirty block writing
+  //   if(entry && last_entry) begin
+  //     if(index[0]) begin
+  //       // valid, not dirty
+  //       meta_odd[index_top] <= {1'b1, 1'b0, tag};
+  //     end
+  //     else begin
+  //       // valid, not dirty
+  //       meta_even[index_top] <= {1'b1, 1'b0, tag};
+  //     end
+  //   end
+  //   else if(mem_write) begin
+  //     if(hit) begin
+  //       if(index[0])
+  //         // valid, dirty
+  //         meta_odd[index_top] <= {1'b1, 1'b1, tag};
+  //       else
+  //         // valid, dirty
+  //         meta_even[index_top] <= {1'b1, 1'b1, tag};
+  //     end
+
+  //     if(spill_hit && line_spill) begin
+  //       if(spill_index[0])
+  //         // valid, dirty
+  //         meta_odd[spill_index_top] <= {1'b1, 1'b1, spill_tag};
+  //       else
+  //         // valid, dirty
+  //         meta_even[spill_index_top] <= {1'b1, 1'b1, spill_tag};
+  //     end
+  //   end
+  // end
 
   cache_bram cache_bram_instance (
     // port a
