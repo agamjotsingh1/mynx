@@ -13,8 +13,12 @@ module hdu (
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`CTL_BUSLEN) __id_ctl_bus,
   input wire `W(`CTL_BUSLEN) __ex_ctl_bus,
-  input wire `W(`CTL_BUSLEN) __mem_ctl_bus
+  input wire `W(`CTL_BUSLEN) __mem_ctl_bus,
   /* verilator lint_on UNUSEDSIGNAL */
+
+  input wire __ex_valid,
+  input wire __mem_valid,
+  input wire __wb_valid
 );
   // simple load hazard
   wire load_hazard =
@@ -47,11 +51,15 @@ module hdu (
   wire sfence_barrier_hazard = `SFENCEVMA(__id_ctl_bus) &&
     (`CSR_WRITE(__ex_ctl_bus) || `CSR_WRITE(__mem_ctl_bus));
 
+  wire fence_barrier_hazard = `FENCE(__id_ctl_bus) &&
+    (__ex_valid || __mem_valid || __wb_valid);
+
   wire is_hazard =
     load_hazard ||
     control_csr_hazard  || 
     control_csr_load_hazard || 
-    sfence_barrier_hazard;
+    sfence_barrier_hazard ||
+    fence_barrier_hazard;
 
   wire `W(`NOPILEN) hazard_nopi =
     is_hazard ? `NOPI_ID_EX: `NOPI_NONE;

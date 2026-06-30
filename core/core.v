@@ -155,6 +155,8 @@ module core (
   wire `W(`DLEN)        __wb_write_epc;
 
   wire tlb_flush = `SFENCEVMA(__id_ctl_bus);  // flush tlb for sfence instructions
+  wire cache_flush = `FENCE(__id_ctl_bus) &&
+    !(__ex_valid || __mem_valid || __wb_valid);
 
   always @(posedge clk) begin
     if(rst) priv <= `PRIVM;
@@ -171,6 +173,7 @@ module core (
     .rst(rst),
     .hard_stall(hard_stall),
     .tlb_flush(tlb_flush),
+    .cache_flush(cache_flush),
     .priv(priv),
     .satp(satp),
     .xcep_a(__if_xcep),
@@ -524,6 +527,9 @@ module core (
   hdu hdu_instance (
     .stall(hazard_stall),
     .nopi(hazard_nopi),
+    .__ex_valid(__ex_valid),
+    .__mem_valid(__mem_valid),
+    .__wb_valid(__wb_valid),
     .__id_rs1(__id_rs1),
     .__id_rs2(__id_rs2),
     .__if_bpt_mispredict(__if_bpt_mispredict),

@@ -35,7 +35,8 @@ module alu_ctl (
       {`OP_J,       10'b?},
       {`OP_I_JALR,  10'b?},
       {`OP_U_LUI,   10'b?},
-      {`OP_U_AUIPC, 10'b?}
+      {`OP_U_AUIPC, 10'b?},
+      {`OP_MISCMEM, 10'b?}
       : alu_op = `ALU_OP_ADD;
 
       `BOP_SUB,

@@ -34,6 +34,9 @@ module mmu (
   // tlb flushing using sfence.vma
   input wire tlb_flush,
 
+  // cache flush using fence.i
+  input wire cache_flush,
+
   output wire ext_irq,
   output wire timer_irq,
 
@@ -92,6 +95,77 @@ module mmu (
 );
   wire busy_a, busy_b;
 
+  // flushing logic for fence instructions
+  wire flush_done_a, flush_done_b;
+
+  reg [1:0] flush_state;
+  localparam FLUSH_IDLE  = 2'b00;
+  localparam FLUSH_WAIT1 = 2'b01;
+  localparam FLUSH_WAIT2 = 2'b10;
+  localparam FLUSH_DONE  = 2'b11;
+
+  reg flush_a, flush_b;
+
+  always @(posedge clk) begin
+    if(rst) begin
+      flush_state <= FLUSH_IDLE;
+      flush_a <= 0;
+      flush_b <= 0;
+    end
+    else begin
+      case(flush_state)
+        // FIXME only works if both caches have SAME DEPTH
+        FLUSH_IDLE: begin
+          if (cache_flush) begin
+            flush_state <= FLUSH_WAIT1;
+            flush_a <= 1;
+            flush_b <= 1;
+          end
+        end
+
+        FLUSH_WAIT1: begin
+          if (flush_done_a && flush_done_b) begin
+            flush_state <= FLUSH_DONE;
+            flush_a <= 0;
+            flush_b <= 0;
+          end
+          else if(flush_done_a && flush_a) begin
+            flush_state <= FLUSH_WAIT2;
+            flush_a <= 0;
+          end
+          else if(flush_done_b && flush_b) begin
+            flush_state <= FLUSH_WAIT2;
+            flush_b <= 0;
+          end
+        end
+
+        FLUSH_WAIT2: begin
+          if(flush_done_a && flush_a) begin
+            flush_state <= FLUSH_DONE;
+            flush_a <= 0;
+          end
+          else if(flush_done_b && flush_b) begin
+            flush_state <= FLUSH_DONE;
+            flush_b <= 0;
+          end
+        end
+
+        FLUSH_DONE: begin
+          if (!hard_stall) flush_state <= FLUSH_IDLE;
+        end
+
+        default: begin
+          flush_state <= FLUSH_IDLE;
+        end
+      endcase
+    end
+  end
+
+  wire is_flushing =
+    (flush_state == FLUSH_WAIT1) ||
+    (flush_state == FLUSH_WAIT2) ||
+    (flush_state == FLUSH_IDLE && cache_flush);
+
   wire ext_abort_a = `XCEP(xcep_a)  | __wb_trap_taken;
   wire ext_abort_b = `XCEP(xcep_b)  | __wb_trap_taken;
   wire mmu_abort_a = `XCEP(uxcep_a) | ext_abort_a;
@@ -103,8 +177,8 @@ module mmu (
     (`SATP_MODE(satp) == `SATP_MODE_SV39);
   /* verilator lint_on WIDTHTRUNC */
 
-  wire pgtbl_en_a = (mem_read_a | mem_write_a) && pgtbl_en_glbl && (!ext_abort_a);
-  wire pgtbl_en_b = (mem_read_b | mem_write_b) && pgtbl_en_glbl && (!ext_abort_b);
+  wire pgtbl_en_a = (mem_read_a | mem_write_a) && pgtbl_en_glbl && (!ext_abort_a) && (!is_flushing);
+  wire pgtbl_en_b = (mem_read_b | mem_write_b) && pgtbl_en_glbl && (!ext_abort_b) && (!is_flushing);
   wire walk_en_a  = (pgtbl_en_a & !tlb_hit_a); 
   wire walk_en_b  = (pgtbl_en_b & !tlb_hit_b); 
 
@@ -121,7 +195,7 @@ module mmu (
     .rst(rst),
     .flush(tlb_flush),
     .pgtbl_en(pgtbl_en_a),
-    .update_en(pgtbl_en_a && (lvl_a == 0) && (~mmu_abort_a) && (~tlb_hit_a)),
+    .update_en(pgtbl_en_a && (lvl_a == 0) && (~mmu_abort_a) && (~tlb_hit_a) && (~is_flushing)),
     .pte_update(pte_a),
     .va(addr_a),
     .hit(tlb_hit_a),
@@ -133,15 +207,15 @@ module mmu (
     .rst(rst),
     .flush(tlb_flush),
     .pgtbl_en(pgtbl_en_b),
-    .update_en(pgtbl_en_b && (lvl_b == 0) && (~mmu_abort_b) && (~tlb_hit_b)),
+    .update_en(pgtbl_en_b && (lvl_b == 0) && (~mmu_abort_b) && (~tlb_hit_b) && (~is_flushing)),
     .pte_update(pte_b),
     .va(addr_b),
     .hit(tlb_hit_b),
     .pte(tlb_pte_b)
   );
 
-  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a) & (~tlb_hit_a);
-  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b) & (~tlb_hit_b);
+  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a) & (~tlb_hit_a) & (~is_flushing);
+  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b) & (~tlb_hit_b) & (~is_flushing);
 
   reg done_a, done_b;
 
@@ -168,8 +242,8 @@ module mmu (
     else if (walk_en_b && (!busy_b)) lvl_b <= (lvl_b == 0) ? `PGTBL_LVLS : (lvl_b - 1);
   end
 
-  wire mem_en_a = phymem_read_a | phymem_write_a;
-  wire mem_en_b = (phymem_read_b | phymem_write_b) & is_mem_b;
+  wire mem_en_a = (phymem_read_a | phymem_write_a) & (~is_flushing);
+  wire mem_en_b = (phymem_read_b | phymem_write_b) & is_mem_b & (~is_flushing);
 
   wire waiting_a = mem_en_a && !done_a && busy_a;
   wire waiting_b = mem_en_b && !done_b && busy_b;
@@ -178,7 +252,8 @@ module mmu (
     (stall_req_a && (lvl_a != 0)) ||
     (stall_req_b && (lvl_b != 0)) ||
     (waiting_a) ||
-    (waiting_b);
+    (waiting_b) ||
+    is_flushing;
   
   wire `W(`DLEN) phymem_data_out_a, phymem_data_out_b;
 
@@ -191,12 +266,12 @@ module mmu (
     : `PTE2PA(pte_b, `VA2VPN(addr_b, lvl_b));
 
   always @(posedge clk) begin
-    if(rst || mmu_abort_a || pmp_fault_a || tlb_hit_a) 
+    if(rst || mmu_abort_a || pmp_fault_a || tlb_hit_a || is_flushing) 
       pte_a <= 0;
     else if(pgtbl_en_a && (!busy_a)) 
       pte_a <= phymem_data_out_a;
       
-    if(rst || mmu_abort_b || pmp_fault_b || tlb_hit_b) 
+    if(rst || mmu_abort_b || pmp_fault_b || tlb_hit_b || is_flushing) 
       pte_b <= 0;
     else if(pgtbl_en_b && (!busy_b))
       pte_b <= phymem_data_out_b;
@@ -268,8 +343,8 @@ module mmu (
   wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
     :((lvl_a == 0 || tlb_hit_a) ? mem_write_a: 0);
 
-  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a) & (~mmu_abort_a);
-  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a) & (~mmu_abort_a);
+  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a) & (~mmu_abort_a) & (~is_flushing);
+  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a) & (~mmu_abort_a) & (~is_flushing);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
     :((lvl_a == 0 || tlb_hit_a) ? bw_a: `BW_DBLWORD);
@@ -286,14 +361,20 @@ module mmu (
     : ((lvl_b == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b));
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_raw_read_b = (!pgtbl_en_b) ? mem_read_b
-    :((lvl_b == 0 || tlb_hit_b) ? mem_read_b: 1);
+  wire active_read_a  = mem_read_a  & (~is_flushing);
+  wire active_write_a = mem_write_a & (~is_flushing);
 
-  wire phymem_raw_write_b = (!pgtbl_en_b) ? mem_write_b
-    :((lvl_b == 0 || tlb_hit_b) ? mem_write_b: 0);
+  wire active_read_b  = mem_read_b  & (~is_flushing);
+  wire active_write_b = mem_write_b & (~is_flushing);
 
-  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b) & (~mmu_abort_b);
-  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b) & (~mmu_abort_b);
+  wire phymem_raw_read_b = (!pgtbl_en_b) ? active_read_b
+    :((lvl_b == 0 || tlb_hit_b) ? active_read_b: 1);
+
+  wire phymem_raw_write_b = (!pgtbl_en_b) ? active_write_b
+    :((lvl_b == 0 || tlb_hit_b) ? active_write_b: 0);
+
+  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b) & (~mmu_abort_b) & (~is_flushing);
+  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b) & (~mmu_abort_b) & (~is_flushing);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl_b == 0 || tlb_hit_b) ? bw_b: `BW_DBLWORD);
@@ -415,6 +496,8 @@ module mmu (
     .data_in(phymem_data_in_a),
     .data_out(phymem_data_out_a),
     .busy(busy_a),
+    .flush(flush_a),
+    .flush_done(flush_done_a),
     .__amc_addr(__amc_addr_a),
     .__amc_mem_read(__amc_mem_read_a),
     .__amc_mem_write(__amc_mem_write_a),
@@ -441,6 +524,8 @@ module mmu (
     .data_in(phymem_data_in_b),
     .data_out(phymem_data_out_b),
     .busy(busy_b),
+    .flush(flush_b),
+    .flush_done(flush_done_b),
     .__amc_addr(__amc_addr_b),
     .__amc_mem_read(__amc_mem_read_b),
     .__amc_mem_write(__amc_mem_write_b),

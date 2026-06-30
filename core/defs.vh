@@ -60,6 +60,7 @@
 
 // OPcodes wrt instruction format
 `define OP_SYS            7'b1110011
+`define OP_MISCMEM        7'b0001111
 `define OP_R              7'b0110011
 `define OP_RW             7'b0111011 // word instrs (like addw)
 `define OP_I              7'b0010011 // standard I format
@@ -97,6 +98,7 @@
 `define F3CSRRWI          3'h5
 `define F3CSRRSI          3'h6
 `define F3CSRRCI          3'h7
+`define F3FENCEI          3'h1
 `define F3NULL            3'h0
 
 // funct7 defs
@@ -201,7 +203,7 @@
 `define ZICSR_OP_CSRRCI   3'h6
 
 // Control (ctl) signals
-`define CTL_BUSLEN            28
+`define CTL_BUSLEN            29
 `define ALU_SRC(ctl_bus)      ctl_bus[0]     // 1 for imm, 0 for reg
 `define REG_WRITE(ctl_bus)    ctl_bus[1]     // 1 for reg to be written
 `define MEM_WRITE(ctl_bus)    ctl_bus[2]     // 1 for mem to be written
@@ -224,7 +226,8 @@
 `define SFENCEVMA(ctl_bus)    ctl_bus[24]    // 1 if instr is sfence.vma
 `define USES_RS1(ctl_bus)     ctl_bus[25]    // 1 if rs1 is used in the instr
 `define USES_RS2(ctl_bus)     ctl_bus[26]    // 1 if rs2 is used in the instr
-`define ILLEGAL(ctl_bus)      ctl_bus[27]    // 1 if instr is illegal
+`define FENCE(ctl_bus)        ctl_bus[27]    // 1 if instr is fence.i
+`define ILLEGAL(ctl_bus)      ctl_bus[28]    // 1 if instr is illegal
 
 // Pipeline stalling signals
 `define STLEN                 7

@@ -40,7 +40,7 @@ void __attribute__((naked)) trap_handler() {
 
         "test_fail: \n"
         "li t4, 0xDEAD \n"
-        "sd t4, 0(t2) \n"            // Store 0xDEAD to known memory location
+        "sd t0, 0(t2) \n"            // Store 0xDEAD to known memory location
         "sd zero, 0(t3) \n"          // Evict by writing garbage (zero) to different tag
         "2: j 2b \n"
         : 
@@ -66,6 +66,10 @@ void main() {
     __asm__ volatile ("csrw mtvec, %0" : : "r"(trap_handler));
 
     // Page Tables in physical memory
+    /* uint64_t *root = (uint64_t *)0x80010000; */
+    /* uint64_t *l1   = (uint64_t *)0x80020000; */
+    /* uint64_t *l0   = (uint64_t *)0x80030000; */
+
     uint64_t *root = (uint64_t *)0x80010000;
     uint64_t *l1   = (uint64_t *)0x80020000;
     uint64_t *l0   = (uint64_t *)0x80030000;
@@ -83,16 +87,18 @@ void main() {
     char *dest = (char *)0x80040000;
     for(int i=0; i < (payload_end - payload_start); i++) dest[i] = payload_start[i];
 
-    volatile uint64_t *dummy = (volatile uint64_t *)0x81000000;
-    for (int i = 0; i < (128 * 1024) / 8; i++) {
-        (void)dummy[i];
-    }
+    /* volatile uint64_t *sweep_ptr = (uint64_t *)0x81000000; */
+    /* int sweep_words = (256 * 1024) / sizeof(uint64_t); // 256 KB worth of 64-bit writes */
+    /* for(int i = 0; i < sweep_words; i++) { */
+    /*     sweep_ptr[i] = 0; */
+    /* } */
 
     // Enable MMU and MRET
     uint64_t satp = SATP_MODE_SV39 | ((uint64_t)root >> 12);
     __asm__ volatile (
+        "fence.i \n"
         "csrw satp, %0 \n"
-        // "sfence.vma \n"
+        "sfence.vma \n"
         "li t0, 0x1800 \n"
         "csrc mstatus, t0 \n"
         "li t0, 0x1000 \n"

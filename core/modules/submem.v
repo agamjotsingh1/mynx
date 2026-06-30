@@ -1,6 +1,8 @@
 `include "defs.vh"
 
 // sub memory for different ports with their own caches
+// TODO! add exceptions for AXI TXN errors
+// TODO! move from synthetic flush addresses to flush line cache input
 module submem (
   input wire clk,
   input wire rst,
@@ -14,6 +16,8 @@ module submem (
   input wire  `W(`DLEN)     data_in,
   output wire `W(`DLEN)     data_out,
   output reg                busy,
+  input wire                flush,
+  output reg                flush_done,
 
   // AMC ports
   output wire  `W(`ADDRLEN)  __amc_addr,
@@ -30,13 +34,22 @@ module submem (
   input  wire               __amc_busy,
   input  wire               __amc_err
 );
-  reg [2:0] state;
-  localparam IDLE         = 3'h0;
-  localparam DIRTY        = 3'h1; // dirty block with a miss => write to amc
-  localparam DIRTY_SPILL  = 3'h2; // dirty spill block with a miss => write to amc
-  localparam LOAD         = 3'h3; // load block from amc
-  localparam LOAD_SPILL   = 3'h4; // load spill block from amc
-  localparam AMC_WAIT     = 3'h5; // wait for the amc to completely finish pending txn
+  reg [4:0] state;
+  localparam IDLE         = 4'h0;
+  localparam DIRTY        = 4'h1; // dirty block with a miss => write to amc
+  localparam DIRTY_SPILL  = 4'h2; // dirty spill block with a miss => write to amc
+  localparam LOAD         = 4'h3; // load block from amc
+  localparam LOAD_SPILL   = 4'h4; // load spill block from amc
+  localparam AMC_WAIT     = 4'h5; // wait for the amc to completely finish pending txn
+  localparam FLUSH_START  = 4'h6; // check if current line needs flushing
+  localparam FLUSH_WIP    = 4'h7; // flushing work in progress (WIP)
+  localparam FLUSH_WAIT   = 4'h8; // waiting for AMC to acknowledge the flush
+
+  reg `W(`CACHE_INDEXLEN) flush_line;
+
+  // create a synthetic address that targets this flush_line
+  wire `W(`ADDRLEN) flush_addr =
+    $unsigned({flush_line, {`CACHE_OFFLEN{1'b0}}});
 
   wire en = (mem_read | mem_write);
 
@@ -51,6 +64,7 @@ module submem (
   reg `W(`DLEN) cache_data_in;
   reg `W(`BWLEN) cache_bw;
   wire cache_line_spill;
+  wire last_flush = (state == FLUSH_WIP) && __amc_data_in_last;
 
   wire cache_miss = !cache_hit || (cache_line_spill & !cache_spill_hit);
 
@@ -114,8 +128,19 @@ module submem (
         cache_data_in = __amc_data_out;
         cache_entry = __amc_data_out_valid;
       end
+      FLUSH_START: begin
+        cache_addr = flush_addr;
+      end
+      FLUSH_WIP: begin
+        // create a synthetic address that targets this flush_line
+        cache_addr =
+          flush_addr +
+          (`AMC_INDEX2ADDR($unsigned(__amc_data_in_index + __amc_data_in_valid)) & ((1 << `CACHE_OFFLEN) - 1));
+
+        cache_mem_read = !__amc_data_in_last;
+      end
       default: begin
-        // AMC_WAIT
+        // AMC_WAIT and FLUSH_WAIT
         cache_addr = addr;
         cache_mem_read = 0;
         cache_mem_write = 0;
@@ -132,11 +157,17 @@ module submem (
     if(rst) begin
       state <= IDLE;
       busy <= 1;
+      flush_line <= 0;
+      flush_done <= 0;
     end
     else begin
       case(state)
         IDLE: begin
-          if(en && busy) begin
+          if(flush) begin
+            if(flush_done) flush_done <= 0;
+            else state <= FLUSH_START;
+          end
+          else if(en && busy) begin
             if(cache_miss) begin
               hit <= cache_hit;
               dirty <= cache_dirty;
@@ -176,6 +207,36 @@ module submem (
         LOAD_SPILL: begin
           if(__amc_data_out_last) state <= AMC_WAIT;
         end
+        FLUSH_START: begin
+          if(cache_dirty) begin
+            state <= FLUSH_WIP;
+            evict_addr <= cache_evict_addr;
+          end
+          else if(&flush_line) begin
+            flush_done <= 1;
+            flush_line <= 0;
+            state <= IDLE;
+          end
+          else flush_line <= flush_line + 1;
+        end
+        FLUSH_WIP: begin
+          if(__amc_data_in_last) begin
+            state <= FLUSH_WAIT;
+          end
+        end
+        FLUSH_WAIT: begin
+          if(!__amc_busy) begin
+            if(&flush_line) begin
+              flush_done <= 1;
+              flush_line <= 0;
+              state <= IDLE;
+            end
+            else begin
+              flush_line <= flush_line + 1;
+              state <= FLUSH_START;
+            end
+          end
+        end
         AMC_WAIT: begin
           if(!__amc_busy) state <= IDLE;
         end
@@ -185,8 +246,12 @@ module submem (
 
   cache cache_instance (
     .clk(clk),
+
     .entry(cache_entry),
     .last_entry(cache_last_entry),
+
+    .flush(flush),
+    .last_flush(last_flush),
 
     .addr(cache_addr),
     .mem_read(cache_mem_read),
@@ -214,13 +279,20 @@ module submem (
       DIRTY_SPILL: __amc_addr_unlined = spill_evict_addr;
       LOAD       : __amc_addr_unlined = addr;
       LOAD_SPILL : __amc_addr_unlined = spill_addr;
+      FLUSH_WIP  : __amc_addr_unlined = evict_addr;
       default    : __amc_addr_unlined = addr;
     endcase
   end
 
   assign __amc_addr = `CACHE_LINE(__amc_addr_unlined);
-  assign __amc_mem_read = (state == LOAD) || (state == LOAD_SPILL);
-  assign __amc_mem_write = (state == DIRTY) || (state == DIRTY_SPILL);
+  assign __amc_mem_read =
+    (state == LOAD) ||
+    (state == LOAD_SPILL);
+
+  assign __amc_mem_write =
+    (state == DIRTY) ||
+    (state == DIRTY_SPILL) ||
+    (state == FLUSH_WIP);
   assign __amc_data_in = cache_data_out;
   assign data_out = cache_data_out;
 endmodule

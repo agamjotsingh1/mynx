@@ -174,6 +174,13 @@ module ctl (
         `JAL(ctl_bus)         = 1;
       end
 
+      `OP_MISCMEM: begin
+        if(funct3 == `F3FENCEI)
+          `FENCE(ctl_bus)     = 1;
+        else
+          `ILLEGAL(ctl_bus)   = 1;
+      end
+
       `OP_NULL: begin
         // do nothing (nop)
         if(instr != 0) `ILLEGAL(ctl_bus) = 1;

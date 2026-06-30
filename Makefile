@@ -55,7 +55,7 @@ RISCVTEST_SRCS = $(wildcard $(RISCVTEST_ASM_DIR)/*.S)
 RISCVTEST_HEX  = $(patsubst $(RISCVTEST_ASM_DIR)/%.S, $(RISCVTEST_HEX_DIR)/%.hex, $(RISCVTEST_SRCS))
 
 # flags
-ARCHFLAGS = -march=rv64i_zicsr -mabi=lp64
+ARCHFLAGS = -march=rv64i_zicsr_zifencei -mabi=lp64
 ASFLAGS  = $(ARCHFLAGS)
 
 # ASM_CFLAGS are for macro and .S file compilation

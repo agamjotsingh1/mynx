@@ -7,7 +7,11 @@ module cache (
 
   // only make entry whenever you miss and have to look in the memory
   input wire entry,
-  input wire last_entry,
+  input wire last_entry, // last entry into cache
+
+  // flushing
+  input wire flush,
+  input wire last_flush, // last flush (to clear dirty)
 
   // mem ports
   input wire  `W(`ADDRLEN)  addr,
@@ -39,7 +43,7 @@ module cache (
   (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_even [0:(`CACHE_DEPTH/2)-1];
   (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_odd  [0:(`CACHE_DEPTH/2)-1];
 
-  // synthesizable initial block because of distributed ram blocks
+  // **synthesizable** initial block because of distributed ram blocks
   integer i;
   initial begin
     for(i = 0; i < (`CACHE_DEPTH/2); i = i + 1) begin
@@ -47,6 +51,8 @@ module cache (
       meta_even[i] = 0;
     end
   end
+
+  wire actual_flush;
 
   /* --- write enable (we) logic --- */
   // here bram A port is the start, bram B port is the spillover (if happens)
@@ -72,7 +78,11 @@ module cache (
       default     : __bram_we = `BRAM_WE_NONE;
     endcase
 
-    if(entry) begin
+    if(actual_flush) begin
+      __bram_wea = `BRAM_WE_NONE;
+      __bram_web = `BRAM_WE_NONE;
+    end
+    else if(entry) begin
       // whenever entry is happening, you never touch BRAM port B
       __bram_wea = mem_read ? `BRAM_WE_NONE: `BRAM_WE_DBLWORD;
       __bram_web = `BRAM_WE_NONE;
@@ -81,7 +91,6 @@ module cache (
       __bram_wea = __bram_we << shift_off_a;
       __bram_web = __bram_we >> shift_off_b;
     end
-    else __bram_wea = `BRAM_WE_NONE;
   end 
   /* ------------------------------ */
 
@@ -100,6 +109,8 @@ module cache (
   assign dirty =
     `CACHE_META_DIRTY(meta_primary) &&
     `CACHE_META_VALID(meta_primary);
+
+  assign actual_flush = flush && dirty;
 
   // evict addr is normal (non 64 bit aligned)
   assign evict_addr =
@@ -122,18 +133,19 @@ module cache (
   assign spill_hit =
     (`CACHE_META_TAG(meta_spill) == spill_tag) &&
     `CACHE_META_VALID(meta_spill) &&
-    (~entry);
+    (~entry) && (~actual_flush);
 
   assign spill_dirty =
     `CACHE_META_DIRTY(meta_spill) &&
-    `CACHE_META_VALID(meta_spill);
+    `CACHE_META_VALID(meta_spill) &&
+    (~entry) && (~actual_flush);
 
   assign spill_evict_addr =
     {`CACHE_META_TAG(meta_spill), spill_index, {`CACHE_OFFLEN{1'b0}}};
   /* ------------------- */
 
   /* --- BRAM ports --- */
-  wire __bram_ena = (hit | entry) && (mem_read | mem_write);
+  wire __bram_ena = (hit | entry | actual_flush) && (mem_read | mem_write);
   wire __bram_enb = (spill_hit && __bram_spill) && (mem_read | mem_write);
 
   wire `W(`BRAM_ADDRLEN) __bram_addra = $unsigned({index, `CACHE_OFF(addr)}) >> $clog2(`BRAM_DATA_BYTELEN);
@@ -145,7 +157,7 @@ module cache (
   wire `W(`DLEN) data_shift_off_b =
     $unsigned(shift_off_b) << $clog2(`BYTE);
 
-  wire `W(`BRAM_DLEN) __bram_dina  = entry ? data_in: data_in << data_shift_off_a;
+  wire `W(`BRAM_DLEN) __bram_dina  = (entry | actual_flush) ? data_in: data_in << data_shift_off_a;
   wire `W(`BRAM_DLEN) __bram_dinb  = data_in >> data_shift_off_b;
   wire `W(`BRAM_DLEN) __bram_douta, __bram_doutb;
   /* ----------------- */
@@ -181,6 +193,7 @@ module cache (
   reg `W(`CACHE_INDEXLEN-1) meta_odd_waddr;
   reg `W(`CACHE_METALEN) meta_odd_wdata;
 
+  // TODO improve this by adding macros for meta valid, dirty and tag
   always @(*) begin
     meta_even_we = 1'b0;
     meta_even_waddr = 0;
@@ -190,8 +203,19 @@ module cache (
     meta_odd_waddr = 0;
     meta_odd_wdata = 0;
 
-    if (entry && last_entry) begin
-      if (index[0]) begin
+    if(actual_flush && last_flush) begin
+      if(index[0]) begin
+        meta_odd_we = 1'b1;
+        meta_odd_waddr = index_top;
+        meta_odd_wdata = {1'b0, 1'b0, tag};
+      end else begin
+        meta_even_we = 1'b1;
+        meta_even_waddr = index_top;
+        meta_even_wdata = {1'b0, 1'b0, tag};
+      end
+    end
+    else if(entry && last_entry) begin
+      if(index[0]) begin
         meta_odd_we = 1'b1;
         meta_odd_waddr = index_top;
         meta_odd_wdata = {1'b1, 1'b0, tag};
@@ -201,9 +225,9 @@ module cache (
         meta_even_wdata = {1'b1, 1'b0, tag};
       end
     end
-    else if (mem_write) begin
-      if (hit) begin
-        if (index[0]) begin
+    else if(mem_write) begin
+      if(hit) begin
+        if(index[0]) begin
           meta_odd_we = 1'b1;
           meta_odd_waddr = index_top;
           meta_odd_wdata = {1'b1, 1'b1, tag};
@@ -214,8 +238,8 @@ module cache (
         end
       end
 
-      if (spill_hit && line_spill) begin
-        if (spill_index[0]) begin
+      if(spill_hit && line_spill) begin
+        if(spill_index[0]) begin
           meta_odd_we = 1'b1;
           meta_odd_waddr = spill_index_top;
           meta_odd_wdata = {1'b1, 1'b1, spill_tag};
