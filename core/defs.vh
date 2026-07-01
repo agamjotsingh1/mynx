@@ -626,6 +626,14 @@
 `define CACHE_META_DIRTY(meta) meta[`CACHE_METALEN - 2]
 `define CACHE_META_TAG(meta)   meta[`CACHE_TAGLEN - 1 : 0]
 `define CACHE_OFFMASK          {{(`ADDRLEN - `CACHE_OFFLEN){1'b0}}, {{`CACHE_OFFLEN{1'b1}}}}
-`define CACHE_LINE(addr)    (addr & (~`CACHE_OFFMASK))
+`define CACHE_LINE(addr)       (addr & (~`CACHE_OFFMASK))
+
+// Disp defs
+`define RGBLEN                 24  // 8 bit * 3 for each r,g,b
+`define POSLEN                 11  // 720p => 1280x720 pixels
+`define XPIXELS                1280
+`define YPIXELS                720
+`define COLOR_BLACK            24'h000000
+`define COLOR_WHITE            24'hFFFFFF
 
 `endif
