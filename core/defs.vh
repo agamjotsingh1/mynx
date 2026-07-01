@@ -636,4 +636,11 @@
 `define COLOR_BLACK            24'h000000
 `define COLOR_WHITE            24'hFFFFFF
 
+// FONTROM defs
+`define FONTROM_DEPTH          4096
+`define FONTROM_ADDRLEN        $clog2(`FONTROM_DEPTH)
+`define FONTROM_DATALEN        `BYTE
+`define FONT_X                 8
+`define FONT_Y                 16
+
 `endif
