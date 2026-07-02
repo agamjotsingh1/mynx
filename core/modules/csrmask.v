@@ -24,8 +24,6 @@ module csrmask (
       `CSR_SSCRATCH: masked_csr_write_data = csr_write_data;
       `CSR_MCAUSE  : masked_csr_write_data = csr_write_data;
       `CSR_SCAUSE  : masked_csr_write_data = csr_write_data;
-      `CSR_PMPCFG0 : masked_csr_write_data = (csr_write_data & `PMPCFG0_MASK)  | (csr_read_data & (~`PMPCFG0_MASK));
-      `CSR_PMPADDR0: masked_csr_write_data = (csr_write_data & `PMPADDR0_MASK) | (csr_read_data & (~`PMPADDR0_MASK));
       `CSR_SATP    : masked_csr_write_data = (csr_write_data & `SATP_MASK)     | (csr_read_data & (~`SATP_MASK));
       default      : masked_csr_write_data = 0;
     endcase

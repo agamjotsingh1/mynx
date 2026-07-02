@@ -33,10 +33,6 @@ module csrfile (
 	input wire `W(`CSRLEN)  write_csr,
 	input wire `W(`DLEN)    write_data,
 
-  // pmp handling ports
-  output wire `W(`DLEN)   read_pmpaddr0,
-  output wire `W(`DLEN)   read_pmpcfg0,
-
   // external interrupt req
   input wire m_ext_irq,
   input wire s_ext_irq,
@@ -83,8 +79,6 @@ module csrfile (
   reg `W(`DLEN) stvec;
   reg `W(`DLEN) sscratch;
   reg `W(`DLEN) scause;
-  reg `W(`DLEN) pmpcfg0;
-  reg `W(`DLEN) pmpaddr0;
 
   // buffers to handle negedge/posedge mismatch
   reg `W(`TRAPMODELEN) trap_mode_buf;
@@ -123,8 +117,6 @@ module csrfile (
       sscratch <= `SSCRATCH_RST;
       mcause <= `MCAUSE_RST;
       scause <= `SCAUSE_RST;
-      pmpcfg0 <= `PMPCFG0_RST;
-      pmpaddr0 <= `PMPADDR0_RST;
       satp <= `SATP_RST;
     end
     else if(!hard_stall) begin
@@ -164,8 +156,6 @@ module csrfile (
           `CSR_SSCRATCH: sscratch <= write_data;
           `CSR_MCAUSE  : mcause   <= write_data;
           `CSR_SCAUSE  : scause   <= write_data;
-          `CSR_PMPCFG0 : pmpcfg0  <= (write_data & `PMPCFG0_MASK)  | (pmpcfg0  & (~`PMPCFG0_MASK));
-          `CSR_PMPADDR0: pmpaddr0 <= (write_data & `PMPADDR0_MASK) | (pmpaddr0 & (~`PMPADDR0_MASK));
           `CSR_SATP    : satp     <= (write_data & `SATP_MASK)     | (satp     & (~`SATP_MASK));
         endcase
       /* verilator lint_on CASEINCOMPLETE */
@@ -204,8 +194,6 @@ module csrfile (
       `CSR_MCAUSE  : read_data = mcause;
       `CSR_SCAUSE  : read_data = scause;
       `CSR_MHARTID : read_data = mhartid;
-      `CSR_PMPCFG0 : read_data = pmpcfg0;
-      `CSR_PMPADDR0: read_data = pmpaddr0;
       `CSR_SATP    : read_data = satp;
       default      : invalid_address = 1;
     endcase
@@ -218,7 +206,4 @@ module csrfile (
   assign read_epc     = (trap_mode == `TRAPMODE_MRET) ? mepc: sepc;
   assign read_mideleg = mideleg;
   assign read_medeleg = medeleg;
-
-  assign read_pmpaddr0 = pmpaddr0;
-  assign read_pmpcfg0 = pmpcfg0;
 endmodule

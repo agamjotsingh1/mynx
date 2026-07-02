@@ -90,8 +90,6 @@ module core (
   wire `W(`DLEN)        __id_epc;
   wire `W(`DLEN)        __id_mideleg;
   wire `W(`DLEN)        __id_medeleg;
-  wire `W(`DLEN)        __id_pmpaddr0;
-  wire `W(`DLEN)        __id_pmpcfg0;
   wire `W(`DLEN)        __id_predicted_pc;
 
   wire                  __ex_valid;
@@ -177,9 +175,6 @@ module core (
     .xcep_b(__mem_xcep),
     .uxcep_b(__mem_uxcep),
     .__wb_trap_taken(__wb_trap_taken),
-
-    .pmpaddr0(__id_pmpaddr0),
-    .pmpcfg0(__id_pmpcfg0),
 
     .ext_irq(__mem_ext_irq),
     .timer_irq(__mem_timer_irq),
@@ -316,10 +311,6 @@ module core (
     .__wb_write_data(__wb_write_data),
     .xcep(__id_xcep),
     .uxcep(__id_uxcep),
-
-    // pmp handling
-    .pmpaddr0(__id_pmpaddr0),
-    .pmpcfg0(__id_pmpcfg0),
 
     // uart irq handling
     .__mem_ext_irq(__mem_ext_irq),

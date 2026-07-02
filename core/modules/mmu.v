@@ -89,6 +89,7 @@ module mmu (
 );
   wire busy_a, busy_b;
 
+`ifndef __SIM__
   // flushing logic for fence instructions
   wire flush_done_a, flush_done_b;
 
@@ -108,7 +109,6 @@ module mmu (
     end
     else begin
       case(flush_state)
-        // FIXME only works if both caches have SAME DEPTH
         FLUSH_IDLE: begin
           if (cache_flush) begin
             flush_state <= FLUSH_WAIT1;
@@ -159,6 +159,9 @@ module mmu (
     (flush_state == FLUSH_WAIT1) ||
     (flush_state == FLUSH_WAIT2) ||
     (flush_state == FLUSH_IDLE && cache_flush);
+`else
+  wire is_flushing = 0;
+`endif
 
   wire ext_abort_a = `XCEP(xcep_a)  | __wb_trap_taken;
   wire ext_abort_b = `XCEP(xcep_b)  | __wb_trap_taken;

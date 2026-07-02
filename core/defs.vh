@@ -368,8 +368,6 @@
 // `define CSR_STVAL             12'h143
 `define CSR_SIE               12'h104
 `define CSR_SIP               12'h144
-`define CSR_PMPCFG0           12'h3a0
-`define CSR_PMPADDR0          12'h3b0
 
 // MSTATUS/SSTATUS fields
 // SSTATUS is just restrictively masked MSTATUS
@@ -444,14 +442,6 @@
 `define MCAUSE_RST            64'h0000_0000_0000_0000
 `define SCAUSE_RST            64'h0000_0000_0000_0000
 
-// PMPCFG0 defs
-`define PMPCFG0_RST           64'h0000_0000_0000_0000
-`define PMPCFG0_MASK          64'h9F9F_9F9F_9F9F_9F9F
-
-// PMPADDR0 defs
-`define PMPADDR0_RST          64'h0000_0000_0000_0000
-`define PMPADDR0_MASK         64'h003F_FFFF_FFFF_FFFF
-
 // SATP defs
 `define SATP_RST              64'h0000_0000_0000_0000
 // only SV39/baremetal is allowed, WARL fields!
@@ -460,13 +450,6 @@
 `define SATP_MODE_BAREMETAL   4'h0
 `define SATP_MODE_SV39        4'h8
 `define SATP_PPN(satp)        satp[43:0]
-
-// PMP defs
-`define PMPADDRSHIFT          2
-`define PMPCFG_R(pmpcfg0)     pmpcfg0[0]
-`define PMPCFG_W(pmpcfg0)     pmpcfg0[1]
-`define PMPCFG_X(pmpcfg0)     pmpcfg0[2]
-`define PMPCFG_L(pmpcfg0)     pmpcfg0[7]
 
 // UART defs
 `define UARTBASE              64'h0000_0000_1000_0000

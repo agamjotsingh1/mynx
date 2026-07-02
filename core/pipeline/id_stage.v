@@ -53,10 +53,6 @@ module id_stage (
   input wire `W(`DLEN)   xcep,
   output reg `W(`DLEN)   uxcep,
 
-  // pmp handling ports
-  output wire `W(`DLEN)  pmpaddr0,
-  output wire `W(`DLEN)  pmpcfg0,
-
   // irq
   input wire __mem_ext_irq,
   input wire __mem_timer_irq,
@@ -180,10 +176,6 @@ module id_stage (
     .write_en(`CSR_WRITE(__wb_ctl_bus)),
     .write_csr(__wb_csr),
     .write_data(__wb_csr_write_data),
-
-    // pmp handling ports
-    .read_pmpaddr0(pmpaddr0),
-    .read_pmpcfg0(pmpcfg0),
 
     // ext irq
     .m_ext_irq(0),
