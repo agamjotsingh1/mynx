@@ -5,12 +5,6 @@ module core (
   input wire clk,
   input wire rst,
 
-  // from verilator (sim only)
-  input wire       rx_valid,
-  input wire `W(`BYTE) rx_data,
-
-  output wire `W(`DLEN) __dbg_pc,
-
   `ifndef __SIM__ // synth (vivado)
   // AMC exposed ports
   output wire  `W(`ADDRLEN)  __amc_addr_a,
@@ -39,8 +33,12 @@ module core (
   input  wire               __amc_data_out_valid_b,
   input  wire               __amc_data_out_last_b,
   input  wire               __amc_busy_b,
-  input  wire               __amc_err_b
+  input  wire               __amc_err_b,
   `endif
+
+  // from verilator (sim only)
+  input wire       rx_valid,
+  input wire `W(`BYTE) rx_data
 );
   reg  `W(`PRIVLEN) priv;
   wire `W(`PRIVLEN) next_priv;
@@ -64,8 +62,6 @@ module core (
   wire `W(`DLEN)        __if_uxcep;
   wire `W(`DLEN)        __if_predicted_pc;
   wire                  __if_bpt_mispredict;
-
-  assign __dbg_pc = __if_pc;
 
   wire                  __id_valid;
   wire `W(`DLEN)        __id_pc;
@@ -191,27 +187,7 @@ module core (
     .rx_valid(rx_valid),
     .rx_data(rx_data),
 
-    // port a for instr fetch
-    .addr_a(__mem_instr_addr),
-    .mem_read_a(1),
-    .mem_write_a(0),
-    .sign_extend_a(0),
-    .bw_a(`BW_WORD),
-    .data_in_a(0),
-
-    /* verilator lint_off WIDTHEXPAND */
-    .data_out_a(__if_instr),
-    /* verilator lint_on WIDTHEXPAND */
-
-    // port b for mem stage access
-    .addr_b(__mem_data_addr),
-    .mem_read_b(`MEM_READ(__mem_ctl_bus)),
-    .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
-    .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
-    .bw_b(`BW(__mem_ctl_bus)),
-    .data_in_b(__mem_mem_data),
-    .data_out_b(__mem_mem_res),
-
+    `ifndef __SIM__
     // AMC port A
     .__amc_addr_a(__amc_addr_a),
     .__amc_mem_read_a(__amc_mem_read_a),
@@ -240,7 +216,30 @@ module core (
     .__amc_data_out_valid_b(__amc_data_out_valid_b),
     .__amc_data_out_last_b(__amc_data_out_last_b),
     .__amc_busy_b(__amc_busy_b),
-    .__amc_err_b(__amc_err_b)
+    .__amc_err_b(__amc_err_b),
+    `endif
+
+
+    // port a for instr fetch
+    .addr_a(__mem_instr_addr),
+    .mem_read_a(1),
+    .mem_write_a(0),
+    .sign_extend_a(0),
+    .bw_a(`BW_WORD),
+    .data_in_a(0),
+
+    /* verilator lint_off WIDTHEXPAND */
+    .data_out_a(__if_instr),
+    /* verilator lint_on WIDTHEXPAND */
+
+    // port b for mem stage access
+    .addr_b(__mem_data_addr),
+    .mem_read_b(`MEM_READ(__mem_ctl_bus)),
+    .mem_write_b(`MEM_WRITE(__mem_ctl_bus)),
+    .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
+    .bw_b(`BW(__mem_ctl_bus)),
+    .data_in_b(__mem_mem_data),
+    .data_out_b(__mem_mem_res)
   );
 
   /* ----- IF STAGE ------ */

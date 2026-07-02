@@ -2,7 +2,7 @@
 `define DEFS_VH
 
 // WARNING! comment while generating bitstream
-// `define __SIM__
+`define __SIM__
 
 // Memory defs
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
@@ -635,6 +635,9 @@
 `define YPIXELS                720
 `define COLOR_BLACK            24'h000000
 `define COLOR_WHITE            24'hFFFFFF
+`define CHAR_COLS              160
+`define CHAR_ROWS              45
+`define CHAR_TOTAL             `CHAR_ROWS * `CHAR_COLS
 
 // FONTROM defs
 `define FONTROM_DEPTH          4096
@@ -642,5 +645,11 @@
 `define FONTROM_DATALEN        `BYTE
 `define FONT_X                 8
 `define FONT_Y                 16
+
+// TEXTRAM defs
+`define TEXTRAM_ADDRLEN        13
+`define TEXTRAM_DATALEN        `BYTE
+`define TEXT_ROWSLICE          [10:4]
+`define TEXT_COLSLICE          [10:3]
 
 `endif

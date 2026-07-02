@@ -4,7 +4,6 @@
 // supports parallel access for different bit widths
 module mem (
   input wire clk,
-  input wire rst,
 
   // Port A
   input wire  `W(`ADDRLEN)  addr_a,
@@ -32,22 +31,7 @@ module mem (
   input wire dma_read_en,
   input wire `W(`DLEN) dma_addr,
   input wire `W(`DLEN) dma_write_data,
-  output wire `W(`DLEN) dma_read_data,
-
-  // AMC ports
-  output wire  `W(`ADDRLEN)  __amc_addr_a,
-  output wire                __amc_mem_read_a,
-  output wire                __amc_mem_write_a,
-  output wire  `W(`DLEN)     __amc_data_in_a,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_a,
-  input  wire               __amc_data_in_last_a,
-  input  wire               __amc_data_in_valid_a,
-  input  wire `W(`DLEN)     __amc_data_out_a,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_a,
-  input  wire               __amc_data_out_valid_a,
-  input  wire               __amc_data_out_last_a,
-  input  wire               __amc_busy_a,
-  input  wire               __amc_err_a
+  output wire `W(`DLEN) dma_read_data
 );
   // never busy in simulation
   assign busy_a = 0;

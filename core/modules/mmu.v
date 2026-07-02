@@ -15,6 +15,37 @@ module mmu (
   output wire hard_stall,
   input wire  __wb_trap_taken,
 
+  `ifndef __SIM__ // synth (vivado)
+  // AMC exposed ports
+  output wire  `W(`ADDRLEN)  __amc_addr_a,
+  output wire                __amc_mem_read_a,
+  output wire                __amc_mem_write_a,
+  output wire  `W(`DLEN)     __amc_data_in_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_a,
+  input  wire               __amc_data_in_last_a,
+  input  wire               __amc_data_in_valid_a,
+  input  wire `W(`DLEN)     __amc_data_out_a,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_a,
+  input  wire               __amc_data_out_valid_a,
+  input  wire               __amc_data_out_last_a,
+  input  wire               __amc_busy_a,
+  input  wire               __amc_err_a,
+
+  output wire  `W(`ADDRLEN)  __amc_addr_b,
+  output wire                __amc_mem_read_b,
+  output wire                __amc_mem_write_b,
+  output wire  `W(`DLEN)     __amc_data_in_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_b,
+  input  wire               __amc_data_in_last_b,
+  input  wire               __amc_data_in_valid_b,
+  input  wire `W(`DLEN)     __amc_data_out_b,
+  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_b,
+  input  wire               __amc_data_out_valid_b,
+  input  wire               __amc_data_out_last_b,
+  input  wire               __amc_busy_b,
+  input  wire               __amc_err_b,
+  `endif
+
   input wire  `W(`PRIVLEN)  priv,
 
   /* verilator lint_off UNUSEDSIGNAL */
@@ -23,12 +54,6 @@ module mmu (
   output reg  `W(`DLEN)     uxcep_a,
   input wire  `W(`DLEN)     xcep_b,
   output reg  `W(`DLEN)     uxcep_b,
-  /* verilator lint_on UNUSEDSIGNAL */
-
-  // pmp handling
-  input wire `W(`DLEN)      pmpaddr0,
-  /* verilator lint_off UNUSEDSIGNAL */
-  input wire `W(`DLEN)      pmpcfg0,
   /* verilator lint_on UNUSEDSIGNAL */
 
   // tlb flushing using sfence.vma
@@ -60,38 +85,7 @@ module mmu (
   input wire                sign_extend_b,
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
-  output reg  `W(`DLEN)     data_out_b,
-
-  `ifndef __SIM__ // synth (vivado)
-  // AMC exposed ports
-  output wire  `W(`ADDRLEN)  __amc_addr_a,
-  output wire                __amc_mem_read_a,
-  output wire                __amc_mem_write_a,
-  output wire  `W(`DLEN)     __amc_data_in_a,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_a,
-  input  wire               __amc_data_in_last_a,
-  input  wire               __amc_data_in_valid_a,
-  input  wire `W(`DLEN)     __amc_data_out_a,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_a,
-  input  wire               __amc_data_out_valid_a,
-  input  wire               __amc_data_out_last_a,
-  input  wire               __amc_busy_a,
-  input  wire               __amc_err_a,
-
-  output wire  `W(`ADDRLEN)  __amc_addr_b,
-  output wire                __amc_mem_read_b,
-  output wire                __amc_mem_write_b,
-  output wire  `W(`DLEN)     __amc_data_in_b,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_in_index_b,
-  input  wire               __amc_data_in_last_b,
-  input  wire               __amc_data_in_valid_b,
-  input  wire `W(`DLEN)     __amc_data_out_b,
-  input  wire `W($clog2(`AXI_AWLEN)) __amc_data_out_index_b,
-  input  wire               __amc_data_out_valid_b,
-  input  wire               __amc_data_out_last_b,
-  input  wire               __amc_busy_b,
-  input  wire               __amc_err_b
-  `endif
+  output reg  `W(`DLEN)     data_out_b
 );
   wire busy_a, busy_b;
 
@@ -214,8 +208,8 @@ module mmu (
     .pte(tlb_pte_b)
   );
 
-  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~pmp_fault_a) & (~tlb_hit_a) & (~is_flushing);
-  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~pmp_fault_b) & (~tlb_hit_b) & (~is_flushing);
+  wire stall_req_a = pgtbl_en_a & (~mmu_abort_a) & (~tlb_hit_a) & (~is_flushing);
+  wire stall_req_b = pgtbl_en_b & (~mmu_abort_b) & (~tlb_hit_b) & (~is_flushing);
 
   reg done_a, done_b;
 
@@ -266,12 +260,12 @@ module mmu (
     : `PTE2PA(pte_b, `VA2VPN(addr_b, lvl_b));
 
   always @(posedge clk) begin
-    if(rst || mmu_abort_a || pmp_fault_a || tlb_hit_a || is_flushing) 
+    if(rst || mmu_abort_a || tlb_hit_a || is_flushing) 
       pte_a <= 0;
     else if(pgtbl_en_a && (!busy_a)) 
       pte_a <= phymem_data_out_a;
       
-    if(rst || mmu_abort_b || pmp_fault_b || tlb_hit_b || is_flushing) 
+    if(rst || mmu_abort_b || tlb_hit_b || is_flushing) 
       pte_b <= 0;
     else if(pgtbl_en_b && (!busy_b))
       pte_b <= phymem_data_out_b;
@@ -305,9 +299,6 @@ module mmu (
           uxcep_a = {1'b1, `XCEP_INST_PAGE_FAULT};
       end
     end
-    // BUG! pmp bug, if pte is valid but still a pmp fault occurs
-    else if(pmp_fault_a)
-      uxcep_a = {1'b1, pmp_xcep_cause_a};
 
     // b port -> mem fetch
     if(`XCEP(xcep_b)) 
@@ -325,8 +316,6 @@ module mmu (
         ) uxcep_b = {1'b1, mem_write_b ? `XCEP_STORE_AMO_PAGE_FAULT : `XCEP_LOAD_PAGE_FAULT};
       end
     end
-    else if(pmp_fault_b)
-      uxcep_b = {1'b1, pmp_xcep_cause_b};
     /* verilator lint_on WIDTHTRUNC */
   end
 
@@ -343,8 +332,8 @@ module mmu (
   wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
     :((lvl_a == 0 || tlb_hit_a) ? mem_write_a: 0);
 
-  wire phymem_read_a = phymem_raw_read_a & (~pmp_fault_a) & (~mmu_abort_a) & (~is_flushing);
-  wire phymem_write_a = phymem_raw_write_a & (~pmp_fault_a) & (~mmu_abort_a) & (~is_flushing);
+  wire phymem_read_a = phymem_raw_read_a & (~mmu_abort_a) & (~is_flushing);
+  wire phymem_write_a = phymem_raw_write_a & (~mmu_abort_a) & (~is_flushing);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
     :((lvl_a == 0 || tlb_hit_a) ? bw_a: `BW_DBLWORD);
@@ -373,8 +362,8 @@ module mmu (
   wire phymem_raw_write_b = (!pgtbl_en_b) ? active_write_b
     :((lvl_b == 0 || tlb_hit_b) ? active_write_b: 0);
 
-  wire phymem_read_b = phymem_raw_read_b & (~pmp_fault_b) & (~mmu_abort_b) & (~is_flushing);
-  wire phymem_write_b = phymem_raw_write_b & (~pmp_fault_b) & (~mmu_abort_b) & (~is_flushing);
+  wire phymem_read_b = phymem_raw_read_b & (~mmu_abort_b) & (~is_flushing);
+  wire phymem_write_b = phymem_raw_write_b & (~mmu_abort_b) & (~is_flushing);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl_b == 0 || tlb_hit_b) ? bw_b: `BW_DBLWORD);
@@ -382,58 +371,6 @@ module mmu (
   // for pgtbl walk, sign extend, data in doesnt matter 
   wire phymem_sign_extend_b = sign_extend_b;
   wire `W(`DLEN) phymem_data_in_b = data_in_b;
-
-  /* --- PMP logic --- */
-  wire `W(`DLEN) pmp_bound = pmpaddr0 << `PMPADDRSHIFT;
-  wire pmp_enforce = (priv != `PRIVM) || `PMPCFG_L(pmpcfg0);
-  reg pmp_fault_a, pmp_fault_b;
-  reg `W(`XCEP_CAUSELEN) pmp_xcep_cause_a, pmp_xcep_cause_b;
-
-  always @(*) begin
-    pmp_fault_a = 0;
-    pmp_fault_b = 0;
-    pmp_xcep_cause_a = 0;
-    pmp_xcep_cause_b = 0;
-
-    if(pmp_enforce) begin
-      if(phymem_addr_a < pmp_bound) begin
-        // Address matches Entry 0, check specific permissions
-        if(phymem_raw_read_a && !`PMPCFG_R(pmpcfg0)) begin
-          pmp_xcep_cause_a = `XCEP_LOAD_ACCESS_FAULT;
-          pmp_fault_a = 1;
-        end
-        if(phymem_raw_write_a && !`PMPCFG_W(pmpcfg0)) begin
-          pmp_xcep_cause_a = `XCEP_STORE_AMO_ACCESS_FAULT;
-          pmp_fault_a = 1'b1;
-        end
-        if(!`PMPCFG_X(pmpcfg0)) begin
-          pmp_xcep_cause_a = `XCEP_INST_ACCESS_FAULT;
-          pmp_fault_a = 1'b1;
-        end
-      end
-      else if (phymem_raw_read_a || phymem_raw_write_a) begin
-        pmp_xcep_cause_a = `XCEP_INST_ACCESS_FAULT;
-        pmp_fault_a = 1'b1; 
-      end
-
-      if(phymem_addr_b < pmp_bound) begin
-        // Address matches Entry 0, check specific permissions
-        if(phymem_raw_read_b && !`PMPCFG_R(pmpcfg0)) begin
-          pmp_xcep_cause_b = `XCEP_LOAD_ACCESS_FAULT;
-          pmp_fault_b = 1;
-        end
-        if(phymem_raw_write_b && !`PMPCFG_W(pmpcfg0)) begin
-          pmp_xcep_cause_b = `XCEP_STORE_AMO_ACCESS_FAULT;
-          pmp_fault_b = 1;
-        end
-      end
-      else if (phymem_raw_read_b || phymem_raw_write_b) begin
-        pmp_xcep_cause_b = phymem_raw_write_b ? `XCEP_STORE_AMO_ACCESS_FAULT : `XCEP_LOAD_ACCESS_FAULT;
-        pmp_fault_b = 1;
-      end
-    end
-  end
-  /* ----------------- */
 
   wire is_uart_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `UARTBASE) && (phymem_addr_b <= `UARTTOP): 0;
   wire is_blkdev_b = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;

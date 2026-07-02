@@ -1,0 +1,166 @@
+%Warning-NULLPORT: core/core.v:42:1: Null port on module (perhaps extraneous comma)
+   42 | );
+      | ^
+                   ... For warning description see https://verilator.org/warn/NULLPORT?v=5.048
+                   ... Use "/* verilator lint_off NULLPORT */" and lint_on around source to disable this message.
+%Warning-NULLPORT: core/core.v:42:1: Null port on module (perhaps extraneous comma)
+   42 | );
+      | ^
+                   ... For warning description see https://verilator.org/warn/NULLPORT?v=5.048
+                   ... Use "/* verilator lint_off NULLPORT */" and lint_on around source to disable this message.
+%Warning-NULLPORT: core/modules/mmu.v:95:1: Null port on module (perhaps extraneous comma)
+   95 | );
+      | ^
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-NULLPORT: core/modules/mmu.v:95:1: Null port on module (perhaps extraneous comma)
+   95 | );
+      | ^
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-PINMISSING: core/core.v:167:7: Instance has missing pin: '__pinNumber33'
+  167 |   mmu mmu_instance (
+      |       ^~~~~~~~~~~~
+                     core/modules/mmu.v:95:1: ... Location of port declaration
+   95 | );
+      | ^
+                     ... For warning description see https://verilator.org/warn/PINMISSING?v=5.048
+                     ... Use "/* verilator lint_off PINMISSING */" and lint_on around source to disable this message.
+%Warning-PINMISSING: core/core.v:167:7: Instance has missing pin: '__pinNumber33'
+  167 |   mmu mmu_instance (
+      |       ^~~~~~~~~~~~
+                     core/modules/mmu.v:95:1: ... Location of port declaration
+   95 | );
+      | ^
+                     ... For warning description see https://verilator.org/warn/PINMISSING?v=5.048
+                     ... Use "/* verilator lint_off PINMISSING */" and lint_on around source to disable this message.
+%Warning-NULLPORT: core/modules/mem.v:36:1: Null port on module (perhaps extraneous comma)
+   36 | );
+      | ^
+                   core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-NULLPORT: core/modules/mem.v:36:1: Null port on module (perhaps extraneous comma)
+   36 | );
+      | ^
+                   core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-PINMISSING: core/modules/mmu.v:451:7: Instance has missing pin: 'rst'
+  451 |   mem mem_instance (
+      |       ^~~~~~~~~~~~
+                     core/core.v:169:1: ... note: In file included from 'core.v'
+                     core/modules/mem.v:7:14: ... Location of port declaration
+    7 |   input wire rst,
+      |              ^~~
+%Warning-PINMISSING: core/modules/mmu.v:451:7: Instance has missing pin: '__pinNumber24'
+  451 |   mem mem_instance (
+      |       ^~~~~~~~~~~~
+                     core/core.v:169:1: ... note: In file included from 'core.v'
+                     core/modules/mem.v:36:1: ... Location of port declaration
+   36 | );
+      | ^
+%Warning-PINMISSING: core/modules/mmu.v:451:7: Instance has missing pin: 'rst'
+  451 |   mem mem_instance (
+      |       ^~~~~~~~~~~~
+                     core/core.v:169:1: ... note: In file included from 'core.v'
+                     core/modules/mem.v:7:14: ... Location of port declaration
+    7 |   input wire rst,
+      |              ^~~
+%Warning-PINMISSING: core/modules/mmu.v:451:7: Instance has missing pin: '__pinNumber24'
+  451 |   mem mem_instance (
+      |       ^~~~~~~~~~~~
+                     core/core.v:169:1: ... note: In file included from 'core.v'
+                     core/modules/mem.v:36:1: ... Location of port declaration
+   36 | );
+      | ^
+%Warning-UNUSEDSIGNAL: core/core.v:42:1: Signal is not used: '__pinNumber5'
+                                       : ... note: In instance 'core'
+   42 | );
+      | ^
+                       ... For warning description see https://verilator.org/warn/UNUSEDSIGNAL?v=5.048
+                       ... Use "/* verilator lint_off UNUSEDSIGNAL */" and lint_on around source to disable this message.
+%Warning-UNUSEDSIGNAL: core/core.v:42:1: Signal is not used: '__pinNumber5'
+                                       : ... note: In instance 'core'
+   42 | );
+      | ^
+                       ... For warning description see https://verilator.org/warn/UNUSEDSIGNAL?v=5.048
+                       ... Use "/* verilator lint_off UNUSEDSIGNAL */" and lint_on around source to disable this message.
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:95:1: Signal is not used: '__pinNumber33'
+                                              : ... note: In instance 'core.mmu_instance'
+   95 | );
+      | ^
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNDRIVEN: core/modules/mmu.v:99:8: Signal is not driven: 'flush_done_a'
+                                          : ... note: In instance 'core.mmu_instance'
+   99 |   wire flush_done_a, flush_done_b;
+      |        ^~~~~~~~~~~~
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+                   ... For warning description see https://verilator.org/warn/UNDRIVEN?v=5.048
+                   ... Use "/* verilator lint_off UNDRIVEN */" and lint_on around source to disable this message.
+%Warning-UNDRIVEN: core/modules/mmu.v:99:22: Signal is not driven: 'flush_done_b'
+                                           : ... note: In instance 'core.mmu_instance'
+   99 |   wire flush_done_a, flush_done_b;
+      |                      ^~~~~~~~~~~~
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:95:1: Signal is not used: '__pinNumber33'
+                                              : ... note: In instance 'core.mmu_instance'
+   95 | );
+      | ^
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNDRIVEN: core/modules/mmu.v:99:8: Signal is not driven: 'flush_done_a'
+                                          : ... note: In instance 'core.mmu_instance'
+   99 |   wire flush_done_a, flush_done_b;
+      |        ^~~~~~~~~~~~
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+                   ... For warning description see https://verilator.org/warn/UNDRIVEN?v=5.048
+                   ... Use "/* verilator lint_off UNDRIVEN */" and lint_on around source to disable this message.
+%Warning-UNDRIVEN: core/modules/mmu.v:99:22: Signal is not driven: 'flush_done_b'
+                                           : ... note: In instance 'core.mmu_instance'
+   99 |   wire flush_done_a, flush_done_b;
+      |                      ^~~~~~~~~~~~
+                   core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:364:8: Signal is not used: 'active_read_a'
+                                               : ... note: In instance 'core.mmu_instance'
+  364 |   wire active_read_a  = mem_read_a  & (~is_flushing);
+      |        ^~~~~~~~~~~~~
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:364:8: Signal is not used: 'active_read_a'
+                                               : ... note: In instance 'core.mmu_instance'
+  364 |   wire active_read_a  = mem_read_a  & (~is_flushing);
+      |        ^~~~~~~~~~~~~
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:365:8: Signal is not used: 'active_write_a'
+                                               : ... note: In instance 'core.mmu_instance'
+  365 |   wire active_write_a = mem_write_a & (~is_flushing);
+      |        ^~~~~~~~~~~~~~
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mmu.v:365:8: Signal is not used: 'active_write_a'
+                                               : ... note: In instance 'core.mmu_instance'
+  365 |   wire active_write_a = mem_write_a & (~is_flushing);
+      |        ^~~~~~~~~~~~~~
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mem.v:7:14: Signal is not used: 'rst'
+                                              : ... note: In instance 'core.mmu_instance.mem_instance'
+    7 |   input wire rst,
+      |              ^~~
+                       core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mem.v:36:1: Signal is not used: '__pinNumber24'
+                                              : ... note: In instance 'core.mmu_instance.mem_instance'
+   36 | );
+      | ^
+                       core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mem.v:7:14: Signal is not used: 'rst'
+                                              : ... note: In instance 'core.mmu_instance.mem_instance'
+    7 |   input wire rst,
+      |              ^~~
+                       core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Warning-UNUSEDSIGNAL: core/modules/mem.v:36:1: Signal is not used: '__pinNumber24'
+                                              : ... note: In instance 'core.mmu_instance.mem_instance'
+   36 | );
+      | ^
+                       core/modules/mmu.v:453:1: ... note: In file included from 'mmu.v'
+                       core/core.v:169:1: ... note: In file included from 'core.v'
+%Error: Exiting due to 14 warning(s)
+%Error: Exiting due to 14 warning(s)
+make: *** [Makefile:110: obj_dir/core/Vcore] Error 1
+make: *** [Makefile:110: obj_dir/core/Vcore] Error 1
