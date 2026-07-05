@@ -96,6 +96,26 @@ XV6_KERNEL_TARGET = kernel/kernel
 XV6_KERNEL_BIN = $(XV6_KERNEL)/kernel.bin
 XV6_KERNEL_HEX = $(XV6_KERNEL)/kernel.hex
 
+# remote files on pynq
+REMOTE_DIR = mynx
+HWH_LOCAL = vivado/mynx/mynx.gen/sources_1/bd/design_1/hw_handoff/design_1.hwh
+HWH_REMOTE = $(REMOTE_DIR)/design_1.hwh
+BITSTREAM_LOCAL = vivado/mynx/mynx.runs/impl_1/design_1_wrapper.bit
+BITSTREAM_REMOTE = $(REMOTE_DIR)/design_1.bit
+PROG ?= $(ASMTEST_HEX_DIR)/deadbeef.hex
+PROG_REMOTE = $(REMOTE_DIR)/prog.hex
+RUN_SCRIPT ?= pynq/run.py
+RUN_SCRIPT_REMOTE = $(REMOTE_DIR)/run.py
+
+# vivado
+VIV = vivado
+VIV_INIT_PROJ_SCRIPT = init.tcl
+VIV_INIT_PROJ_FLAGS = -mode batch -source $(VIV_INIT_PROJ_SCRIPT)
+VIV_PROJ_FILE = mynx/mynx.xpr
+VIV_BD_SCRIPT = pynq/bd/bd.tcl
+VIV_BUILD_PROJ_SCRIPT = build.tcl
+VIV_BUILD_PROJ_FLAGS = -mode batch -source $(VIV_BUILD_PROJ_SCRIPT)
+
 # colors for display
 GREEN   = \033[1;32m
 RED     = \033[1;31m
@@ -242,6 +262,49 @@ boot: $(CORE_BIN) build-kernel
 	./$(CORE_BIN) $(XV6_KERNEL_HEX) $(LOGGING) 0
 
 .PHONY: boot
+
+# --- vivado file upload ---
+upload: $(HWH_LOCAL) $(BITSTREAM_LOCAL)
+	@sudo chmod +x ./pynq/samba.sh
+	@./pynq/samba.sh 
+
+# --- pynq file upload ---
+pynq-upload: $(HWH_LOCAL) $(BITSTREAM_LOCAL) $(PROG) $(RUN_SCRIPT)
+	@echo -e "$(YELLOW)Uploading Bitstream and HWH to PYNQ...$(NC)"
+	@chmod +x ./pynq/samba.sh
+	@echo -e "$(YELLOW)Uploading HWH...$(NC)"
+	@./pynq/samba.sh upload $(HWH_LOCAL) $(REMOTE_DIR) $(HWH_REMOTE)
+	@echo -e "$(YELLOW)Uploading Bitstream...$(NC)"
+	@./pynq/samba.sh upload $(BITSTREAM_LOCAL) $(REMOTE_DIR) $(BITSTREAM_REMOTE)
+	@echo -e "$(YELLOW)Uploading program hex...$(NC)"
+	@./pynq/samba.sh upload $(PROG) $(REMOTE_DIR) $(PROG_REMOTE)
+	@echo -e "$(YELLOW)Uploading Run script...$(NC)"
+	@./pynq/samba.sh upload $(RUN_SCRIPT) $(REMOTE_DIR) $(RUN_SCRIPT_REMOTE)
+	@echo -e "$(GREEN)Vivado files successfully uploaded to PYNQ!$(NC)"
+
+.PHONY: pynq-upload
+
+# --- vivado init project ---
+viv-init:
+	$(VIV) $(VIV_INIT_PROJ_FLAGS)
+
+.PHONY: viv-init
+
+# --- vivado make block design ---
+viv-bd:
+	@echo -e "$(YELLOW)Exporting block design...$(NC)"
+	@echo "open_project $(VIV_PROJ_FILE); open_bd_design [get_files design_1.bd]; write_bd_tcl -force $(BD_SCRIPT); close_project; exit" | vivado -mode tcl
+	@echo -e "$(YELLOW)Sanitizing block design script...$(NC)"
+	@sed -i -E 's/-net [^ ]+ +//g' $(BD_SCRIPT)
+	@echo -e "$(GREEN)Vivado block design script generated!$(NC)"
+
+.PHONY: viv-bd
+
+# --- vivado synthesize project ---
+viv-build:
+	$(VIV) $(VIV_BUILD_PROJ_FLAGS)
+
+.PHONY: viv-build
 
 # --- clean ---
 clean:
