@@ -1,10 +1,11 @@
-set origin_dir "."
+set origin_dir [file dirname [file normalize [info script]]]
+if {$origin_dir eq ""} { set origin_dir [pwd] }
 
-set absolute_dir [pwd]
-set local_board_repo [file normalize "$absolute_dir/pynq/board_files"]
+set local_board_repo [file normalize "$origin_dir/pynq/board_files"]
+
 set_param board.repoPaths $local_board_repo
-
 create_project mynx ./vivado/mynx -part xc7z020clg400-1 -force
+
 set_property board_part_repo_paths $local_board_repo [current_project]
 set_property board_part tul.com.tw:pynq-z2:part0:1.0 [current_project]
 
@@ -23,3 +24,5 @@ source $origin_dir/pynq/bd/bd.tcl
 
 make_wrapper -files [get_files design_1.bd] -top -import
 set_property top design_1_wrapper [current_fileset]
+
+generate_target all [get_files design_1.bd]
