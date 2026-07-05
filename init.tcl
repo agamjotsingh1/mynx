@@ -1,19 +1,8 @@
 set origin_dir "."
 
 create_project mynx ./vivado/mynx -part xc7z020clg400-1 -force
-
-# Fetch PYNQ-Z2 board files and dynamically link the local XHub store path
-catch {
-    xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
-    set pynq_board [xhub::get_xitems *tul.com.tw:board_store:pynq-z2*]
-    if {$pynq_board ne "" && ![get_property IS_INSTALLED $pynq_board]} {
-        xhub::install $pynq_board
-    }
-}
-catch {
-    set_property board_part_repo_paths [get_property LOCAL_ROOT_DIR [xhub::get_xstores xilinx_board_store]] [current_project]
-}
-
+set local_board_repo [file normalize "$origin_dir/board_files"]
+set_property board_part_repo_paths $local_board_repo [current_project]
 set_property board_part tul.com.tw:pynq-z2:part0:1.0 [current_project]
 
 set_property ip_repo_paths [file normalize "$origin_dir/rgb2dvi"] [current_project]
