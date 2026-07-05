@@ -1,3 +1,8 @@
+set origin_dir [file dirname [file normalize [info script]]]
+if {$origin_dir eq ""} { set origin_dir [pwd] }
+set local_board_repo [file normalize "$origin_dir/pynq/board_files"]
+set_param board.repoPaths [list $local_board_repo]
+
 open_project vivado/mynx/mynx.xpr
 
 update_compile_order -fileset sources_1

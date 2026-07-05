@@ -104,7 +104,7 @@ module disp (
         write_col <= 0;
         scrolled <= scrolled | last_row;
         write_row <= (last_row) ? 0 : write_row + 1;
-        top_row <= (scrolled | last_row) ? top_row + 1: top_row;
+        top_row <= (scrolled | last_row) ? ((top_row == `CHAR_ROWS - 1) ? 0 : top_row + 1) : top_row;
       end
       else begin
         write_col <= write_col + 1;
@@ -154,10 +154,12 @@ module disp (
   wire `W(`CHAR_ROWS) text_row = vtc_y`TEXT_ROWSLICE;
   wire `W(`CHAR_COLS) text_col = vtc_x`TEXT_COLSLICE;
 
-  wire `W(`CHAR_ROWS) real_row =
-    (text_row + top_row_sync2 >= `CHAR_ROWS)
-    ? (text_row + top_row_sync2 - `CHAR_ROWS)
-    : (text_row + top_row_sync2);
+  wire `W($clog2(`CHAR_ROWS) + 1) sum_row = {1'b0, text_row} + {1'b0, top_row_sync2};
+
+  wire `W($clog2(`CHAR_ROWS)) real_row =
+    (sum_row >= `CHAR_ROWS)
+    ? (sum_row - `CHAR_ROWS)
+    : sum_row;
 
   assign __textram_addrb =
     ($unsigned(real_row) << 7) + 
