@@ -77,12 +77,12 @@ void trap_handler() {
 }
 
 void print_menu(int energy, int gold) {
-  puts("\r\n\r\n=== LIFE SIMULATOR ===\r\n");
-  puts("Energy: "); print_num(energy); puts("\r\n");
-  puts("Gold:   "); print_num(gold); puts("\r\n");
-  puts("1. Work (-2 Energy, +10 Gold)\r\n");
-  puts("2. Rest (+5 Energy)\r\n");
-  puts("3. Quit\r\n");
+  puts("\n\n=== LIFE SIMULATOR ===\n");
+  puts("Energy: "); print_num(energy); puts("\n");
+  puts("Gold:   "); print_num(gold); puts("\n");
+  puts("1. Work (-2 Energy, +10 Gold)\n");
+  puts("2. Rest (+5 Energy)\n");
+  puts("3. Quit\n");
   puts("> ");
 }
 
@@ -107,20 +107,20 @@ int main(){
         if (energy >= 2) {
           energy -= 2;
           gold += 10;
-          puts("\r\nWorked hard! Earned 10 gold.");
+          puts("\nWorked hard! Earned 10 gold.");
         } else {
-          puts("\r\nToo tired to work! Rest first.");
+          puts("\nToo tired to work! Rest first.");
         }
       } else if (action == '2') {
         energy += 5;
-        puts("\r\nSlept well. Recovered 5 energy.");
+        puts("\nSlept well. Recovered 5 energy.");
       } else if (action == '3') {
         done = 1;
         break;
-      } else if (action == '\r' || action == '\n') {
+      } else if (action == '\n') {
         continue;
       } else {
-        puts("\r\nInvalid action.");
+        puts("\nInvalid action.");
       }
       
       print_menu(energy, gold);
@@ -129,9 +129,9 @@ int main(){
     __asm__ volatile("nop");
   }
 
-  puts("\r\nGame Over. Final Gold: ");
+  puts("\nGame Over. Final Gold: ");
   print_num(gold);
-  puts("\r\n");
+  puts("\n");
   
   return 1;
 }

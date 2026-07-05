@@ -36,6 +36,7 @@ module core (
 
   // tx, goes to disp driver
   output wire           tx_valid,
+  input  wire           tx_ready,
   output wire `W(`BYTE) tx_data,
   `endif
 
@@ -216,6 +217,7 @@ module core (
     .__amc_err_b(__amc_err_b),
 
     .tx_valid(tx_valid),
+    .tx_ready(tx_ready),
     .tx_data(tx_data),
     `endif
 

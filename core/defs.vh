@@ -639,5 +639,6 @@
 `define ASCII_BKSPC            8'h08
 `define ASCII_NEWLINE          8'h0A
 `define ASCII_RETURN           8'h0D
+`define ASCII_WHITESPACE       8'h20
 
 `endif

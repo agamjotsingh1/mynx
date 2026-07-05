@@ -21,6 +21,7 @@ module uart (
   `ifndef __SIM__
   // tx, goes to disp driver
   output wire           tx_valid,
+  input  wire           tx_ready,
   output wire `W(`BYTE) tx_data,
   `endif
 
@@ -68,8 +69,8 @@ module uart (
 
   // lsr fields
   wire data_ready = $unsigned(fifo_bufcount) > 0;
-  wire thre = 1; // always ready to send (transmit holding register empty)
-  wire temt = 1; // always done sending (transmitter empty)
+  wire thre = tx_ready; // always ready to send (transmit holding register empty)
+  wire temt = tx_ready; // always done sending (transmitter empty)
   wire err_parity  = 0; // simulation => unimplemented
   wire err_framing = 0; // simulation => unimplemented
   wire break_intr  = 0; // simulation => unimplemented

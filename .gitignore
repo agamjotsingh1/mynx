@@ -32,3 +32,5 @@ vivado/
 *.str
 hs_err_pid*.log
 .Xil/
+NA/
+*.logfile

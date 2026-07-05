@@ -7,6 +7,7 @@ module disp (
 
   input wire valid,
   input wire  `W(`BYTE) char,
+  output reg ready,
 
   output wire __textram_clka,
   output wire `W(`TEXTRAM_ADDRLEN) __textram_addra,
@@ -78,6 +79,12 @@ module disp (
   wire is_backspace = (char == `ASCII_BKSPC);
   wire is_printable = !is_enter && !is_backspace;
 
+  reg state;
+  localparam IDLE  = 1'b0;
+  localparam CLEAR = 1'b1;
+
+  reg `W($clog2(`CHAR_COLS)) clear_col;
+
   always @(posedge clk) begin
     if(rst) begin
       latched_valid <= 0;
@@ -85,30 +92,49 @@ module disp (
       write_col <= 0;
       scrolled  <= 0;
       top_row <= 0;
-    end
-    else if(!valid && latched_valid) begin
-      latched_valid <= 0;
-    end
-    else if(valid && !latched_valid) begin
-      latched_valid <= 1;
 
-      if(is_backspace) begin
-        if(write_col == 0) begin
-          write_col <= `CHAR_COLS - 1;
-          write_row <= (write_row == 0) ? 0: write_row - 1;
+      state <= IDLE;
+      clear_col <= 0;
+      ready <= 1;
+    end
+    else if(state == IDLE) begin
+      if(!valid && latched_valid) begin
+        latched_valid <= 0;
+      end
+      else if(valid && !latched_valid) begin
+        latched_valid <= 1;
+
+        if(is_backspace) begin
+          if(write_col == 0) begin
+            write_col <= `CHAR_COLS - 1;
+            write_row <= (write_row == 0) ? 0: write_row - 1;
+          end
+          else write_col <= write_col - 1;
         end
-        else write_col <= write_col - 1;
+        // end of current line
+        else if(write_col == `CHAR_COLS - 1 || is_enter) begin
+          write_col <= 0;
+          scrolled <= scrolled | last_row;
+          write_row <= (last_row) ? 0 : write_row + 1;
+          top_row <= (scrolled | last_row) ? ((top_row == `CHAR_ROWS - 1) ? 0 : top_row + 1) : top_row;
+
+          state <= CLEAR;
+          ready <= 0;
+        end
+        else begin
+          write_col <= write_col + 1;
+        end
       end
-      // end of current line
-      else if(write_col == `CHAR_COLS - 1 || is_enter) begin
-        write_col <= 0;
-        scrolled <= scrolled | last_row;
-        write_row <= (last_row) ? 0 : write_row + 1;
-        top_row <= (scrolled | last_row) ? ((top_row == `CHAR_ROWS - 1) ? 0 : top_row + 1) : top_row;
-      end
-      else begin
-        write_col <= write_col + 1;
-      end
+    end
+    else if(state == CLEAR) begin
+      if(clear_col == `CHAR_COLS - 1) begin
+          state <= IDLE;
+          ready <= 1;
+          clear_col <= 0;
+        end
+        else begin
+          clear_col <= clear_col + 1;
+        end
     end
   end
 
@@ -135,24 +161,32 @@ module disp (
     ($unsigned(write_row) << 5) +
     ($unsigned(write_col));
 
+  wire `W($clog2(`CHAR_TOTAL)) clear_ptr =
+    ($unsigned(write_row) << 7) +
+    ($unsigned(write_row) << 5) +
+    ($unsigned(clear_col));
+
   // textram port A for clk writes
   assign __textram_clka = clk;
-  assign __textram_wea =
-    valid && !latched_valid &&
-    (is_printable||is_backspace);
-  assign __textram_ena = valid && !latched_valid;
-  assign __textram_dina  = is_backspace ? 0: char;
-  assign __textram_addra = is_backspace
-  ? (write_ptr == 0 ? 0: write_ptr - 1)
-  : write_ptr;
+  assign __textram_wea = (state == CLEAR) ||
+    (valid && !latched_valid &&
+    (is_printable||is_backspace));
+  assign __textram_ena   = (state == CLEAR) || (valid && !latched_valid);
+  assign __textram_dina  = (state == CLEAR) ? `ASCII_WHITESPACE: (is_backspace ? 0: char);
+  assign __textram_addra = (state == CLEAR)
+    ? clear_ptr
+    : (is_backspace
+      ? (write_ptr == 0 ? 0: write_ptr - 1)
+      : write_ptr
+    );
 
   // textram port B for pixel_clk reads
   assign __textram_clkb = pixel_clk;
   assign __textram_web = 1'b0;
   assign __textram_enb = 1'b1;
 
-  wire `W(`CHAR_ROWS) text_row = vtc_y`TEXT_ROWSLICE;
-  wire `W(`CHAR_COLS) text_col = vtc_x`TEXT_COLSLICE;
+  wire `W($clog2(`CHAR_ROWS)) text_row = vtc_y`TEXT_ROWSLICE;
+  wire `W($clog2(`CHAR_COLS)) text_col = vtc_x`TEXT_COLSLICE;
 
   wire `W($clog2(`CHAR_ROWS) + 1) sum_row = {1'b0, text_row} + {1'b0, top_row_sync2};
 

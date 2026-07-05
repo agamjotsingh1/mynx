@@ -47,6 +47,7 @@ module mmu (
 
   // tx, goes to disp driver
   output wire           tx_valid,
+  input  wire           tx_ready,
   output wire `W(`BYTE) tx_data,
   `endif
 
@@ -507,6 +508,7 @@ module mmu (
     .irq(uart_irq),
     `ifndef __SIM__
     .tx_valid(tx_valid),
+    .tx_ready(tx_ready),
     .tx_data(tx_data),
     `endif
     .rx_valid(rx_valid),
