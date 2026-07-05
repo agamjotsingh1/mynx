@@ -109,9 +109,10 @@ RUN_SCRIPT_REMOTE = $(REMOTE_DIR)/run.py
 
 # vivado
 VIV = vivado
+VIV_DIR = vivado
 VIV_INIT_PROJ_SCRIPT = init.tcl
 VIV_INIT_PROJ_FLAGS = -mode batch -source $(VIV_INIT_PROJ_SCRIPT)
-VIV_PROJ_FILE = mynx/mynx.xpr
+VIV_PROJ_FILE = vivado/mynx/mynx.xpr
 VIV_BD_SCRIPT = pynq/bd/bd.tcl
 VIV_BUILD_PROJ_SCRIPT = build.tcl
 VIV_BUILD_PROJ_FLAGS = -mode batch -source $(VIV_BUILD_PROJ_SCRIPT)
@@ -293,9 +294,9 @@ viv-init:
 # --- vivado make block design ---
 viv-bd:
 	@echo -e "$(YELLOW)Exporting block design...$(NC)"
-	@echo "open_project $(VIV_PROJ_FILE); open_bd_design [get_files design_1.bd]; write_bd_tcl -force $(BD_SCRIPT); close_project; exit" | vivado -mode tcl
+	@echo "open_project $(VIV_PROJ_FILE); open_bd_design [get_files design_1.bd]; write_bd_tcl -force $(VIV_BD_SCRIPT); close_project; exit" | vivado -mode tcl
 	@echo -e "$(YELLOW)Sanitizing block design script...$(NC)"
-	@sed -i -E 's/-net [^ ]+ +//g' $(BD_SCRIPT)
+	@sed -i -E 's/-net [^ ]+ +//g' $(VIV_BD_SCRIPT)
 	@echo -e "$(GREEN)Vivado block design script generated!$(NC)"
 
 .PHONY: viv-bd
@@ -313,6 +314,12 @@ clean:
 	@rm -rf $(ASMTEST_HEX_DIR)
 	@rm -rf $(CTEST_HEX_DIR)
 	@rm -rf $(RISCVTEST_HEX_DIR)
+	@rm -rf $(VIV_DIR)
+	@rm -rf NA
+	@rm -f *.jou
+	@rm -f *.log
+	@rm -f *.logfile
+	@rm -f *.str
 	@rm -f $(FSIMG) spike.cmd
 	@if [ -d "$(XV6_ROOT)" ]; then \
 		rm -f $(XV6_KERNEL_BIN) $(XV6_KERNEL_HEX); \

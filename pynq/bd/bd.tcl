@@ -283,7 +283,9 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_APU_CLK_RATIO_ENABLE {6:2:1} \
     CONFIG.PCW_APU_PERIPHERAL_FREQMHZ {650} \
     CONFIG.PCW_CAN0_PERIPHERAL_CLKSRC {External} \
+    CONFIG.PCW_CAN0_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_CAN1_PERIPHERAL_CLKSRC {External} \
+    CONFIG.PCW_CAN1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_CAN_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_CAN_PERIPHERAL_VALID {0} \
     CONFIG.PCW_CLK0_FREQ {1000000} \
@@ -397,10 +399,13 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {1} \
     CONFIG.PCW_GPIO_MIO_GPIO_IO {MIO} \
     CONFIG.PCW_GPIO_PERIPHERAL_ENABLE {0} \
+    CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} \
+    CONFIG.PCW_I2C1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_I2C_RESET_ENABLE {1} \
     CONFIG.PCW_I2C_RESET_POLARITY {Active Low} \
     CONFIG.PCW_IMPORT_BOARD_PRESET {None} \
     CONFIG.PCW_INCLUDE_ACP_TRANS_CHECK {0} \
+    CONFIG.PCW_IRQ_F2P_MODE {DIRECT} \
     CONFIG.PCW_MIO_0_IOTYPE {LVCMOS 3.3V} \
     CONFIG.PCW_MIO_0_PULLUP {enabled} \
     CONFIG.PCW_MIO_0_SLEW {slow} \
@@ -614,6 +619,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_PCAP_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_PCAP_PERIPHERAL_FREQMHZ {200} \
     CONFIG.PCW_PERIPHERAL_BOARD_PRESET {part0} \
+    CONFIG.PCW_PJTAG_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_PLL_BYPASSMODE_ENABLE {0} \
     CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 3.3V} \
     CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 1.8V} \
@@ -655,19 +661,25 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_SPI1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_SPI_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_SPI_PERIPHERAL_VALID {0} \
+    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64} \
+    CONFIG.PCW_S_AXI_HP1_DATA_WIDTH {64} \
     CONFIG.PCW_TPIU_PERIPHERAL_CLKSRC {External} \
+    CONFIG.PCW_TRACE_INTERNAL_WIDTH {2} \
+    CONFIG.PCW_TRACE_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_TTC0_CLK0_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC0_CLK0_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_TTC0_CLK1_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC0_CLK1_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_TTC0_CLK2_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC0_CLK2_PERIPHERAL_DIVISOR0 {1} \
+    CONFIG.PCW_TTC0_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_TTC1_CLK0_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC1_CLK0_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_TTC1_CLK1_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC1_CLK1_PERIPHERAL_DIVISOR0 {1} \
     CONFIG.PCW_TTC1_CLK2_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_TTC1_CLK2_PERIPHERAL_DIVISOR0 {1} \
+    CONFIG.PCW_TTC1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_UART0_BASEADDR {0xE0000000} \
     CONFIG.PCW_UART0_BAUD_RATE {115200} \
     CONFIG.PCW_UART0_GRP_FULL_ENABLE {0} \
@@ -778,6 +790,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_VALUE_SILVERSION {3} \
     CONFIG.PCW_WDT_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_WDT_PERIPHERAL_DIVISOR0 {1} \
+    CONFIG.PCW_WDT_PERIPHERAL_ENABLE {0} \
   ] $processing_system7_0
 
 
@@ -1040,6 +1053,8 @@ proc create_root_design { parentCell } {
   [get_bd_pins rgb2dvi/vid_pVDE]
   connect_bd_net [get_bd_pins disp_0/hsync] \
   [get_bd_pins rgb2dvi/vid_pHSync]
+  connect_bd_net [get_bd_pins disp_0/ready] \
+  [get_bd_pins core_0/tx_ready]
   connect_bd_net [get_bd_pins disp_0/rgb] \
   [get_bd_pins rgb2dvi/vid_pData]
   connect_bd_net [get_bd_pins disp_0/vsync] \
@@ -1113,7 +1128,6 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -1125,4 +1139,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
