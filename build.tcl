@@ -1,4 +1,4 @@
-open_project mynx/mynx.xpr
+open_project vivado/mynx/mynx.xpr
 
 # run synth
 launch_runs synth_1 -jobs 2
