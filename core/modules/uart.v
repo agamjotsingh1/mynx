@@ -1,10 +1,8 @@
 `include "defs.vh"
 
-// SIMULATION ONLY
 // mocks uart 16650 hardware
 // registers are byte sized
 // DALB is not enabled
-// no tx fifo and tx is instantaneous in sim
 // reference: http://byterunner.com/16550.html
 // TODO! enable fifo triggers (set to default 1)
 module uart (
@@ -18,9 +16,14 @@ module uart (
   output reg `W(`BYTE)          read_data,
 
   // input wire irq_claim, // not needed in simulation
-  output reg irq,
+  output wire irq,
 
-  // from verilator (sim only)
+  `ifndef __SIM__
+  // tx, goes to disp driver
+  output wire           tx_valid,
+  output wire `W(`BYTE) tx_data,
+  `endif
+
   input wire           rx_valid,
   input wire `W(`BYTE) rx_data
 );
@@ -40,6 +43,15 @@ module uart (
   wire fifo_full;
   wire `W($clog2(`UART_FIFOLEN) + 1) fifo_bufcount;
 
+  reg rx_valix_latched;
+
+  always @(posedge clk) begin
+    if(rst) rx_valix_latched <= 0;
+    else if(!rx_valid && rx_valix_latched) rx_valix_latched <= 0;
+    else if(rx_valid && !rx_valix_latched) rx_valix_latched <= 1;
+  end
+
+  // TODO make this fifo async with proper CDC guardrails
   byte_fifo #(
     .N(`UART_FIFOLEN)
   ) byte_fifo_uart_rx_instance (
@@ -47,7 +59,7 @@ module uart (
     .rst(rst | (write_en && (addr == `UART_WRITE_FCR) && `UART_FCR_RST(write_data))),
     .en(`UART_FCR_EN(fcr)),
     .read_en(read_en && (addr == `UART_READ_RHR)),
-    .write_en(rx_valid),
+    .write_en(rx_valid && !rx_valix_latched),
     .data_in(rx_data),
     .data_out(rhr),
     .full(fifo_full),
@@ -84,6 +96,9 @@ module uart (
     end
   end
 
+  assign tx_valid = (addr == `UART_WRITE_THR) && write_en;
+  assign tx_data = write_data;
+
   always @(posedge clk) begin
     if (rst) begin
       ier <= 0;
@@ -96,10 +111,12 @@ module uart (
       /* verilator lint_off CASEINCOMPLETE */
       case (addr)
         `UART_WRITE_THR: begin
+          `ifdef __SIM__
           // print the transmit holding register (THR) 
           // directly, can do this because its just simulation
           $write("%c", write_data);
           $fflush();
+          `endif
         end
         `UART_WRITE_IER: ier <= write_data;
         `UART_WRITE_FCR: fcr <= write_data & (~`UART_FCR_RSTMASK);

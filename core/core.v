@@ -1,6 +1,5 @@
 `include "defs.vh"
 
-// (* DONT_TOUCH = "yes" *)
 module core (
   input wire clk,
   input wire rst,
@@ -34,9 +33,12 @@ module core (
   input  wire               __amc_data_out_last_b,
   input  wire               __amc_busy_b,
   input  wire               __amc_err_b,
+
+  // tx, goes to disp driver
+  output wire           tx_valid,
+  output wire `W(`BYTE) tx_data,
   `endif
 
-  // from verilator (sim only)
   input wire       rx_valid,
   input wire `W(`BYTE) rx_data
 );
@@ -212,8 +214,10 @@ module core (
     .__amc_data_out_last_b(__amc_data_out_last_b),
     .__amc_busy_b(__amc_busy_b),
     .__amc_err_b(__amc_err_b),
-    `endif
 
+    .tx_valid(tx_valid),
+    .tx_data(tx_data),
+    `endif
 
     // port a for instr fetch
     .addr_a(__mem_instr_addr),

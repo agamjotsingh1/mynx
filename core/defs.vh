@@ -2,7 +2,7 @@
 `define DEFS_VH
 
 // WARNING! comment while generating bitstream
-`define __SIM__
+// `define __SIM__
 
 // Memory defs
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
@@ -634,5 +634,10 @@
 `define TEXTRAM_DATALEN        `BYTE
 `define TEXT_ROWSLICE          [10:4]
 `define TEXT_COLSLICE          [10:3]
+
+// ASCII defs
+`define ASCII_BKSPC            8'h08
+`define ASCII_NEWLINE          8'h0A
+`define ASCII_RETURN           8'h0D
 
 `endif

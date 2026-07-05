@@ -26,5 +26,9 @@ xv6/user/usys.S
 xv6/user/initcode
 xv6/user/initcode.out
 
-# vivado
-mynx_vivado/
+vivado/
+*.jou
+*.log
+*.str
+hs_err_pid*.log
+.Xil/

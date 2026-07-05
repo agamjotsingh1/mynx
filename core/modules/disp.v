@@ -3,8 +3,9 @@
 // display driver with text interface
 module disp (
   input wire clk,
+  input wire rst,
+
   input wire valid,
-  input wire rstn,
   input wire  `W(`BYTE) char,
 
   output wire __textram_clka,
@@ -67,15 +68,23 @@ module disp (
 
   reg `W($clog2(`CHAR_ROWS)) write_row;
   reg `W($clog2(`CHAR_COLS)) write_col;
+  reg `W($clog2(`CHAR_ROWS)) top_row;
   reg scrolled;
   reg latched_valid;
 
+  wire last_row = (write_row == `CHAR_ROWS - 1);
+
+  wire is_enter     = (char == `ASCII_NEWLINE) || (char == `ASCII_RETURN);
+  wire is_backspace = (char == `ASCII_BKSPC);
+  wire is_printable = !is_enter && !is_backspace;
+
   always @(posedge clk) begin
-    if(!rstn) begin
+    if(rst) begin
       latched_valid <= 0;
       write_row <= 0;
       write_col <= 0;
       scrolled  <= 0;
+      top_row <= 0;
     end
     else if(!valid && latched_valid) begin
       latched_valid <= 0;
@@ -83,11 +92,19 @@ module disp (
     else if(valid && !latched_valid) begin
       latched_valid <= 1;
 
+      if(is_backspace) begin
+        if(write_col == 0) begin
+          write_col <= `CHAR_COLS - 1;
+          write_row <= (write_row == 0) ? 0: write_row - 1;
+        end
+        else write_col <= write_col - 1;
+      end
       // end of current line
-      if(write_col == `CHAR_COLS - 1) begin
+      else if(write_col == `CHAR_COLS - 1 || is_enter) begin
         write_col <= 0;
-        scrolled <= scrolled | (write_row == `CHAR_ROWS - 1);
-        write_row <= (write_row == `CHAR_ROWS - 1) ? 0 : write_row + 1;
+        scrolled <= scrolled | last_row;
+        write_row <= (last_row) ? 0 : write_row + 1;
+        top_row <= (scrolled | last_row) ? top_row + 1: top_row;
       end
       else begin
         write_col <= write_col + 1;
@@ -95,15 +112,7 @@ module disp (
     end
   end
 
-//   wire `W($clog2(`CHAR_ROWS)) top_row =
-//     write_row + $unsigned(scrolled);
-
-  reg `W($clog2(`CHAR_ROWS)) top_row_50mhz_reg;
-  always @(posedge clk) begin
-    if (!rstn) top_row_50mhz_reg <= 0;
-    else top_row_50mhz_reg <= write_row + $unsigned(scrolled);
-  end
-
+  // CDC synchronizer
   (* ASYNC_REG = "TRUE" *) reg `W($clog2(`CHAR_ROWS)) top_row_sync1;
   (* ASYNC_REG = "TRUE" *) reg `W($clog2(`CHAR_ROWS)) top_row_sync2;
 
@@ -113,7 +122,7 @@ module disp (
       top_row_sync2 <= 0;
     end
     else begin
-      top_row_sync1 <= top_row_50mhz_reg;
+      top_row_sync1 <= top_row;
       top_row_sync2 <= top_row_sync1;
     end
   end
@@ -128,10 +137,14 @@ module disp (
 
   // textram port A for clk writes
   assign __textram_clka = clk;
-  assign __textram_wea = valid && !latched_valid;
+  assign __textram_wea =
+    valid && !latched_valid &&
+    (is_printable||is_backspace);
   assign __textram_ena = valid && !latched_valid;
-  assign __textram_dina  = char;
-  assign __textram_addra = write_ptr;
+  assign __textram_dina  = is_backspace ? 0: char;
+  assign __textram_addra = is_backspace
+  ? (write_ptr == 0 ? 0: write_ptr - 1)
+  : write_ptr;
 
   // textram port B for pixel_clk reads
   assign __textram_clkb = pixel_clk;
@@ -140,7 +153,9 @@ module disp (
 
   wire `W(`CHAR_ROWS) text_row = vtc_y`TEXT_ROWSLICE;
   wire `W(`CHAR_COLS) text_col = vtc_x`TEXT_COLSLICE;
-  wire `W(`CHAR_ROWS) real_row = (text_row + top_row_sync2 >= `CHAR_ROWS)
+
+  wire `W(`CHAR_ROWS) real_row =
+    (text_row + top_row_sync2 >= `CHAR_ROWS)
     ? (text_row + top_row_sync2 - `CHAR_ROWS)
     : (text_row + top_row_sync2);
 
@@ -202,6 +217,4 @@ module disp (
   assign active_video = d2_active_video;
   assign hsync = d2_hsync;
   assign vsync = d2_vsync;
-
-  (* mark_debug = "true" *) wire [7:0] dbg_bram_out = __textram_doutb;
 endmodule

@@ -44,6 +44,10 @@ module mmu (
   input  wire               __amc_data_out_last_b,
   input  wire               __amc_busy_b,
   input  wire               __amc_err_b,
+
+  // tx, goes to disp driver
+  output wire           tx_valid,
+  output wire `W(`BYTE) tx_data,
   `endif
 
   input wire  `W(`PRIVLEN)  priv,
@@ -59,8 +63,10 @@ module mmu (
   // tlb flushing using sfence.vma
   input wire tlb_flush,
 
+  /* verilator lint_off UNUSEDSIGNAL */
   // cache flush using fence.i
   input wire cache_flush,
+  /* verilator lint_on UNUSEDSIGNAL */
 
   output wire ext_irq,
   output wire timer_irq,
@@ -329,10 +335,13 @@ module mmu (
     :((lvl_a == 0) ? `PTE2PA(pte_a, `VA2OFF(addr_a)): pte_addr_a));
   /* verilator lint_on WIDTHEXPAND */
 
-  wire phymem_raw_read_a = (!pgtbl_en_a) ? mem_read_a
+  wire active_read_a  = mem_read_a  & (~is_flushing);
+  wire active_write_a = mem_write_a & (~is_flushing);
+
+  wire phymem_raw_read_a = (!pgtbl_en_a) ? active_read_a
     :((lvl_a == 0 || tlb_hit_a) ? mem_read_a: 1);
 
-  wire phymem_raw_write_a = (!pgtbl_en_a) ? mem_write_a
+  wire phymem_raw_write_a = (!pgtbl_en_a) ? active_write_a
     :((lvl_a == 0 || tlb_hit_a) ? mem_write_a: 0);
 
   wire phymem_read_a = phymem_raw_read_a & (~mmu_abort_a) & (~is_flushing);
@@ -352,9 +361,6 @@ module mmu (
     :(tlb_hit_b ? `PTE2PA(tlb_pte_b, `VA2OFF(addr_b))
     : ((lvl_b == 0) ? `PTE2PA(pte_b, `VA2OFF(addr_b)): pte_addr_b));
   /* verilator lint_on WIDTHEXPAND */
-
-  wire active_read_a  = mem_read_a  & (~is_flushing);
-  wire active_write_a = mem_write_a & (~is_flushing);
 
   wire active_read_b  = mem_read_b  & (~is_flushing);
   wire active_write_b = mem_write_b & (~is_flushing);
@@ -490,7 +496,6 @@ module mmu (
   wire `W(`BYTE) uart_out_b;
 
   /* verilator lint_off WIDTHTRUNC */
-  `ifdef __SIM__
   uart uart_instance (
     .clk(clk),
     .rst(rst),
@@ -500,12 +505,13 @@ module mmu (
     .write_data(data_in_b),
     .read_data(uart_out_b),
     .irq(uart_irq),
+    `ifndef __SIM__
+    .tx_valid(tx_valid),
+    .tx_data(tx_data),
+    `endif
     .rx_valid(rx_valid),
     .rx_data(rx_data)
   );
-  `else
-  assign uart_irq = 0;
-  `endif
   /* verilator lint_on WIDTHTRUNC */
 
   /* MMIO #2 - BLKDEV */

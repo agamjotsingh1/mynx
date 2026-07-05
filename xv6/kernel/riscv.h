@@ -239,34 +239,6 @@ r_mcounteren()
   return x;
 }
 
-static inline void 
-w_pmpcfg0(uint64 x)
-{
-  asm volatile("csrw pmpcfg0, %0" : : "r" (x));
-}
-
-static inline uint64
-r_pmpcfg0()
-{
-  uint64 x;
-  asm volatile("csrr %0, pmpcfg0" : "=r" (x) );
-  return x;
-}
-
-static inline void 
-w_pmpaddr0(uint64 x)
-{
-  asm volatile("csrw pmpaddr0, %0" : : "r" (x));
-}
-
-static inline uint64
-r_pmpaddr0()
-{
-  uint64 x;
-  asm volatile("csrr %0, pmpaddr0" : "=r" (x) );
-  return x;
-}
-
 // machine-mode cycle counter
 static inline uint64
 r_time()

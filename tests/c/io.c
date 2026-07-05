@@ -18,6 +18,8 @@ int done = 0;
 void putc(char c) {
   while ((UART_LSR & LSR_THR_EMPTY) == 0);
   UART_THR = c;
+  asm volatile("nop");
+  asm volatile("nop");
 }
 
 void puts(const char* str) {
@@ -50,7 +52,7 @@ int main(){
   puts("\n> ");
   while(!done) {
     // avoid infinite recursion detection here
-    __asm__ volatile("nop");
+    asm volatile("nop");
   }
 
   puts("program done\n");

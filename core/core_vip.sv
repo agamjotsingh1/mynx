@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module tb_vip;
+module core_vip;
 
     localparam RST_GPIO_ADDR      = 32'h41210000;
     localparam PHY_ADDR_GPIO_ADDR = 32'h41200000;
