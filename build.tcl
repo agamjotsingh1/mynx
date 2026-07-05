@@ -4,7 +4,6 @@ set local_board_repo [file normalize "$origin_dir/pynq/board_files"]
 set_param board.repoPaths [list $local_board_repo]
 
 open_project vivado/mynx/mynx.xpr
-
 update_compile_order -fileset sources_1
 
 launch_runs synth_1 -jobs 2

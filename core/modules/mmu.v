@@ -45,6 +45,15 @@ module mmu (
   input  wire               __amc_busy_b,
   input  wire               __amc_err_b,
 
+  output wire __asdc_read_en,
+  output wire __asdc_write_en,
+  output wire  `W(`ASDC_ADDRLEN)  __asdc_addr,
+  output wire  `W(`ASDC_DATALEN)  __asdc_data_in,
+  input  wire  `W(`ASDC_DATALEN)  __asdc_data_out,
+  input  wire  __asdc_data_out_valid,
+  input  wire  __asdc_busy,
+  input  wire  __asdc_err,
+
   // tx, goes to disp driver
   output wire           tx_valid,
   input  wire           tx_ready,
@@ -525,6 +534,7 @@ module mmu (
   blkdev blkdev_instance (
     .clk(clk),
     .rst(rst),
+
     .mmio_read_en(phymem_read_b & blkdev_en_b),
     .mmio_write_en(phymem_write_b & blkdev_en_b),
     .mmio_addr(phymem_addr_b - `BLKDEVBASE),
@@ -540,7 +550,28 @@ module mmu (
     .irq(blkdev_irq)
   );
   `else
-  assign blkdev_irq = 0;
+  sd sd_instance (
+    .clk(clk),
+    .rst(rst),
+
+    // TODO! change to SD naming conventions
+    .mmio_read_en(phymem_read_b & blkdev_en_b),
+    .mmio_write_en(phymem_write_b & blkdev_en_b),
+    .mmio_addr(phymem_addr_b - `BLKDEVBASE),
+    .mmio_write_data(data_in_b),
+    .mmio_read_data(blkdev_out_b),
+
+    .irq(blkdev_irq),
+
+    .__asdc_read_en(__asdc_read_en),
+    .__asdc_write_en(__asdc_write_en),
+    .__asdc_addr(__asdc_addr),
+    .__asdc_data_in(__asdc_data_in),
+    .__asdc_data_out(__asdc_data_out),
+    .__asdc_data_out_valid(__asdc_data_out_valid),
+    .__asdc_busy(__asdc_busy),
+    .__asdc_err(__asdc_err)
+  );
   `endif
 
   /* MMIO #3 - PLIC */

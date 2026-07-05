@@ -641,4 +641,27 @@
 `define ASCII_RETURN           8'h0D
 `define ASCII_WHITESPACE       8'h20
 
+// AXI SD CONTROLLER defs
+`define ASDC_DATALEN          32
+`define ASDC_ADDRLEN          7
+`define ASDC_PROTLEN          3
+`define ASDC_RESPLEN          2
+`define ASDC_STRBLEN          4
+
+`define ASDC_WSTRB            4'hF
+
+// SD defs
+`define SDBASE                64'h0000_0000_2000_0000
+`define SD_MMIO_CFG           64'h0000_0000_0000_0000
+`define SD_MMIO_ADDR          64'h0000_0000_0000_0008
+`define SD_MMIO_DATA          64'h0000_0000_0000_0010
+`define SD_MMIO_REPLY         64'h0000_0000_0000_0018
+`define SD_SECTORSIZE         1024 // bytes
+
+// SD CFG defs
+`define SD_CFG_FIRE(cfg)      cfg[0]
+`define SD_CFG_DMA(cfg)       cfg[1]
+`define SD_CFG_RE(cfg)        cfg[2]
+`define SD_CFG_WE(cfg)        cfg[3]
+
 `endif

@@ -34,6 +34,17 @@ module core (
   input  wire               __amc_busy_b,
   input  wire               __amc_err_b,
 
+  // ASDC exposed ports
+    // ASDC ports
+  output wire __asdc_read_en,
+  output wire __asdc_write_en,
+  output wire  `W(`ASDC_ADDRLEN)  __asdc_addr,
+  output wire  `W(`ASDC_DATALEN)  __asdc_data_in,
+  input  wire  `W(`ASDC_DATALEN)  __asdc_data_out,
+  input  wire  __asdc_data_out_valid,
+  input  wire  __asdc_busy,
+  input  wire  __asdc_err,
+
   // tx, goes to disp driver
   output wire           tx_valid,
   input  wire           tx_ready,
@@ -215,6 +226,16 @@ module core (
     .__amc_data_out_last_b(__amc_data_out_last_b),
     .__amc_busy_b(__amc_busy_b),
     .__amc_err_b(__amc_err_b),
+
+    // ASDC port
+    .__asdc_read_en(__asdc_read_en),
+    .__asdc_write_en(__asdc_write_en),
+    .__asdc_addr(__asdc_addr),
+    .__asdc_data_in(__asdc_data_in),
+    .__asdc_data_out(__asdc_data_out),
+    .__asdc_data_out_valid(__asdc_data_out_valid),
+    .__asdc_busy(__asdc_busy),
+    .__asdc_err(__asdc_err),
 
     .tx_valid(tx_valid),
     .tx_ready(tx_ready),
