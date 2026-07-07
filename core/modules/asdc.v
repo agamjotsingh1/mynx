@@ -91,6 +91,7 @@ module asdc (
             state <= AW_TXN;
             busy  <= 1;
             m_axi_awvalid <= 1;
+            m_axi_wvalid <= 1;
             m_axi_awaddr  <= addr;
           end
 
@@ -115,12 +116,21 @@ module asdc (
           end
         end
         AW_TXN: begin
-          if(m_axi_awready && m_axi_awvalid) begin
-            state <= W_TXN;
-            m_axi_awvalid <= 0;
-            m_axi_wvalid  <= 1;
+          if (m_axi_awready) m_axi_awvalid <= 0;
+          if (m_axi_wready)  m_axi_wvalid  <= 0;
+
+          // when BOTH channels have completed their handshakes, move to the B channel
+          if ((m_axi_awready || !m_axi_awvalid) && (m_axi_wready || !m_axi_wvalid)) begin
+            state <= B_TXN;
+            m_axi_bready <= 1;
           end
+          // if(m_axi_awready && m_axi_awvalid) begin
+          //   state <= W_TXN;
+          //   m_axi_awvalid <= 0;
+          //   m_axi_wvalid  <= 1;
+          // end
         end
+        // FIXME! unused
         W_TXN: begin
           if(m_axi_wready && m_axi_wvalid) begin
             state <= B_TXN;

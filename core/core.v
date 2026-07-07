@@ -339,7 +339,7 @@ module core (
     .xcep(__id_xcep),
     .uxcep(__id_uxcep),
 
-    // uart irq handling
+    // irq handling
     .__mem_ext_irq(__mem_ext_irq),
     .__mem_timer_irq(__mem_timer_irq),
 

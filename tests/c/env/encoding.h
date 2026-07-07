@@ -12,6 +12,7 @@ typedef unsigned char      uint8_t;
 
 #define UARTBASE   0x10000000
 #define BLKDEVBASE 0x20000000
+#define SDBASE     0x20000000
 #define PLICBASE   0x30000000
 #define CLINTBASE  0x40000000
 #define MEMBASE    0x80000000

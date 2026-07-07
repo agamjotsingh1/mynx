@@ -67,6 +67,7 @@ for i, instr in enumerate(instructions):
 
 buffer.flush()
 time.sleep(1)
+print("starting core...")
 rst.write(0, 0xFFFFFFFF)
 
 try:

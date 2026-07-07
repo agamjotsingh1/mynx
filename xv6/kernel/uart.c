@@ -35,7 +35,7 @@ uartinit(void)
 void
 uartputc(int c)
 {
-// while ((UART_LSR & LSR_THR_EMPTY) == 0);
+  while ((UART_LSR & LSR_THR_EMPTY) == 0);
   UART_THR = c;
 }
 

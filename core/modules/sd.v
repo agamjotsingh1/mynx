@@ -60,12 +60,13 @@ module sd (
       if(__asdc_data_out_valid)
         reply <= __asdc_data_out;
 
+      // clear interrupt request if mmio acknowledges by reading reply
+      if(mmio_read_en && mmio_addr == `SD_MMIO_REPLY) begin
+        irq <= 0;
+      end
+
       case(state)
         IDLE: begin
-          // clear interrupt request if mmio acknowledges by reading reply
-          if(mmio_read_en && mmio_addr == `SD_MMIO_REPLY) begin
-            irq <= 0;
-          end
 
           if(`SD_CFG_FIRE(cfg)) begin
             if(`SD_CFG_DMA(cfg)) state <= DMA;
@@ -94,7 +95,7 @@ module sd (
           if(!__asdc_busy) begin
             irq <= 1;
             state <= IDLE;
-            `SD_CFG_FIRE(cfg) <= 1;
+            `SD_CFG_FIRE(cfg) <= 0;
           end
         end
 

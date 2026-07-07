@@ -1,0 +1,149 @@
+#include "env/encoding.h"
+
+#define SD_CFG   (*(volatile uint64_t *) (SDBASE + 0x00))
+#define SD_ADDR  (*(volatile uint64_t *) (SDBASE + 0x08))
+#define SD_DATA  (*(volatile uint64_t *) (SDBASE + 0x10))
+#define SD_REPLY (*(volatile uint64_t *) (SDBASE + 0x18))
+
+#define PLIC_IRQ (*(volatile uint64_t *) (PLICBASE   + 0x00))
+
+#define UART_RHR (*((volatile uint8_t *)(UARTBASE + 0x00)))
+#define UART_THR (*((volatile uint8_t *)(UARTBASE + 0x00)))
+#define UART_IER (*((volatile uint8_t *)(UARTBASE + 0x01)))
+#define UART_FCR (*((volatile uint8_t *)(UARTBASE + 0x02)))
+#define UART_LSR (*((volatile uint8_t *)(UARTBASE + 0x05)))
+
+#define LSR_DATA_READY 0x01
+#define LSR_THR_EMPTY  0x20
+#define IER_RX_ENABLE  0x01
+#define FCR_FIFO_EN    0x01
+
+#define SPICR  0x60
+#define SPISR  0x64
+#define SPIDTR 0x68
+#define SPIDRR 0x6C
+#define SPISSR 0x70
+
+extern void trapvec();
+
+volatile int done;
+volatile uint64_t reply;
+
+void putc(char c) {
+  while ((UART_LSR & LSR_THR_EMPTY) == 0);
+  UART_THR = c;
+}
+
+void puts(const char* str) {
+  while (*str) {
+    putc(*str++);
+  }
+}
+
+void trap_handler() {
+  uint64_t mcause;
+  csrr(mcause, mcause);
+  /* if(!done) puts("b"); */
+  puts("t");
+
+  // MSB=1 (Interrupt), Code=9 (S-External)
+  if (mcause == 0x8000000000000009ULL) {
+    if(PLIC_IRQ == 2) {
+      done = 1;
+      reply = SD_REPLY;
+    }
+  }
+}
+
+void sd_write(uint64_t addr, uint64_t data) {
+  done = 0;
+  SD_DATA = data;
+  SD_ADDR = addr;
+  SD_CFG  = 0b1001;
+  while(done != 1)
+    ;
+  done = 0;
+}
+
+uint64_t sd_read(uint64_t addr) {
+  done = 0;
+  SD_ADDR = addr;
+  SD_CFG  = 0b0101;
+  while(done != 1)
+    ;
+
+  done = 0;
+  return SD_REPLY;
+}
+
+int main() {
+  done = 0;
+  csrw(mtvec, trapvec);
+  csrs(mie, 1 << 9);     // enable SEIP
+  csrs(mstatus, 1 << 3); // enable global M-Mode interrupts
+
+  puts("starting sd card txns\n");
+
+  // setup SPI Master and keep CS HIGH
+  sd_write(SPICR, 0x00000186);
+  puts("checkpoint 1\n");
+  sd_write(SPISSR, 0xFFFFFFFE);
+  puts("checkpoint 2\n");
+
+  // dummy clocks (at least 10 bytes of 0xFF)
+  for(int i = 0; i < 10; i++) {
+      sd_write(SPIDTR, 0xFF);
+  }
+
+  sd_write(SPICR, 0x00000086); // start txn
+
+  /* // wait for SPI txn to finish */
+  /* while((sd_read(SPISR) & (1ULL<<2)) == 0) */
+  /*   ; */
+
+  for(int i = 0; i < 10; i++) {
+    while(sd_read(SPISR) & 0x01);
+    sd_read(SPIDRR);
+  }
+  puts("first SPI txn finished\n");
+
+  sd_write(SPICR, 0x00000086);
+  sd_write(SPISSR, 0xFFFFFFFE); // CS LOW
+
+  // send CMD0
+  sd_write(SPIDTR, 0x40); // CMD0
+  sd_write(SPIDTR, 0x00); // ARG1
+  sd_write(SPIDTR, 0x00); // ARG2
+  sd_write(SPIDTR, 0x00); // ARG3
+  sd_write(SPIDTR, 0x00); // ARG4
+  sd_write(SPIDTR, 0x95); // CRC
+
+  sd_write(SPICR, 0x00000086);
+  // wait until FIFO is empty
+  while ((sd_read(SPISR) & (1ULL<<2)) == 0)
+    ;
+
+  // flush the 6 garbage bytes from the RX FIFO
+  for (int i = 0; i < 6; i++) {
+      sd_read(SPIDRR);
+  }
+
+  // poll the SD card for the R1 response (0x01 means idle)
+  int timeout = 1000;
+
+  while (timeout > 0) {
+      sd_write(SPIDTR, 0xFF);
+      while ((sd_read(SPISR) & (1ULL<<2)) == 0);
+      if(sd_read(SPIDRR) == 0x01) break;
+      timeout--;
+  }
+
+  if (timeout == 0) {
+      puts("Error: CMD0 failed or timed out.\n");
+  } else {
+      puts("CMD0 successful! Card is in Idle state.\n");
+  }
+
+  sd_write(SPISSR, 0xFFFFFFFF);
+  return 0;
+}
