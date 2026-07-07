@@ -295,31 +295,11 @@ int sd_init(int *block_addressing) {
   return 0;
 }
 
-int sd_write_blk(int block_addressing) {
-}
+int sd_write_blk(uint64_t block, uint8_t* data, int block_addressing) {
+  uint64_t write_addr = block_addressing ? block : (block * 512);
 
-int main() {
-  done = 0;
-  csrw(mtvec, trapvec);
-  csrs(mie, 1 << 9);     // enable SEIP
-  csrs(mstatus, 1 << 3); // enable global M-Mode interrupts
-
-  puts("starting sd card txns\n");
-
-  int block_addressing = 0;
-  if (sd_init(&block_addressing) != 0) {
-      puts("SD Card initialization failed!\n");
-      return 1;
-  }
-
-  // write a block with CMD24
-  // use block 100 (address = 100 for SDHC, or 100*512 for SDSC)
-  uint64_t test_block = 100;
-  uint64_t write_addr = block_addressing ? test_block : (test_block * 512);
-
-  puts("writing block 100...\n");
   spi_cs_low();
-  r1 = sd_cmd(24, write_addr, 0x01);
+  uint8_t r1 = sd_cmd(24, write_addr, 0x01);
   if (r1 != 0x00) {
     puts("CMD24 rejected, R1=");
     put_hex8(r1);
@@ -332,14 +312,9 @@ int main() {
   // send start token
   spi_xfer(0xFE);
 
-  // write 512 bytes: a recognizable pattern
-  // first 16 bytes: "MYNXMYNXMYNXMYNX", rest: incrementing bytes
-  const char* tag = "MYNXMYNXMYNXMYNX";
+  // send data
   for (int i = 0; i < 512; i++) {
-    if (i < 16)
-      spi_xfer((uint8_t)tag[i]);
-    else
-      spi_xfer((uint8_t)(i & 0xFF));
+    spi_xfer(data[i]);
   }
 
   // dummy CRC (2 bytes)
@@ -359,7 +334,7 @@ int main() {
   }
 
   // wait for card to finish programming (busy := MISO low -> reads 0x00)
-  timeout = 100000;
+  int timeout = 100000;
   while (timeout > 0) {
     if (spi_xfer(0xFF) != 0x00) break;
     timeout--;
@@ -371,14 +346,15 @@ int main() {
     puts("write busy timeout\n");
     return 1;
   }
-  puts("write done!\n");
 
-  // read the block back with CMD17
-  puts("reading block 100...\n");
-  uint64_t read_addr = write_addr;
+  return 0;
+}
 
+int sd_read_blk(uint64_t block, uint8_t* data, int block_addressing) {
+  uint64_t read_addr = block_addressing ? block : (block * 512);
   spi_cs_low();
-  r1 = sd_cmd(17, read_addr, 0x01);
+  uint8_t r1 = sd_cmd(17, read_addr, 0x01);
+
   if (r1 != 0x00) {
     puts("CMD17 rejected, R1=");
     put_hex8(r1);
@@ -389,7 +365,7 @@ int main() {
   }
 
   // wait for data start token (0xFE)
-  timeout = 100000;
+  int timeout = 100000;
   uint8_t token;
   while (timeout > 0) {
     token = spi_xfer(0xFF);
@@ -412,10 +388,8 @@ int main() {
     return 1;
   }
 
-  // read 512 bytes
-  uint8_t buf[512];
   for (int i = 0; i < 512; i++)
-    buf[i] = spi_xfer(0xFF);
+    data[i] = spi_xfer(0xFF);
 
   // discard 2 CRC bytes
   spi_xfer(0xFF);
@@ -424,7 +398,50 @@ int main() {
   spi_cs_high();
   spi_dummy();
 
+  return 0;
+}
+
+int main() {
+  done = 0;
+  csrw(mtvec, trapvec);
+  csrs(mie, 1 << 9);     // enable SEIP
+  csrs(mstatus, 1 << 3); // enable global M-Mode interrupts
+
+  puts("starting sd card txns\n");
+
+  int block_addressing = 0;
+  if (sd_init(&block_addressing) != 0) {
+      puts("init sd card FAILED!\n");
+      return 1;
+  }
+  puts("init sd card done!\n");
+
+  uint64_t test_block = 100;
+  uint8_t write_buf[512];
+  const char* tag = "MYNXMYNXMYNXMYNX";
+
+  for (int i = 0; i < 512; i++) {
+    if (i < 16)
+      write_buf[i] = (uint8_t)tag[i];
+    else
+      write_buf[i] = (uint8_t)(i & 0xFF);
+  }
+
+  puts("writing block 100...\n");
+  if (sd_write_blk(test_block, write_buf, block_addressing) != 0) {
+      puts("Write failed!\n");
+      return 1;
+  }
+  puts("write done!\n");
+
+  uint8_t buf[512]; // Read buffer
+  puts("reading block 100...\n");
+  if (sd_read_blk(test_block, buf, block_addressing) != 0) {
+      puts("Read failed!\n");
+      return 1;
+  }
   puts("read done! first 32 bytes:\n");
+
   for (int i = 0; i < 32; i++) {
     put_hex8(buf[i]);
     putc(' ');

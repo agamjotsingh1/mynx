@@ -46,7 +46,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# disp, core, amc, amc
+# disp, core, amc, amc, asdc
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -144,6 +144,7 @@ xilinx.com:ip:blk_mem_gen:8.4\
 xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:ip:smartconnect:1.0\
 digilentinc.com:ip:rgb2dvi:1.4\
+xilinx.com:ip:axi_quad_spi:3.2\
 "
 
    set list_ips_missing ""
@@ -173,6 +174,7 @@ disp\
 core\
 amc\
 amc\
+asdc\
 "
 
    set list_mods_missing ""
@@ -240,6 +242,8 @@ proc create_root_design { parentCell } {
   set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
 
   set hdmi_tx [ create_bd_intf_port -mode Master -vlnv digilentinc.com:interface:tmds_rtl:1.0 hdmi_tx ]
+
+  set spi_sd [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:spi_rtl:1.0 spi_sd ]
 
 
   # Create ports
@@ -820,9 +824,6 @@ proc create_root_design { parentCell } {
   ] $clk_wiz_0
 
 
-  # Create instance: proc_sys_reset_0, and set properties
-  set proc_sys_reset_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0 ]
-
   # Create instance: disp_0, and set properties
   set block_name disp
   set block_cell_name disp_0
@@ -948,11 +949,41 @@ proc create_root_design { parentCell } {
   set_property CONFIG.C_ALL_OUTPUTS {1} $phy_ps_addr
 
 
+  # Create instance: axi_quad_spi_0, and set properties
+  set axi_quad_spi_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_quad_spi:3.2 axi_quad_spi_0 ]
+  set_property -dict [list \
+    CONFIG.C_FIFO_DEPTH {256} \
+    CONFIG.C_SCK_RATIO {4} \
+    CONFIG.C_USE_STARTUP {0} \
+    CONFIG.QSPI_BOARD_INTERFACE {Custom} \
+    CONFIG.USE_BOARD_FLOW {true} \
+  ] $axi_quad_spi_0
+
+
+  # Create instance: asdc_0, and set properties
+  set block_name asdc
+  set block_cell_name asdc_0
+  if { [catch {set asdc_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $asdc_0 eq "" } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: axi_interconnect_0, and set properties
+  set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
+  set_property CONFIG.NUM_MI {1} $axi_interconnect_0
+
+
   # Create interface connections
   connect_bd_intf_net -intf_net amc_a_m_axi [get_bd_intf_pins amc_a/m_axi] [get_bd_intf_pins axi_mem_intercon/S00_AXI]
   connect_bd_intf_net -intf_net amc_b_m_axi [get_bd_intf_pins amc_b/m_axi] [get_bd_intf_pins axi_mem_intercon_1/S00_AXI]
+  connect_bd_intf_net -intf_net asdc_0_m_axi [get_bd_intf_pins asdc_0/m_axi] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins axi_quad_spi_0/AXI_LITE]
   connect_bd_intf_net -intf_net axi_mem_intercon_1_M00_AXI [get_bd_intf_pins axi_mem_intercon_1/M00_AXI] [get_bd_intf_pins processing_system7_0/S_AXI_HP1]
   connect_bd_intf_net -intf_net axi_mem_intercon_M00_AXI [get_bd_intf_pins axi_mem_intercon/M00_AXI] [get_bd_intf_pins processing_system7_0/S_AXI_HP0]
+  connect_bd_intf_net -intf_net axi_quad_spi_0_SPI_0 [get_bd_intf_ports spi_sd] [get_bd_intf_pins axi_quad_spi_0/SPI_0]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins kb/S_AXI]
   connect_bd_intf_net -intf_net axi_smc_M01_AXI [get_bd_intf_pins axi_smc/M01_AXI] [get_bd_intf_pins kb_valid/S_AXI]
   connect_bd_intf_net -intf_net axi_smc_M02_AXI [get_bd_intf_pins axi_smc/M02_AXI] [get_bd_intf_pins core_rst/S_AXI]
@@ -999,6 +1030,14 @@ proc create_root_design { parentCell } {
   [get_bd_pins core_0/__amc_data_out_valid_b]
   connect_bd_net [get_bd_pins amc_b/err] \
   [get_bd_pins core_0/__amc_err_b]
+  connect_bd_net [get_bd_pins asdc_0/busy] \
+  [get_bd_pins core_0/__asdc_busy]
+  connect_bd_net [get_bd_pins asdc_0/data_out] \
+  [get_bd_pins core_0/__asdc_data_out]
+  connect_bd_net [get_bd_pins asdc_0/data_out_valid] \
+  [get_bd_pins core_0/__asdc_data_out_valid]
+  connect_bd_net [get_bd_pins asdc_0/err] \
+  [get_bd_pins core_0/__asdc_err]
   connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] \
   [get_bd_pins proc_sys_reset_1/slowest_sync_clk] \
   [get_bd_pins rgb2dvi/PixelClk] \
@@ -1022,15 +1061,24 @@ proc create_root_design { parentCell } {
   [get_bd_pins amc_a/mem_write]
   connect_bd_net [get_bd_pins core_0/__amc_mem_write_b] \
   [get_bd_pins amc_b/mem_write]
+  connect_bd_net [get_bd_pins core_0/__asdc_addr] \
+  [get_bd_pins asdc_0/addr]
+  connect_bd_net [get_bd_pins core_0/__asdc_data_in] \
+  [get_bd_pins asdc_0/data_in]
+  connect_bd_net [get_bd_pins core_0/__asdc_read_en] \
+  [get_bd_pins asdc_0/read_en]
+  connect_bd_net [get_bd_pins core_0/__asdc_write_en] \
+  [get_bd_pins asdc_0/write_en]
   connect_bd_net [get_bd_pins core_0/tx_data] \
   [get_bd_pins disp_0/char]
   connect_bd_net [get_bd_pins core_0/tx_valid] \
   [get_bd_pins disp_0/valid]
   connect_bd_net [get_bd_pins core_rst/gpio_io_o] \
-  [get_bd_pins core_0/rst] \
   [get_bd_pins amc_a/rst] \
   [get_bd_pins amc_b/rst] \
-  [get_bd_pins disp_0/rst]
+  [get_bd_pins disp_0/rst] \
+  [get_bd_pins core_0/rst] \
+  [get_bd_pins asdc_0/rst]
   connect_bd_net [get_bd_pins disp_0/__textram_addra] \
   [get_bd_pins text_bram/addra]
   connect_bd_net [get_bd_pins disp_0/__textram_addrb] \
@@ -1066,9 +1114,6 @@ proc create_root_design { parentCell } {
   connect_bd_net [get_bd_pins phy_ps_addr/gpio_io_o] \
   [get_bd_pins amc_a/phy_ps_addr] \
   [get_bd_pins amc_b/phy_ps_addr]
-  connect_bd_net [get_bd_pins proc_sys_reset_0/peripheral_aresetn] \
-  [get_bd_pins clk_wiz_0/resetn] \
-  [get_bd_pins axi_smc/aresetn]
   connect_bd_net [get_bd_pins proc_sys_reset_1/peripheral_aresetn] \
   [get_bd_pins disp_0/pixel_rstn]
   connect_bd_net [get_bd_pins proc_sys_reset_2/peripheral_aresetn] \
@@ -1083,12 +1128,15 @@ proc create_root_design { parentCell } {
   [get_bd_pins kb_valid/s_axi_aresetn] \
   [get_bd_pins kb/s_axi_aresetn] \
   [get_bd_pins phy_ps_addr/s_axi_aresetn] \
-  [get_bd_pins core_rst/s_axi_aresetn]
+  [get_bd_pins core_rst/s_axi_aresetn] \
+  [get_bd_pins axi_interconnect_0/ARESETN] \
+  [get_bd_pins axi_interconnect_0/S00_ARESETN] \
+  [get_bd_pins axi_interconnect_0/M00_ARESETN] \
+  [get_bd_pins axi_quad_spi_0/s_axi_aresetn]
   connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] \
   [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] \
   [get_bd_pins proc_sys_reset_3/slowest_sync_clk] \
   [get_bd_pins axi_smc/aclk1] \
-  [get_bd_pins core_0/clk] \
   [get_bd_pins axi_mem_intercon/ACLK] \
   [get_bd_pins axi_mem_intercon/S00_ACLK] \
   [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] \
@@ -1097,22 +1145,29 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_mem_intercon_1/S00_ACLK] \
   [get_bd_pins processing_system7_0/S_AXI_HP1_ACLK] \
   [get_bd_pins axi_mem_intercon_1/M00_ACLK] \
-  [get_bd_pins amc_a/clk] \
-  [get_bd_pins amc_b/clk] \
   [get_bd_pins axi_smc/aclk] \
   [get_bd_pins kb/s_axi_aclk] \
   [get_bd_pins kb_valid/s_axi_aclk] \
   [get_bd_pins phy_ps_addr/s_axi_aclk] \
   [get_bd_pins core_rst/s_axi_aclk] \
-  [get_bd_pins disp_0/clk]
+  [get_bd_pins axi_interconnect_0/ACLK] \
+  [get_bd_pins axi_interconnect_0/S00_ACLK] \
+  [get_bd_pins axi_interconnect_0/M00_ACLK] \
+  [get_bd_pins axi_quad_spi_0/s_axi_aclk] \
+  [get_bd_pins axi_quad_spi_0/ext_spi_clk] \
+  [get_bd_pins amc_a/clk] \
+  [get_bd_pins amc_b/clk] \
+  [get_bd_pins disp_0/clk] \
+  [get_bd_pins core_0/clk] \
+  [get_bd_pins asdc_0/clk]
   connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] \
-  [get_bd_pins proc_sys_reset_0/ext_reset_in] \
   [get_bd_pins proc_sys_reset_1/ext_reset_in] \
   [get_bd_pins proc_sys_reset_2/ext_reset_in] \
-  [get_bd_pins proc_sys_reset_3/ext_reset_in]
+  [get_bd_pins proc_sys_reset_3/ext_reset_in] \
+  [get_bd_pins clk_wiz_0/resetn] \
+  [get_bd_pins axi_smc/aresetn]
   connect_bd_net [get_bd_ports sys_clock] \
-  [get_bd_pins clk_wiz_0/clk_in1] \
-  [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
+  [get_bd_pins clk_wiz_0/clk_in1]
   connect_bd_net [get_bd_pins text_bram/doutb] \
   [get_bd_pins disp_0/__textram_doutb]
 
@@ -1123,11 +1178,13 @@ proc create_root_design { parentCell } {
   assign_bd_address -offset 0x41210000 -range 0x00010000 -with_name SEG_valid_Reg -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs kb_valid/S_AXI/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces amc_a/m_axi] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces amc_b/m_axi] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x00000080 -target_address_space [get_bd_addr_spaces asdc_0/m_axi] [get_bd_addr_segs axi_quad_spi_0/AXI_LITE/Reg] -force
 
 
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -1139,6 +1196,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
