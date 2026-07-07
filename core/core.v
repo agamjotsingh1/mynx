@@ -162,7 +162,7 @@ module core (
   wire `W(`DLEN)        __wb_write_cause;
   wire `W(`DLEN)        __wb_write_epc;
 
-  wire tlb_flush = `SFENCEVMA(__id_ctl_bus);  // flush tlb for sfence instructions
+  wire tlb_flush = `SFENCEVMA(__id_ctl_bus);
   wire cache_flush = `FENCE(__id_ctl_bus) &&
     !(__ex_valid || __mem_valid || __wb_valid);
 

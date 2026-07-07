@@ -44,7 +44,7 @@ CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I.
-CFLAGS += -march=rv64i_zicsr -mabi=lp64
+CFLAGS += -march=rv64i_zicsr_zifencei -mabi=lp64
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += -Wno-error=infinite-recursion
 

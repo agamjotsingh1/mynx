@@ -1,5 +1,35 @@
 /* AI GENERATED TESTBENCH */
 
+#include "env/encoding.h"
+
+#define UART_RHR (*((volatile uint8_t *)(UARTBASE + 0x00)))
+#define UART_THR (*((volatile uint8_t *)(UARTBASE + 0x00)))
+#define UART_IER (*((volatile uint8_t *)(UARTBASE + 0x01)))
+#define UART_FCR (*((volatile uint8_t *)(UARTBASE + 0x02)))
+#define UART_LSR (*((volatile uint8_t *)(UARTBASE + 0x05)))
+
+#define LSR_DATA_READY 0x01
+#define LSR_THR_EMPTY  0x20
+#define IER_RX_ENABLE  0x01
+#define FCR_FIFO_EN    0x01
+
+extern void trapvec();
+
+int done = 0;
+
+void putc(char c) {
+  while ((UART_LSR & LSR_THR_EMPTY) == 0);
+  UART_THR = c;
+  asm volatile("nop");
+  asm volatile("nop");
+}
+
+void puts(const char* str) {
+  while (*str) {
+    putc(*str++);
+  }
+}
+
 // Typedefs to replace stdint.h
 typedef unsigned long long uint64_t;
 typedef unsigned int       uint32_t;
@@ -63,6 +93,8 @@ extern char payload_start[];
 extern char payload_end[];
 
 void main() {
+    UART_FCR = FCR_FIFO_EN;
+    UART_IER = IER_RX_ENABLE;
     __asm__ volatile ("csrw mtvec, %0" : : "r"(trap_handler));
 
     // Page Tables in physical memory

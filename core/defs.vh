@@ -656,6 +656,7 @@
 `define SD_MMIO_ADDR          64'h0000_0000_0000_0008
 `define SD_MMIO_DATA          64'h0000_0000_0000_0010
 `define SD_MMIO_REPLY         64'h0000_0000_0000_0018
+`define SD_MMIO_DONE          64'h0000_0000_0000_0020
 `define SD_SECTORSIZE         1024 // bytes
 
 // SD CFG defs

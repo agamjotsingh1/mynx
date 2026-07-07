@@ -214,6 +214,17 @@ module cache (
         meta_even_wdata = {1'b0, 1'b0, tag};
       end
     end
+    else if(flush && !actual_flush) begin
+      if(index[0]) begin
+        meta_odd_we = 1'b1;
+        meta_odd_waddr = index_top;
+        meta_odd_wdata = {1'b0, 1'b0, tag};
+      end else begin
+        meta_even_we = 1'b1;
+        meta_even_waddr = index_top;
+        meta_even_wdata = {1'b0, 1'b0, tag};
+      end
+    end
     else if(entry && last_entry) begin
       if(index[0]) begin
         meta_odd_we = 1'b1;

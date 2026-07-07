@@ -250,7 +250,7 @@ module submem (
     .entry(cache_entry),
     .last_entry(cache_last_entry),
 
-    .flush(flush),
+    .flush(state == FLUSH_WIP || state == FLUSH_START),
     .last_flush(last_flush),
 
     .addr(cache_addr),

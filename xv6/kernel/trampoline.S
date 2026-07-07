@@ -75,6 +75,7 @@ uservec:
 
         # restore kernel page table from p->trapframe->kernel_satp
         ld t1, 0(a0)
+        fence.i
         csrw satp, t1
         sfence.vma zero, zero
 
@@ -93,6 +94,7 @@ userret:
         # a1: user page table, for satp.
 
         # switch to the user page table.
+        fence.i
         csrw satp, a1
         sfence.vma zero, zero
 

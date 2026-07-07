@@ -144,6 +144,7 @@ module amc (
             state <= AW_TXN;
             busy  <= 1;
             m_axi_awvalid <= 1;
+            m_axi_wvalid  <= 1;
             m_axi_awaddr  <= $unsigned(addr) + phy_ps_addr;
           end
 
@@ -174,13 +175,32 @@ module amc (
           end
         end
         AW_TXN: begin
+          if(m_axi_wready && m_axi_wvalid) begin
+            if(m_axi_wlast) begin
+              m_axi_wvalid <= 0; // Finished W channel early
+            end
+            else begin
+              cntr <= cntr + 1;
+            end
+          end
+
+          // Handle AW channel handshake
           if(m_axi_awready && m_axi_awvalid) begin
-            state <= W_TXN;
             m_axi_awvalid <= 0;
-            m_axi_wvalid  <= 1;
+            if (m_axi_wvalid == 0 || (m_axi_wready && m_axi_wvalid && m_axi_wlast)) begin
+              // Both AW and W are done
+              state <= B_TXN;
+              cntr <= 0;
+              m_axi_wvalid <= 0;
+              m_axi_bready <= 1;
+            end else begin
+              // AW done, W still ongoing
+              state <= W_TXN;
+            end
           end
         end
         W_TXN: begin
+          // W channel only, AW is already done
           if(m_axi_wready && m_axi_wvalid) begin
             if(m_axi_wlast) begin
               state <= B_TXN;
@@ -228,5 +248,5 @@ module amc (
   assign data_in_index = cntr;
   assign data_out_index = cntr;
   assign data_in_last  = m_axi_wlast && m_axi_wready && m_axi_wvalid;
-  assign data_in_valid = (state == W_TXN) && m_axi_wready && m_axi_wvalid;
+  assign data_in_valid = ((state == W_TXN) || (state == AW_TXN)) && m_axi_wready && m_axi_wvalid;
 endmodule

@@ -30,12 +30,14 @@ module sd (
   reg `W(`DLEN) addr;
   reg `W(`DLEN) data;
   reg `W(`DLEN) reply; // read-only
+  reg `W(`DLEN) done;  // read-only
 
   always @(*) begin
     case(mmio_addr)
       `SD_MMIO_CFG  : mmio_read_data = cfg;
       `SD_MMIO_ADDR : mmio_read_data = addr;
       `SD_MMIO_REPLY: mmio_read_data = reply;
+      `SD_MMIO_DONE : mmio_read_data = done;
       default       : mmio_read_data = 0;
     endcase
   end
@@ -54,6 +56,7 @@ module sd (
       addr <= 0;
       data <= 0;
       reply <= 0;
+      done <= 0;
       irq <= 0;
     end
     else begin
@@ -61,8 +64,8 @@ module sd (
         reply <= __asdc_data_out;
 
       // clear interrupt request if mmio acknowledges by reading reply
-      if(mmio_read_en && mmio_addr == `SD_MMIO_REPLY) begin
-        irq <= 0;
+      if(mmio_read_en && mmio_addr == `SD_MMIO_DONE) begin
+        done <= 0;
       end
 
       case(state)
@@ -93,7 +96,7 @@ module sd (
 
         WAIT: begin
           if(!__asdc_busy) begin
-            irq <= 1;
+            done <= 1;
             state <= IDLE;
             `SD_CFG_FIRE(cfg) <= 0;
           end

@@ -4,6 +4,7 @@
 #define SD_ADDR  (*(volatile uint64_t *) (SDBASE + 0x08))
 #define SD_DATA  (*(volatile uint64_t *) (SDBASE + 0x10))
 #define SD_REPLY (*(volatile uint64_t *) (SDBASE + 0x18))
+#define SD_DONE  (*(volatile uint64_t *) (SDBASE + 0x20))
 
 #define PLIC_IRQ (*(volatile uint64_t *) (PLICBASE   + 0x00))
 
@@ -27,9 +28,6 @@
 
 extern void trapvec();
 
-volatile int done;
-volatile uint64_t reply;
-
 void putc(char c) {
   while ((UART_LSR & LSR_THR_EMPTY) == 0);
   UART_THR = c;
@@ -45,33 +43,28 @@ void trap_handler() {
   uint64_t mcause;
   csrr(mcause, mcause);
 
-  // MSB=1 (Interrupt), Code=9 (S-External)
-  if (mcause == 0x8000000000000009ULL) {
-    if(PLIC_IRQ == 2) {
-      done = 1;
-      reply = SD_REPLY;
-    }
-  }
+  /* // MSB=1 (Interrupt), Code=9 (S-External) */
+  /* if (mcause == 0x8000000000000009ULL) { */
+  /*   if(PLIC_IRQ == 2) { */
+  /*     done = 1; */
+  /*     reply = SD_REPLY; */
+  /*   } */
+  /* } */
 }
 
 void sd_write(uint64_t addr, uint64_t data) {
-  done = 0;
   SD_DATA = data;
   SD_ADDR = addr;
   SD_CFG  = 0b1001;
-  while(done != 1)
+  while(SD_DONE != 1)
     ;
-  done = 0;
 }
 
 uint64_t sd_read(uint64_t addr) {
-  done = 0;
   SD_ADDR = addr;
   SD_CFG  = 0b0101;
-  while(done != 1)
+  while(SD_DONE != 1)
     ;
-
-  done = 0;
   return SD_REPLY;
 }
 
@@ -402,7 +395,6 @@ int sd_read_blk(uint64_t block, uint8_t* data, int block_addressing) {
 }
 
 int main() {
-  done = 0;
   csrw(mtvec, trapvec);
   csrs(mie, 1 << 9);     // enable SEIP
   csrs(mstatus, 1 << 3); // enable global M-Mode interrupts

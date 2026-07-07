@@ -26,21 +26,20 @@ struct {
 void
 kinit()
 {
+  printf("inside kinit\n");
   initlock(&kmem.lock, "kmem");
-  // printf("kinitlock done\n");
+  printf("locked kmem lock\n");
   freerange(end, (void*)PHYSTOP);
-  // printf("kfreerange done\n");
 }
 
 void
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
-  // printf("inside freerange\n");
   p = (char*)PGROUNDUP((uint64)pa_start);
-  // printf("done rounding up\n");
+  printf("inside freerange");
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {
-    // printf("freeing %p\n", (uint64) p);
+    printf("freeing %p\n", (uint64) p);
     kfree(p);
   }
 }
