@@ -109,14 +109,9 @@ timervec:
         add a3, a3, a2
         sd a3, 0(a1)
 
-        # # (*((volatile unsigned char *)(UART0 + 0x00)))
-        # li a1, 0x10000000
-        # li a3, 0x2E
-        # sd a3, 0(a1)
-
         # raise a supervisor software interrupt.
-	li a1, 2
-        csrw sip, a1
+	      li a1, 2
+        csrs sip, a1
 
         ld a3, 16(a0)
         ld a2, 8(a0)

@@ -62,6 +62,7 @@ except FileNotFoundError:
     buffer.freebuffer()
     exit(1)
 
+buffer.fill(0)
 for i, instr in enumerate(instructions):
     buffer[i] = instr
 

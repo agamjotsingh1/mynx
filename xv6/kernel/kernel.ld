@@ -33,12 +33,14 @@ SECTIONS
     *(.data .data.*)
   }
 
+  PROVIDE(sbss = .);
   .bss : {
     . = ALIGN(16);
     *(.sbss .sbss.*) /* do not need to distinguish this from .bss */
     . = ALIGN(16);
     *(.bss .bss.*)
   }
+  PROVIDE(ebss = .);
 
   PROVIDE(end = .);
 }

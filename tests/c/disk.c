@@ -52,22 +52,6 @@ void trap_handler() {
   /* } */
 }
 
-void sd_write(uint64_t addr, uint64_t data) {
-  SD_DATA = data;
-  SD_ADDR = addr;
-  SD_CFG  = 0b1001;
-  while(SD_DONE != 1)
-    ;
-}
-
-uint64_t sd_read(uint64_t addr) {
-  SD_ADDR = addr;
-  SD_CFG  = 0b0101;
-  while(SD_DONE != 1)
-    ;
-  return SD_REPLY;
-}
-
 void put_nibble(uint8_t n) {
   n &= 0x0F;
   if (n < 10) putc('0' + n);
@@ -85,6 +69,22 @@ void put_hex32(uint64_t v) {
   put_hex8((v >> 16) & 0xFF);
   put_hex8((v >>  8) & 0xFF);
   put_hex8( v        & 0xFF);
+}
+
+void sd_write(uint64_t addr, uint64_t data) {
+  SD_DATA = data;
+  SD_ADDR = addr;
+  SD_CFG  = 0b1001;
+  while(SD_DONE != 1)
+    ;
+}
+
+uint64_t sd_read(uint64_t addr) {
+  SD_ADDR = addr;
+  SD_CFG  = 0b0101;
+  while(SD_DONE != 1)
+    ;
+  return SD_REPLY;
 }
 
 void spi_inhibit() {
@@ -407,6 +407,7 @@ int main() {
       return 1;
   }
   puts("init sd card done!\n");
+  return 0;
 
   uint64_t test_block = 100;
   uint8_t write_buf[512];

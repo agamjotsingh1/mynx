@@ -52,21 +52,11 @@ kvminit()
 void
 kvminithart()
 {
-  w_satp(MAKE_SATP(kernel_pagetable));
-  printf("satp written\n");
-  for(int i = 0; i < 1000; i++) {
-    asm volatile("nop");
-  }
-  sfence_vma();
-  for(int i = 0; i < 1000; i++) {
-    asm volatile("nop");
-  }
-  printf("sfence vma done\n");
   fence_i();
-  for(int i = 0; i < 1000; i++) {
-    asm volatile("nop");
-  }
   printf("fence i done\n");
+  w_satp(MAKE_SATP(kernel_pagetable));
+  sfence_vma();
+  printf("satp written and sfence.vma done\n");
 }
 
 // Return the address of the PTE in page table pagetable
