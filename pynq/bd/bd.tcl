@@ -1074,11 +1074,11 @@ proc create_root_design { parentCell } {
   connect_bd_net [get_bd_pins core_0/tx_valid] \
   [get_bd_pins disp_0/valid]
   connect_bd_net [get_bd_pins core_rst/gpio_io_o] \
+  [get_bd_pins disp_0/rst] \
+  [get_bd_pins asdc_0/rst] \
   [get_bd_pins amc_a/rst] \
   [get_bd_pins amc_b/rst] \
-  [get_bd_pins disp_0/rst] \
-  [get_bd_pins core_0/rst] \
-  [get_bd_pins asdc_0/rst]
+  [get_bd_pins core_0/rst]
   connect_bd_net [get_bd_pins disp_0/__textram_addra] \
   [get_bd_pins text_bram/addra]
   connect_bd_net [get_bd_pins disp_0/__textram_addrb] \
@@ -1155,11 +1155,11 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_interconnect_0/M00_ACLK] \
   [get_bd_pins axi_quad_spi_0/s_axi_aclk] \
   [get_bd_pins axi_quad_spi_0/ext_spi_clk] \
+  [get_bd_pins disp_0/clk] \
+  [get_bd_pins asdc_0/clk] \
   [get_bd_pins amc_a/clk] \
   [get_bd_pins amc_b/clk] \
-  [get_bd_pins disp_0/clk] \
-  [get_bd_pins core_0/clk] \
-  [get_bd_pins asdc_0/clk]
+  [get_bd_pins core_0/clk]
   connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] \
   [get_bd_pins proc_sys_reset_1/ext_reset_in] \
   [get_bd_pins proc_sys_reset_2/ext_reset_in] \
