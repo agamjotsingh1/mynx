@@ -40,8 +40,8 @@ module cache (
   // and comparison of tag bits is faster due to silicon muxes
   // distributed ram only has one write port
   // so even/odd split is done
-  (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_even [0:(`CACHE_DEPTH/2)-1];
-  (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_odd  [0:(`CACHE_DEPTH/2)-1];
+  (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_even [0:(`CACHE_DEPTH/2)-1] /*verilator public_flat_rd*/;
+  (* ram_style = "distributed" *) reg `W(`CACHE_METALEN) meta_odd  [0:(`CACHE_DEPTH/2)-1] /*verilator public_flat_rd*/;
 
   // **synthesizable** initial block because of distributed ram blocks
   integer i;

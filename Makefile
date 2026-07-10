@@ -314,12 +314,12 @@ clean:
 	@rm -rf $(ASMTEST_HEX_DIR)
 	@rm -rf $(CTEST_HEX_DIR)
 	@rm -rf $(RISCVTEST_HEX_DIR)
-	@rm -rf $(VIV_DIR)
-	@rm -rf NA
-	@rm -f *.jou
-	@rm -f *.log
-	@rm -f *.logfile
-	@rm -f *.str
+	#@rm -rf $(VIV_DIR)
+	#@rm -rf NA
+	#@rm -f *.jou
+	#@rm -f *.log
+	#@rm -f *.logfile
+	#@rm -f *.str
 	@rm -f $(FSIMG) spike.cmd
 	@if [ -d "$(XV6_ROOT)" ]; then \
 		rm -f $(XV6_KERNEL_BIN) $(XV6_KERNEL_HEX); \

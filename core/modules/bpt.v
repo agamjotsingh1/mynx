@@ -28,7 +28,9 @@ module bpt (
   wire is_branch = (instr`OSLICE == `OP_B);
   wire is_jal    = (instr`OSLICE == `OP_J);
   /* verilator lint_off WIDTHEXPAND */
-  wire `W(`DLEN) imm = $signed({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0});
+  wire `W(`DLEN) imm = is_branch
+  ? $signed({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0})
+  : (is_jal ? $signed({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0}) : 0);
   /* verilator lint_on WIDTHEXPAND */
 
   /* verilator lint_off UNUSEDSIGNAL */

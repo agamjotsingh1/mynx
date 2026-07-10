@@ -37,6 +37,7 @@ void
 usertrap(void)
 {
   int which_dev = 0;
+  printf("[DEBUG] entered usertrap: scause = %p, sepc = %p, sstatus = %p\n", r_scause(), r_sepc(), r_sstatus());
 
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
@@ -137,6 +138,8 @@ kerneltrap()
   uint64 sepc = r_sepc();
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
+
+  printf("[DEBUG] entered kerneltrap: scause = %p, sepc = %p\n", r_scause(), r_sepc());
   
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
@@ -181,8 +184,8 @@ devintr()
   if((scause & 0x8000000000000000L) &&
      (scause & 0xff) == 9){
     // this is a supervisor external interrupt, via PLIC.
-
     // irq indicates which device interrupted.
+    // printf("devintr occured\n");
     int irq = plic_claim();
     printf("devintr: claimed irq=%d\n", irq);
 
@@ -204,7 +207,6 @@ devintr()
   } else if(scause == 0x8000000000000001L){
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
-
     if(cpuid() == 0){
       clockintr();
     }

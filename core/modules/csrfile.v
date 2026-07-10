@@ -177,9 +177,9 @@ module csrfile (
     invalid_address = 0;
 
     case(read_csr)
-      `CSR_SSTATUS : read_data = mstatus & `SSTATUS_MASK;
-      `CSR_SIE     : read_data = mie     & `SIE_MASK;
-      `CSR_SIP     : read_data = mip     & `SIP_READ_MASK;
+      `CSR_SSTATUS : read_data = mstatus      & `SSTATUS_MASK;
+      `CSR_SIE     : read_data = mie          & `SIE_MASK;
+      `CSR_SIP     : read_data = mip_with_irq & `SIP_READ_MASK;
       `CSR_MSTATUS : read_data = mstatus;
       `CSR_MEPC    : read_data = mepc;
       `CSR_SEPC    : read_data = sepc;

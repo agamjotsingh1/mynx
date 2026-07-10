@@ -53,13 +53,20 @@ module uart (
   end
 
   // TODO make this fifo async with proper CDC guardrails
+  wire rhr_read = read_en && (addr == `UART_READ_RHR);
+  reg rhr_read_latched;
+  always @(posedge clk) begin
+    if(rst) rhr_read_latched <= 0;
+    else rhr_read_latched <= rhr_read;
+  end
+
   byte_fifo #(
     .N(`UART_FIFOLEN)
   ) byte_fifo_uart_rx_instance (
     .clk(clk),
     .rst(rst | (write_en && (addr == `UART_WRITE_FCR) && `UART_FCR_RST(write_data))),
     .en(`UART_FCR_EN(fcr)),
-    .read_en(read_en && (addr == `UART_READ_RHR)),
+    .read_en(rhr_read && !rhr_read_latched),
     .write_en(rx_valid && !rx_valix_latched),
     .data_in(rx_data),
     .data_out(rhr),
@@ -69,8 +76,13 @@ module uart (
 
   // lsr fields
   wire data_ready = $unsigned(fifo_bufcount) > 0;
+  `ifdef __SIM__
+  wire thre = 1; // always ready to send (transmit holding register empty)
+  wire temt = 1; // always done sending (transmitter empty)
+  `else
   wire thre = tx_ready; // always ready to send (transmit holding register empty)
   wire temt = tx_ready; // always done sending (transmitter empty)
+  `endif
   wire err_parity  = 0; // simulation => unimplemented
   wire err_framing = 0; // simulation => unimplemented
   wire break_intr  = 0; // simulation => unimplemented
@@ -97,8 +109,10 @@ module uart (
     end
   end
 
+  `ifndef __SIM__
   assign tx_valid = (addr == `UART_WRITE_THR) && write_en;
   assign tx_data = write_data;
+  `endif
 
   always @(posedge clk) begin
     if (rst) begin
@@ -149,5 +163,5 @@ module uart (
       endcase
       /* verilator lint_on CASEINCOMPLETE */
     end
-end
+  end
 endmodule

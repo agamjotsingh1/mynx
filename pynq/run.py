@@ -57,7 +57,7 @@ try:
             if line.strip()
         ]
 except FileNotFoundError:
-    print("Error: 'instructions.hex' not found. Please make sure you have shifted instructions.hex to the board.")
+    print("Error: 'prog.hex' not found. Please make sure you have shifted prog.hex to the board.")
     rst.write(1, 0xFFFFFFFF)
     buffer.freebuffer()
     exit(1)
@@ -105,4 +105,4 @@ except KeyboardInterrupt:
     
 rst.write(1, 0xFFFFFFFF)
 buffer.invalidate()
-buffer.close()
+buffer.freebuffer()

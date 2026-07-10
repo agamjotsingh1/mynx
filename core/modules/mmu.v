@@ -12,8 +12,8 @@ module mmu (
   input wire  clk,
   input wire  rst,
   output wire hard_stall,
-  input wire  __wb_trap_taken,
-
+  input wire `W(`TRAPMODELEN) __wb_trap_mode,
+  
   `ifndef __SIM__ // synth (vivado)
   // AMC exposed ports
   output wire  `W(`ADDRLEN)  __amc_addr_a,
@@ -178,8 +178,8 @@ module mmu (
   wire is_flushing = 0;
 `endif
 
-  wire ext_abort_a = `XCEP(xcep_a)  | __wb_trap_taken;
-  wire ext_abort_b = `XCEP(xcep_b)  | __wb_trap_taken;
+  wire ext_abort_a = `XCEP(xcep_a)  | `TRAP_XCEP(__wb_trap_mode) | `TRAP_RET(__wb_trap_mode);
+  wire ext_abort_b = `XCEP(xcep_b)  | `TRAP_XCEP(__wb_trap_mode) | `TRAP_RET(__wb_trap_mode);
   wire mmu_abort_a = `XCEP(uxcep_a) | ext_abort_a;
   wire mmu_abort_b = `XCEP(uxcep_b) | ext_abort_b;
 
@@ -189,6 +189,19 @@ module mmu (
     (`SATP_MODE(satp) == `SATP_MODE_SV39);
   /* verilator lint_on WIDTHTRUNC */
 
+  wire tlb_hit_a, tlb_hit_b;
+  wire `W(`PTELEN) tlb_pte_a, tlb_pte_b;
+
+  wire phymem_read_a, phymem_write_a;
+  wire phymem_read_b, phymem_write_b;
+
+  wire is_mem_b;
+
+  wire mem_en_a, mem_en_b;
+
+  reg `W($clog2(`PGTBL_LVLS)) lvl_a;
+  reg `W($clog2(`PGTBL_LVLS)) lvl_b;
+
   wire pgtbl_en_a = (mem_read_a | mem_write_a) && pgtbl_en_glbl && (!ext_abort_a) && (!is_flushing);
   wire pgtbl_en_b = (mem_read_b | mem_write_b) && pgtbl_en_glbl && (!ext_abort_b) && (!is_flushing);
   wire walk_en_a  = (pgtbl_en_a & !tlb_hit_a); 
@@ -197,9 +210,6 @@ module mmu (
   /* verilator lint_off UNUSEDSIGNAL */
   reg `W(`PTELEN) pte_a, pte_b;
   /* verilator lint_on UNUSEDSIGNAL */
-
-  wire tlb_hit_a, tlb_hit_b;
-  wire `W(`PTELEN) tlb_pte_a, tlb_pte_b;
 
   // check for tlb hit
   tlb tlb_a_instance (
@@ -243,9 +253,6 @@ module mmu (
     end
   end
 
-  reg `W($clog2(`PGTBL_LVLS)) lvl_a;
-  reg `W($clog2(`PGTBL_LVLS)) lvl_b;
-
   always @(posedge clk) begin
     if (rst || !stall_req_a) lvl_a <= `PGTBL_LVLS;
     else if (walk_en_a && (!busy_a)) lvl_a <= (lvl_a == 0) ? `PGTBL_LVLS : (lvl_a - 1);
@@ -254,8 +261,8 @@ module mmu (
     else if (walk_en_b && (!busy_b)) lvl_b <= (lvl_b == 0) ? `PGTBL_LVLS : (lvl_b - 1);
   end
 
-  wire mem_en_a = (phymem_read_a | phymem_write_a) & (~is_flushing);
-  wire mem_en_b = (phymem_read_b | phymem_write_b) & is_mem_b & (~is_flushing);
+  assign mem_en_a = (phymem_read_a | phymem_write_a) & (~is_flushing);
+  assign mem_en_b = (phymem_read_b | phymem_write_b) & is_mem_b & (~is_flushing);
 
   wire waiting_a = mem_en_a && !done_a && busy_a;
   wire waiting_b = mem_en_b && !done_b && busy_b;
@@ -353,8 +360,8 @@ module mmu (
   wire phymem_raw_write_a = (!pgtbl_en_a) ? active_write_a
     :((lvl_a == 0 || tlb_hit_a) ? mem_write_a: 0);
 
-  wire phymem_read_a = phymem_raw_read_a & (~mmu_abort_a) & (~is_flushing);
-  wire phymem_write_a = phymem_raw_write_a & (~mmu_abort_a) & (~is_flushing);
+  assign phymem_read_a = phymem_raw_read_a & (~mmu_abort_a) & (~is_flushing) & (~done_a);
+  assign phymem_write_a = phymem_raw_write_a & (~mmu_abort_a) & (~is_flushing) & (~done_a);
 
   wire `W(`BWLEN) phymem_bw_a = (!pgtbl_en_a) ? bw_a
     :((lvl_a == 0 || tlb_hit_a) ? bw_a: `BW_DBLWORD);
@@ -380,8 +387,9 @@ module mmu (
   wire phymem_raw_write_b = (!pgtbl_en_b) ? active_write_b
     :((lvl_b == 0 || tlb_hit_b) ? active_write_b: 0);
 
-  wire phymem_read_b = phymem_raw_read_b & (~mmu_abort_b) & (~is_flushing);
-  wire phymem_write_b = phymem_raw_write_b & (~mmu_abort_b) & (~is_flushing);
+  assign phymem_read_b = phymem_raw_read_b & (~mmu_abort_b) & (~is_flushing) & (~done_b);
+
+  assign phymem_write_b = phymem_raw_write_b & (~mmu_abort_b) & (~is_flushing) & (~done_b);
 
   wire `W(`BWLEN) phymem_bw_b = (!pgtbl_en_b) ? bw_b
     :((lvl_b == 0 || tlb_hit_b) ? bw_b: `BW_DBLWORD);
@@ -394,7 +402,7 @@ module mmu (
   wire is_blkdev_b = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `BLKDEVBASE) && (phymem_addr_b <= `BLKDEVTOP): 0;
   wire is_plic_b   = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `PLICBASE) && (phymem_addr_b <= `PLICTOP): 0;
   wire is_clint_b  = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `CLINTBASE) && (phymem_addr_b <= `CLINTTOP): 0;
-  wire is_mem_b    = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `MEMBASE): 1;
+  assign is_mem_b  = (!pgtbl_en_b || lvl_b == 0 || tlb_hit_b) ? (phymem_addr_b >= `MEMBASE): 1;
 
   wire dma_write_en;
   wire dma_read_en;

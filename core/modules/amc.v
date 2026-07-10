@@ -177,18 +177,17 @@ module amc (
         AW_TXN: begin
           if(m_axi_wready && m_axi_wvalid) begin
             if(m_axi_wlast) begin
-              m_axi_wvalid <= 0; // Finished W channel early
+              m_axi_wvalid <= 0;
             end
             else begin
               cntr <= cntr + 1;
             end
           end
 
-          // Handle AW channel handshake
           if(m_axi_awready && m_axi_awvalid) begin
             m_axi_awvalid <= 0;
             if (m_axi_wvalid == 0 || (m_axi_wready && m_axi_wvalid && m_axi_wlast)) begin
-              // Both AW and W are done
+              // both AW and W are done
               state <= B_TXN;
               cntr <= 0;
               m_axi_wvalid <= 0;

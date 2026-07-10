@@ -34,7 +34,7 @@ module submem (
   input  wire               __amc_busy,
   input  wire               __amc_err
 );
-  reg [4:0] state;
+  reg [4:0] state /*verilator public_flat_rd*/;
   localparam IDLE         = 4'h0;
   localparam DIRTY        = 4'h1; // dirty block with a miss => write to amc
   localparam DIRTY_SPILL  = 4'h2; // dirty spill block with a miss => write to amc
@@ -45,7 +45,7 @@ module submem (
   localparam FLUSH_WIP    = 4'h7; // flushing work in progress (WIP)
   localparam FLUSH_WAIT   = 4'h8; // waiting for AMC to acknowledge the flush
 
-  reg `W(`CACHE_INDEXLEN) flush_line;
+  reg `W(`CACHE_INDEXLEN) flush_line /*verilator public_flat_rd*/;
 
   // create a synthetic address that targets this flush_line
   wire `W(`ADDRLEN) flush_addr =
@@ -70,7 +70,12 @@ module submem (
 
   wire cache_last_entry = __amc_data_out_last;
 
-  wire `W(`ADDRLEN) spill_addr = addr + (1 << `CACHE_OFFLEN);
+  // miss address latched at dispatch: LOAD/LOAD_SPILL must not depend on the
+  // live addr input — a trap taken in WB (__wb_trap_taken) aborts the MEM-stage
+  // op, drops hard_stall mid-transaction, and addr then changes under the
+  // in-flight burst, scattering beats across wrong cache lines
+  reg `W(`ADDRLEN) miss_addr;
+  wire `W(`ADDRLEN) miss_spill_addr = miss_addr + (1 << `CACHE_OFFLEN);
 
   always @(*) begin
     cache_addr = addr;
@@ -111,7 +116,7 @@ module submem (
       end
       LOAD: begin
         cache_addr =
-          `CACHE_LINE(addr) +
+          `CACHE_LINE(miss_addr) +
           `AMC_INDEX2ADDR($unsigned(__amc_data_out_index));
 
         cache_mem_write = __amc_data_out_valid;
@@ -121,7 +126,7 @@ module submem (
       LOAD_SPILL: begin
         // TODO temporary patch, move into cache.v
         cache_addr =
-          `CACHE_LINE(spill_addr) +
+          `CACHE_LINE(miss_spill_addr) +
           `AMC_INDEX2ADDR($unsigned(__amc_data_out_index));
 
         cache_mem_write = __amc_data_out_valid;
@@ -169,6 +174,7 @@ module submem (
           end
           else if(en && busy) begin
             if(cache_miss) begin
+              miss_addr <= addr;
               hit <= cache_hit;
               dirty <= cache_dirty;
               spill_hit <= cache_spill_hit;
@@ -177,10 +183,10 @@ module submem (
               evict_addr <= cache_evict_addr;
               spill_evict_addr <= cache_spill_evict_addr;
 
-              if(cache_dirty) state <= DIRTY;
-              else if(cache_line_spill && cache_spill_dirty) state <= DIRTY_SPILL;
+              if(cache_dirty && !cache_hit) state <= DIRTY;
+              else if(cache_line_spill && cache_spill_dirty && !cache_spill_hit) state <= DIRTY_SPILL;
               else if(!cache_hit) state <= LOAD;
-              else if(cache_line_spill & !cache_spill_hit) state <= LOAD_SPILL;
+              else if(cache_line_spill && !cache_spill_hit) state <= LOAD_SPILL;
             end
             else busy <= 0;
           end
@@ -188,7 +194,7 @@ module submem (
         end
         DIRTY: begin
           if(__amc_data_in_last) begin
-            if(line_spill & spill_dirty) state <= DIRTY_SPILL;
+            if(line_spill && spill_dirty && !spill_hit) state <= DIRTY_SPILL;
             else state <= LOAD;
           end
         end
@@ -277,8 +283,8 @@ module submem (
       IDLE       : __amc_addr_unlined = addr;
       DIRTY      : __amc_addr_unlined = evict_addr;
       DIRTY_SPILL: __amc_addr_unlined = spill_evict_addr;
-      LOAD       : __amc_addr_unlined = addr;
-      LOAD_SPILL : __amc_addr_unlined = spill_addr;
+      LOAD       : __amc_addr_unlined = miss_addr;
+      LOAD_SPILL : __amc_addr_unlined = miss_spill_addr;
       FLUSH_WIP  : __amc_addr_unlined = evict_addr;
       default    : __amc_addr_unlined = addr;
     endcase

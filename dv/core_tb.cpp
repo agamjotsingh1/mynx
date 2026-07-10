@@ -210,17 +210,17 @@ int main(int argc, char** argv) {
 
         // check if PC is stuck on the same instruction (e.g., j .) 
         // or alternating between two instructions
-        if (current_pc == prev_pc1 || current_pc == prev_pc2) {
-            loop_counter++;
-            if (loop_counter > LOOP_THRESHOLD && verify != 0) {
-                std::cout << "\n[INFO] Infinite loop detected at PC 0x" 
-                          << std::hex << current_pc << std::dec 
-                          << ".\n";
-                break;
-            }
-        } else {
-            loop_counter = 0;
-        }
+        // if (current_pc == prev_pc1 || current_pc == prev_pc2) {
+        //     loop_counter++;
+        //     if (loop_counter > LOOP_THRESHOLD && verify != 0) {
+        //         std::cout << "\n[INFO] Infinite loop detected at PC 0x" 
+        //                   << std::hex << current_pc << std::dec 
+        //                   << ".\n";
+        //         break;
+        //     }
+        // } else {
+        //     loop_counter = 0;
+        // }
 
         prev_pc2 = prev_pc1;
         prev_pc1 = current_pc;

@@ -552,7 +552,7 @@
 `define AXI_ARLOCK             2'b00
 `define AXI_ARID               6'b000000
 `define AXI_ARPROT             3'b000
-`define AXI_ARCACHE            4'b0011 // non cacheable
+`define AXI_ARCACHE            4'b0000 // non cacheable
 `define AXI_ARBURST            2'b01   // increment burst
 `define AXI_ARSIZE             3'b011  // 8 byte beat
 

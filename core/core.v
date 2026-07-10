@@ -168,7 +168,7 @@ module core (
 
   always @(posedge clk) begin
     if(rst) priv <= `PRIVM;
-    else if(__wb_trap_taken) priv <= next_priv;
+    else if(__wb_trap_taken && (!hard_stall)) priv <= next_priv;
   end
 
   /* verilator lint_off UNUSEDSIGNAL */
@@ -188,7 +188,7 @@ module core (
     .uxcep_a(__if_uxcep),
     .xcep_b(__mem_xcep),
     .uxcep_b(__mem_uxcep),
-    .__wb_trap_taken(__wb_trap_taken),
+    .__wb_trap_mode(__wb_trap_mode),
 
     .ext_irq(__mem_ext_irq),
     .timer_irq(__mem_timer_irq),
@@ -490,10 +490,13 @@ module core (
     .clk(clk),
     .rst(rst),
     .stall(trap_stall),
+    .hard_stall(hard_stall),
     .regw_data(__wb_regw_data),
     .mem_res(__wb_mem_res),
     .ctl_bus(__wb_ctl_bus),
     .write_data(__wb_write_data),
+    .__mem_ctl_bus(__mem_ctl_bus),
+    .__mem_valid(__mem_valid),
 
     // trap handling
     .valid(__wb_valid),

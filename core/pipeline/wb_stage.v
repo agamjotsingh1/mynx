@@ -5,6 +5,7 @@ module wb_stage (
 
   input wire clk,
   input wire rst,
+  input wire hard_stall,
 
   input wire `W(`DLEN)       regw_data,
   input wire `W(`DLEN)       mem_res,
@@ -13,6 +14,8 @@ module wb_stage (
   /* verilator lint_on UNUSEDSIGNAL */
 
   output wire `W(`DLEN)      write_data,
+  input wire `W(`CTL_BUSLEN) __mem_ctl_bus,
+  input wire                 __mem_valid,
 
   // trap handling
   input wire                 valid,
@@ -73,6 +76,9 @@ module wb_stage (
   wire `W(`DLEN) pending_s_intr = pending_intr & mideleg;
   wire `W(`DLEN) pending_m_intr = pending_intr & (~mideleg);
 
+  wire mem_active = __mem_valid && (`MEM_READ(__mem_ctl_bus) || `MEM_WRITE(__mem_ctl_bus));
+  wire suppress_intr = mem_active || hard_stall;
+
   always @(*) begin
     trap_mode = `TRAPMODE_NONE;
 
@@ -96,9 +102,9 @@ module wb_stage (
       trap_mode = `TRAPMODE_SRET;
 
     // intrs
-    else if((pending_m_intr != 0) && m_intr_en && valid)
+    else if((pending_m_intr != 0) && m_intr_en && valid && (~suppress_intr))
       trap_mode = `TRAPMODE_MINTR;
-    else if((pending_s_intr != 0) && s_intr_en && valid)
+    else if((pending_s_intr != 0) && s_intr_en && valid && (~suppress_intr))
       trap_mode = `TRAPMODE_SINTR;
   end
   /* ----------------------------- */

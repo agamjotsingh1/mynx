@@ -39,7 +39,8 @@ freerange(void *pa_start, void *pa_end)
   p = (char*)PGROUNDUP((uint64)pa_start);
   printf("inside freerange");
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {
-    printf("freeing %p\n", (uint64) p);
+    if((uint64)p%(128*PGSIZE)==0) printf("freeing %p\n", p);
+    /* printf("freeing %p\n", (uint64) p); */
     kfree(p);
   }
 }
@@ -57,7 +58,8 @@ kfree(void *pa)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
+  // too slow for fpga work
+  // memset(pa, 1, PGSIZE);
 
   r = (struct run*)pa;
 
@@ -65,6 +67,20 @@ kfree(void *pa)
   r->next = kmem.freelist;
   kmem.freelist = r;
   release(&kmem.lock);
+}
+
+// DEBUG: count reachable freelist pages (bounded so a cyclic/corrupt
+// chain can't hang). also returns head via *head.
+int
+kmem_count(uint64 *head)
+{
+  int n = 0;
+  struct run *r;
+  acquire(&kmem.lock);
+  if(head) *head = (uint64)kmem.freelist;
+  for(r = kmem.freelist; r && n < 200000; r = r->next) n++;
+  release(&kmem.lock);
+  return n;
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -81,7 +97,8 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
-    memset((char*)r, 5, PGSIZE); // fill with junk
+  // too slow for fpga work
+  /* if(r) */
+  /*   memset((char*)r, 5, PGSIZE); // fill with junk */
   return (void*)r;
 }
