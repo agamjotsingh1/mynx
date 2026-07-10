@@ -26,9 +26,9 @@ struct {
 void
 kinit()
 {
-  printf("inside kinit\n");
+  /* printf("inside kinit\n"); */
   initlock(&kmem.lock, "kmem");
-  printf("locked kmem lock\n");
+  /* printf("locked kmem lock\n"); */
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -37,9 +37,9 @@ freerange(void *pa_start, void *pa_end)
 {
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
-  printf("inside freerange");
+  /* printf("inside freerange"); */
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {
-    if((uint64)p%(128*PGSIZE)==0) printf("freeing %p\n", p);
+    /* if((uint64)p%(128*PGSIZE)==0) printf("freeing %p\n", p); */
     /* printf("freeing %p\n", (uint64) p); */
     kfree(p);
   }

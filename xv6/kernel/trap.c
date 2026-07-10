@@ -37,7 +37,6 @@ void
 usertrap(void)
 {
   int which_dev = 0;
-  printf("[DEBUG] entered usertrap: scause = %p, sepc = %p, sstatus = %p\n", r_scause(), r_sepc(), r_sstatus());
 
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
@@ -139,7 +138,7 @@ kerneltrap()
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
 
-  printf("[DEBUG] entered kerneltrap: scause = %p, sepc = %p\n", r_scause(), r_sepc());
+  /* printf("[DEBUG] entered kerneltrap: scause = %p, sepc = %p\n", r_scause(), r_sepc()); */
   
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
@@ -187,7 +186,7 @@ devintr()
     // irq indicates which device interrupted.
     // printf("devintr occured\n");
     int irq = plic_claim();
-    printf("devintr: claimed irq=%d\n", irq);
+    // printf("devintr: claimed irq=%d\n", irq);
 
     if(irq == UART0_IRQ){
       uartintr();

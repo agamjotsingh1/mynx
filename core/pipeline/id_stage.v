@@ -172,7 +172,7 @@ module id_stage (
     .stall(stall),
     .read_csr(csr),
     .read_data(csrdata),
-    .satp(satp),
+    .satp_mmu(satp),
     .write_en(`CSR_WRITE(__wb_ctl_bus)),
     .write_csr(__wb_csr),
     .write_data(__wb_csr_write_data),

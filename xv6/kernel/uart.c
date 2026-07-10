@@ -66,11 +66,6 @@ uartintr(void)
   // read and process incoming characters.
   while(1){
     int c = uartgetc();
-    if (c != -1) {
-      printf("uartintr: read char %d\n", c);
-    } else {
-      printf("uartintr: uartgetc returned -1\n");
-    }
     if(c == -1)
       break;
     consoleintr(c);

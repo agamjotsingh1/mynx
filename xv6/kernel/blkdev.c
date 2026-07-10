@@ -171,7 +171,7 @@ int sd_init() {
     spi_dummy();
   }
 
-  printf("dummy clocks done\n");
+  /* printf("dummy clocks done\n"); */
 
   // CMD0: go idle state
   spi_cs_low();
@@ -186,7 +186,7 @@ int sd_init() {
     printf("\n");
     return 1;
   }
-  printf("CMD0 ok (idle)\n");
+  /* printf("CMD0 ok (idle)\n"); */
 
   // CMD8 - send if condition (voltage check)
   spi_cs_low();
@@ -210,9 +210,9 @@ int sd_init() {
     printf("%x", r1);
     printf("\n");
   } else {
-    printf("CMD8 ok, R7=");
-    printf("%x", cmd8_resp);
-    printf("\n");
+    /* printf("CMD8 ok, R7="); */
+    /* printf("%x", cmd8_resp); */
+    /* printf("\n"); */
     if ((cmd8_resp & 0x1FF) != 0x1AA) {
       printf("voltage/pattern mismatch!\n");
       return 1;
@@ -250,7 +250,7 @@ int sd_init() {
     printf("ACMD41 timed out\n");
     return 1;
   }
-  printf("ACMD41 ok (card ready, out of idle state)\n");
+  /* printf("ACMD41 ok (card ready, out of idle state)\n"); */
 
   // CMD58 - read ocr
   // returns R3 response (5 bytes long)
@@ -263,9 +263,9 @@ int sd_init() {
   spi_cs_high();
   spi_dummy();
 
-  printf("CMD58 OCR=");
-  printf("%x", ocr);
-  printf("\n");
+  /* printf("CMD58 OCR="); */
+  /* printf("%x", ocr); */
+  /* printf("\n"); */
 
   // CCS bit (bit 30 of OCR) - if set, card uses block addressing (SDHC/SDXC)
   disk.block_addressing = (ocr >> 30) & 1;
@@ -287,7 +287,7 @@ int sd_init() {
       printf("\n");
       return 1;
     }
-    printf("CMD16 ok (block len = 512)\n");
+    /* printf("CMD16 ok (block len = 512)\n"); */
   }
 
   return 0;

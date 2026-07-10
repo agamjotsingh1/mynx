@@ -29,14 +29,6 @@ procinit(void)
   
   initlock(&pid_lock, "nextpid");
 
-  // DEBUG: freelist state right after paging is on, before any alloc
-  {
-    extern int kmem_count(uint64 *head);
-    uint64 head = 0;
-    int n = kmem_count(&head);
-    printf("procinit: freelist head=%p count=%d\n", head, n);
-  }
-
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
 
@@ -45,7 +37,6 @@ procinit(void)
       // guard page.
       char *pa = kalloc();
       if(pa == 0){
-        printf("kalloc null at proc idx %d\n", (int)(p - proc));
         panic("kalloc");
       }
       uint64 va = KSTACK((int) (p - proc));
@@ -474,8 +465,8 @@ scheduler(void)
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-    printf("#sstatus=%p,noff=%p,intena=%p\n", r_sstatus(), mycpu()->noff, mycpu()->intena);
-    printf("#sie=%p,sip=%p,ier=%p,plic=%p\n", r_sie(), r_sip(), *((volatile unsigned char *)(0x10000000L + 0x01)), *(volatile uint64*)(0x30000000L));
+    /* printf("#sstatus=%p,noff=%p,intena=%p\n", r_sstatus(), mycpu()->noff, mycpu()->intena); */
+    /* printf("#sie=%p,sip=%p,ier=%p,plic=%p\n", r_sie(), r_sip(), *((volatile unsigned char *)(0x10000000L + 0x01)), *(volatile uint64*)(0x30000000L)); */
     
     int found = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
@@ -499,8 +490,8 @@ scheduler(void)
     if(found == 0) {
       intr_on();
       // asm volatile("wfi");
-      printf("@sstatus=%x,noff=%x,intena=%x,stvec=%p,scause=%p,sepc=%p\n", r_sstatus(), mycpu()->noff, mycpu()->intena, r_stvec(), r_scause(), r_sepc());
-      printf("@sie=%p,sip=%p,ier=%p,plic=%p\n", r_sie(), r_sip(), *((volatile unsigned char *)(0x10000000L + 0x01)), *(volatile uint64*)(0x30000000L));
+      /* printf("@sstatus=%x,noff=%x,intena=%x,stvec=%p,scause=%p,sepc=%p\n", r_sstatus(), mycpu()->noff, mycpu()->intena, r_stvec(), r_scause(), r_sepc()); */
+      /* printf("@sie=%p,sip=%p,ier=%p,plic=%p\n", r_sie(), r_sip(), *((volatile unsigned char *)(0x10000000L + 0x01)), *(volatile uint64*)(0x30000000L)); */
 
       // mock wfi by just repeatedly looping
       for(int k = 0; k < 200; k++) {

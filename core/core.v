@@ -557,7 +557,8 @@ module core (
     .__ex_rd(__ex_rd),
     .__ex_ctl_bus(__ex_ctl_bus),
     .__mem_rd(__mem_rd),
-    .__mem_ctl_bus(__mem_ctl_bus)
+    .__mem_ctl_bus(__mem_ctl_bus),
+    .__wb_ctl_bus(__wb_ctl_bus)
   );
   /* ---------------------------------- */
 endmodule

@@ -26,7 +26,8 @@ module csrfile (
 	output reg `W(`DLEN)   read_data,
 
   // satp read port (mmu -> pagetable ppn fetching)
-  output reg  `W(`DLEN)   satp,
+  // posedge triggered
+  output reg `W(`DLEN)   satp_mmu,
 
 	// standard write port
 	input wire              write_en,
@@ -79,6 +80,7 @@ module csrfile (
   reg `W(`DLEN) stvec;
   reg `W(`DLEN) sscratch;
   reg `W(`DLEN) scause;
+  reg `W(`DLEN) satp;
 
   // buffers to handle negedge/posedge mismatch
   reg `W(`TRAPMODELEN) trap_mode_buf;
@@ -197,6 +199,15 @@ module csrfile (
       `CSR_SATP    : read_data = satp;
       default      : invalid_address = 1;
     endcase
+  end
+
+  always @(posedge clk) begin
+    if(rst) begin
+      satp_mmu <= 0;
+    end
+    else begin
+      satp_mmu <= satp;
+    end
   end
 
   assign read_mip     = mip_with_irq;

@@ -52,45 +52,34 @@ kvminit()
 void
 kvminithart()
 {
-  printf("KVMH-A: before fence.i\n");
+  /* printf("KVMH-A: before fence.i\n"); */
   fence_i();
-  printf("KVMH-B: after fence.i\n");
+  /* printf("KVMH-B: after fence.i\n"); */
 
   // ---- DEBUG: is the flushed page table correct in DRAM? ----
   // paging still off here, so pt[] loads are PHYSICAL. fence.i invalidated
   // submem_b, so these loads miss -> read DRAM -> show exactly what the
   // flush wrote back. walk the kernel-text VA the next fetch will translate.
-  {
-    uint64 va = (uint64)kvminithart;
-    pagetable_t pt = kernel_pagetable;
-    printf("readback: pt=%p va=%p\n", kernel_pagetable, va);
-    for(int level = 2; level >= 0; level--){
-      pte_t pte = pt[PX(level, va)];
-      printf("  L%d[%d] pte=%p pa=%p flags=%p\n",
-             level, PX(level, va), pte, PTE2PA(pte), pte & 0x3ff);
-      if(level > 0){
-        if((pte & PTE_V) == 0){ printf("  -> INVALID/stale at L%d\n", level); break; }
-        pt = (pagetable_t)PTE2PA(pte);
-      }
-    }
-  }
+  /* { */
+  /*   uint64 va = (uint64)kvminithart; */
+  /*   pagetable_t pt = kernel_pagetable; */
+  /*   printf("readback: pt=%p va=%p\n", kernel_pagetable, va); */
+  /*   for(int level = 2; level >= 0; level--){ */
+  /*     pte_t pte = pt[PX(level, va)]; */
+  /*     printf("  L%d[%d] pte=%p pa=%p flags=%p\n", */
+  /*            level, PX(level, va), pte, PTE2PA(pte), pte & 0x3ff); */
+  /*     if(level > 0){ */
+  /*       if((pte & PTE_V) == 0){ printf("  -> INVALID/stale at L%d\n", level); break; } */
+  /*       pt = (pagetable_t)PTE2PA(pte); */
+  /*     } */
+  /*   } */
+  /* } */
   // ----------------------------------------------------------
 
-  printf("KVMH-C: after readback, before satp\n");
+  /* printf("KVMH-C: after readback, before satp\n"); */
   w_satp(MAKE_SATP(kernel_pagetable));
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
-  asm volatile ("nop");
   sfence_vma();
-  printf("KVMH-D: satp written and sfence.vma done\n");
+  /* printf("KVMH-D: satp written and sfence.vma done\n"); */
 }
 
 // Return the address of the PTE in page table pagetable
