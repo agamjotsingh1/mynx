@@ -1,0 +1,2 @@
+- Cache line spills and stuff, what to do with them? My core handles them at the cost of clock speed 
+- 

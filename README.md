@@ -3,6 +3,9 @@
 
 Extensible RISC-V core with xv6 on PYNQ Z2 FPGA board.
 
+## Architecture
+![Arch](./docs/mynx.svg)
+
 ## Prerequisites
 
 * **Verilator:** verilog simulation

@@ -44,12 +44,12 @@ module uart (
   wire fifo_full;
   wire `W($clog2(`UART_FIFOLEN) + 1) fifo_bufcount;
 
-  reg rx_valix_latched;
+  reg rx_valid_latched;
 
   always @(posedge clk) begin
-    if(rst) rx_valix_latched <= 0;
-    else if(!rx_valid && rx_valix_latched) rx_valix_latched <= 0;
-    else if(rx_valid && !rx_valix_latched) rx_valix_latched <= 1;
+    if(rst) rx_valid_latched <= 0;
+    else if(!rx_valid && rx_valid_latched) rx_valid_latched <= 0;
+    else if(rx_valid && !rx_valid_latched) rx_valid_latched <= 1;
   end
 
   // TODO make this fifo async with proper CDC guardrails
@@ -67,7 +67,7 @@ module uart (
     .rst(rst | (write_en && (addr == `UART_WRITE_FCR) && `UART_FCR_RST(write_data))),
     .en(`UART_FCR_EN(fcr)),
     .read_en(rhr_read && !rhr_read_latched),
-    .write_en(rx_valid && !rx_valix_latched),
+    .write_en(rx_valid && !rx_valid_latched),
     .data_in(rx_data),
     .data_out(rhr),
     .full(fifo_full),
