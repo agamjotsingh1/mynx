@@ -16,6 +16,7 @@ VCD     = vcd
 TEST    ?= deadbeef
 LOGGING ?= 1
 FILE    ?= deadbeef.hex
+JOBS    ?= 1
 
 # core verilator build
 CORE_TOP  = $(CORE)/core.v
@@ -115,7 +116,7 @@ VIV_INIT_PROJ_FLAGS = -mode batch -source $(VIV_INIT_PROJ_SCRIPT)
 VIV_PROJ_FILE = vivado/mynx/mynx.xpr
 VIV_BD_SCRIPT = pynq/bd/bd.tcl
 VIV_BUILD_PROJ_SCRIPT = build.tcl
-VIV_BUILD_PROJ_FLAGS = -mode batch -source $(VIV_BUILD_PROJ_SCRIPT)
+VIV_BUILD_PROJ_FLAGS = -mode batch -source $(VIV_BUILD_PROJ_SCRIPT) -tclargs $(JOBS)
 
 # colors for display
 GREEN   = \033[1;32m
@@ -302,10 +303,18 @@ viv-bd:
 .PHONY: viv-bd
 
 # --- vivado synthesize project ---
+# stdout is filtered down to errors
+# PIPESTATUS keeps vivado's exit code instead of grep's.
 viv-build:
-	$(VIV) $(VIV_BUILD_PROJ_FLAGS)
+	@bash -c '$(VIV) $(VIV_BUILD_PROJ_FLAGS) | grep -E --line-buffered "^(ERROR|CRITICAL WARNING)"; exit $${PIPESTATUS[0]}'
 
 .PHONY: viv-build
+
+# --- vivado open project ---
+viv-open:
+	$(VIV) vivado/mynx/mynx.xpr
+
+.PHONY: viv-open
 
 # --- clean ---
 clean:

@@ -41,6 +41,7 @@ module disp (
     end
     else if(vtc_active_video) begin
       // end of 720p horizontal line
+      // increase reliability by checking hsync
       if(vtc_x == `XPIXELS - 1) begin
         vtc_x <= 0;
         vtc_y <= (vtc_y == `YPIXELS - 1) ? 0: (vtc_y + 1);

@@ -39,6 +39,7 @@ start()
   w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
   // ask for clock interrupts.
+  // turned off preemptive for now
   // timerinit();
 
   // keep each CPU's hartid in its tp register, for cpuid().
@@ -61,7 +62,7 @@ timerinit()
   int id = r_mhartid();
 
   // ask the CLINT for a timer interrupt.
-  int interval = 1000000; // cycles; about 1/10th second in qemu.
+  int interval = 100000; // cycles; about 1/10th second in qemu.
   *(uint64*)CLINT_MTIMECMP = *(uint64*)CLINT_MTIME + interval;
 
   // prepare information in scratch[] for timervec.

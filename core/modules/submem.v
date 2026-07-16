@@ -70,10 +70,6 @@ module submem (
 
   wire cache_last_entry = __amc_data_out_last;
 
-  // miss address latched at dispatch: LOAD/LOAD_SPILL must not depend on the
-  // live addr input — a trap taken in WB (__wb_trap_taken) aborts the MEM-stage
-  // op, drops hard_stall mid-transaction, and addr then changes under the
-  // in-flight burst, scattering beats across wrong cache lines
   reg `W(`ADDRLEN) miss_addr;
   wire `W(`ADDRLEN) miss_spill_addr = miss_addr + (1 << `CACHE_OFFLEN);
 

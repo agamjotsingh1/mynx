@@ -72,10 +72,6 @@ module id_stage (
 );
   wire illegal_csr;
 
-  // always@(posedge clk) begin
-  //   $display("PC: %x, illegal csr: %d, csr: %x, priv: %d", pc, illegal_csr && (`ZICSR_OP(ctl_bus) != `ZICSR_OP_NONE), csr, priv);
-  // end
-
   always @(*) begin
     uxcep = 0;
 

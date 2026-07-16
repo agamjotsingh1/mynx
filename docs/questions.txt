@@ -1,2 +1,4 @@
 - Cache line spills and stuff, what to do with them? My core handles them at the cost of clock speed 
-- 
+- I and D cache coherency, how to maintain? currently invalidating/flushing caches with fence.i which is extremely unoptimal
+- SD card is abysmally slow
+- How to decrease fanout for stall signals (especially hard_stall from mmu)? Handshaking mechanisms using elastic buffers?
