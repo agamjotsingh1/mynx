@@ -262,7 +262,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_ACT_DCI_PERIPHERAL_FREQMHZ {10.096154} \
     CONFIG.PCW_ACT_ENET0_PERIPHERAL_FREQMHZ {125.000000} \
     CONFIG.PCW_ACT_ENET1_PERIPHERAL_FREQMHZ {10.000000} \
-    CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {20.000000} \
+    CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {25.000000} \
     CONFIG.PCW_ACT_FPGA1_PERIPHERAL_FREQMHZ {10.000000} \
     CONFIG.PCW_ACT_FPGA2_PERIPHERAL_FREQMHZ {10.000000} \
     CONFIG.PCW_ACT_FPGA3_PERIPHERAL_FREQMHZ {10.000000} \
@@ -292,7 +292,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_CAN1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_CAN_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_CAN_PERIPHERAL_VALID {0} \
-    CONFIG.PCW_CLK0_FREQ {20000000} \
+    CONFIG.PCW_CLK0_FREQ {25000000} \
     CONFIG.PCW_CLK1_FREQ {10000000} \
     CONFIG.PCW_CLK2_FREQ {10000000} \
     CONFIG.PCW_CLK3_FREQ {10000000} \
@@ -392,7 +392,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_FCLK2_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_FCLK3_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_FCLK_CLK0_BUF {TRUE} \
-    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {20} \
+    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {25} \
     CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {50} \
     CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ {50} \
     CONFIG.PCW_FPGA3_PERIPHERAL_FREQMHZ {50} \
@@ -953,7 +953,7 @@ proc create_root_design { parentCell } {
   set axi_quad_spi_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_quad_spi:3.2 axi_quad_spi_0 ]
   set_property -dict [list \
     CONFIG.C_FIFO_DEPTH {256} \
-    CONFIG.C_SCK_RATIO {4} \
+    CONFIG.C_SCK_RATIO {2} \
     CONFIG.C_USE_STARTUP {0} \
     CONFIG.QSPI_BOARD_INTERFACE {Custom} \
     CONFIG.USE_BOARD_FLOW {true} \
@@ -1069,16 +1069,18 @@ proc create_root_design { parentCell } {
   [get_bd_pins asdc_0/read_en]
   connect_bd_net [get_bd_pins core_0/__asdc_write_en] \
   [get_bd_pins asdc_0/write_en]
+  connect_bd_net [get_bd_pins core_0/ext_spi_clk] \
+  [get_bd_pins axi_quad_spi_0/ext_spi_clk]
   connect_bd_net [get_bd_pins core_0/tx_data] \
   [get_bd_pins disp_0/char]
   connect_bd_net [get_bd_pins core_0/tx_valid] \
   [get_bd_pins disp_0/valid]
   connect_bd_net [get_bd_pins core_rst/gpio_io_o] \
+  [get_bd_pins core_0/rst] \
+  [get_bd_pins amc_a/rst] \
   [get_bd_pins disp_0/rst] \
   [get_bd_pins asdc_0/rst] \
-  [get_bd_pins amc_a/rst] \
-  [get_bd_pins amc_b/rst] \
-  [get_bd_pins core_0/rst]
+  [get_bd_pins amc_b/rst]
   connect_bd_net [get_bd_pins disp_0/__textram_addra] \
   [get_bd_pins text_bram/addra]
   connect_bd_net [get_bd_pins disp_0/__textram_addrb] \
@@ -1154,12 +1156,11 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_interconnect_0/S00_ACLK] \
   [get_bd_pins axi_interconnect_0/M00_ACLK] \
   [get_bd_pins axi_quad_spi_0/s_axi_aclk] \
-  [get_bd_pins axi_quad_spi_0/ext_spi_clk] \
+  [get_bd_pins core_0/clk] \
+  [get_bd_pins amc_a/clk] \
   [get_bd_pins disp_0/clk] \
   [get_bd_pins asdc_0/clk] \
-  [get_bd_pins amc_a/clk] \
-  [get_bd_pins amc_b/clk] \
-  [get_bd_pins core_0/clk]
+  [get_bd_pins amc_b/clk]
   connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] \
   [get_bd_pins proc_sys_reset_1/ext_reset_in] \
   [get_bd_pins proc_sys_reset_2/ext_reset_in] \

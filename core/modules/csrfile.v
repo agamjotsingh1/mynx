@@ -27,7 +27,7 @@ module csrfile (
 
   // satp read port (mmu -> pagetable ppn fetching)
   // posedge triggered
-  output reg `W(`DLEN)   satp_mmu,
+  output wire `W(`DLEN)   read_satp,
 
 	// standard write port
 	input wire              write_en,
@@ -103,7 +103,7 @@ module csrfile (
     end
   end
 
-	always @(negedge clk) begin
+	always @(posedge clk) begin
     if(rst) begin
       mstatus <= `MSTATUS_RST;
       mepc <= `MEPC_RST;
@@ -201,18 +201,10 @@ module csrfile (
     endcase
   end
 
-  always @(posedge clk) begin
-    if(rst) begin
-      satp_mmu <= 0;
-    end
-    else begin
-      satp_mmu <= satp;
-    end
-  end
-
   assign read_mip     = mip_with_irq;
   assign read_mstatus = mstatus;
   assign read_mie     = mie;
+  assign read_satp    = satp;
   assign read_vec     = `TRAP_M(trap_mode) ? mtvec: stvec;
   assign read_epc     = (trap_mode == `TRAPMODE_MRET) ? mepc: sepc;
   assign read_mideleg = mideleg;

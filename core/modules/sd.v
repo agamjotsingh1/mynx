@@ -15,6 +15,9 @@ module sd (
   // interrupt request
   output reg irq,
 
+  // take the external spi clock slow during init process
+  output wire slow_sel,
+
   // ASDC ports
   output wire __asdc_read_en,
   output wire __asdc_write_en,
@@ -41,6 +44,8 @@ module sd (
       default       : mmio_read_data = 0;
     endcase
   end
+  
+  assign slow_sel = ~`SD_CFG_INITD(cfg);
 
   reg [2:0] state;
   localparam IDLE    = 3'b000;

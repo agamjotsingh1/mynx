@@ -46,6 +46,7 @@ module id_stage (
   // fwd controls
   input wire `W(`FWDLEN)  fwd1,
   input wire `W(`FWDLEN)  fwd2,
+  input wire `W(`FWDLEN)  fwdcsr,
 
   // fwd inputs
   input wire `W(`DLEN)    __mem_ex_res,
@@ -158,6 +159,11 @@ module id_stage (
     branch_taken = branch_taken | (`JAL(ctl_bus) | `JALR(ctl_bus));
   end
 
+  wire `W(`DLEN) csrdata_fwded  = (fwdcsr == `FWD_MEM_WB) ? __wb_csr_write_data: csrdata_unfwded;
+  wire `W(`DLEN) csrdata_unfwded;
+
+  assign csrdata = csrdata_fwded;
+
   csrfile csrfile_instance (
     .clk(clk),
     .rst(rst),
@@ -167,8 +173,8 @@ module id_stage (
     .illegal_csr(illegal_csr),
     .stall(stall),
     .read_csr(csr),
-    .read_data(csrdata),
-    .satp_mmu(satp),
+    .read_data(csrdata_unfwded),
+    .read_satp(satp),
     .write_en(`CSR_WRITE(__wb_ctl_bus)),
     .write_csr(__wb_csr),
     .write_data(__wb_csr_write_data),

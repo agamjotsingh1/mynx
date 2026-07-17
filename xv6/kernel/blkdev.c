@@ -73,10 +73,12 @@ void blkdev_intr(void) {
 #define SPISSR 0x70
 #define SPISRR 0x40
 
+int init_done;
+
 void sd_write(uint64 addr, uint64 data) {
   SD_DATA = data;
   SD_ADDR = addr;
-  SD_CFG  = 0b1001;
+  SD_CFG  = init_done ? 0b11001: 0b01001;
 
   while(SD_DONE != 1)
     ;
@@ -84,7 +86,7 @@ void sd_write(uint64 addr, uint64 data) {
 
 uint64 sd_read(uint64 addr) {
   SD_ADDR = addr;
-  SD_CFG  = 0b0101;
+  SD_CFG  = init_done ? 0b10101: 0b00101;
 
   while(SD_DONE != 1)
     ;
@@ -159,6 +161,8 @@ uint8 sd_cmd(uint8 cmd, uint64 arg, uint8 crc) {
 }
 
 int sd_init() {
+  init_done = 0;
+
   // SPI core reset + setup
   // softreset the AXI Quad SPI IP (clears FIFOs + cfg)
   sd_write(SPISRR, 0x0000000A);
@@ -289,6 +293,8 @@ int sd_init() {
     }
     /* printf("CMD16 ok (block len = 512)\n"); */
   }
+
+  init_done = 1;
 
   return 0;
 }

@@ -13,6 +13,7 @@ module mmu (
   input wire  rst,
   output wire hard_stall,
   input wire `W(`TRAPMODELEN) __wb_trap_mode,
+  output wire slow_sel,
   
   `ifndef __SIM__ // synth (vivado)
   // AMC exposed ports
@@ -569,6 +570,8 @@ module mmu (
     .mmio_read_data(blkdev_out_b),
 
     .irq(blkdev_irq),
+
+    .slow_sel(slow_sel),
 
     .__asdc_read_en(__asdc_read_en),
     .__asdc_write_en(__asdc_write_en),

@@ -77,7 +77,7 @@ module wb_stage (
   wire `W(`DLEN) pending_m_intr = pending_intr & (~mideleg);
 
   wire mem_active = __mem_valid && (`MEM_READ(__mem_ctl_bus) || `MEM_WRITE(__mem_ctl_bus));
-  wire suppress_intr = mem_active || hard_stall;
+  wire suppress_intr = mem_active || hard_stall || `CSR_WRITE(ctl_bus);
 
   always @(*) begin
     trap_mode = `TRAPMODE_NONE;

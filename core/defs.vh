@@ -659,10 +659,14 @@
 `define SD_MMIO_DONE          64'h0000_0000_0000_0020
 `define SD_SECTORSIZE         1024 // bytes
 
+// SPI defs (for SPI controller)
+`define SPI_CLKDIV            16 // clk/(2*DIV*2) is the spi clock supply
+
 // SD CFG defs
 `define SD_CFG_FIRE(cfg)      cfg[0]
 `define SD_CFG_DMA(cfg)       cfg[1]
 `define SD_CFG_RE(cfg)        cfg[2]
 `define SD_CFG_WE(cfg)        cfg[3]
+`define SD_CFG_INITD(cfg)     cfg[4]
 
 `endif

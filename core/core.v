@@ -49,6 +49,8 @@ module core (
   output wire           tx_valid,
   input  wire           tx_ready,
   output wire `W(`BYTE) tx_data,
+
+  output wire ext_spi_clk,
   `endif
 
   input wire       rx_valid,
@@ -58,6 +60,8 @@ module core (
   wire `W(`PRIVLEN) next_priv;
 
   wire hard_stall; // stall the entire pipeline
+
+  wire slow_sel;
 
   wire `W(`STLEN)        trap_stall;
   wire `W(`STLEN)        hazard_stall;
@@ -105,6 +109,7 @@ module core (
   wire `W(`DLEN)        __id_mideleg;
   wire `W(`DLEN)        __id_medeleg;
   wire `W(`DLEN)        __id_predicted_pc;
+  wire `W(`FWDLEN)      __id_fwdcsr;
 
   wire                  __ex_valid;
   wire `W(`DLEN)        __ex_pc;
@@ -180,6 +185,7 @@ module core (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    .slow_sel(slow_sel),
     .tlb_flush(tlb_flush),
     .cache_flush(cache_flush),
     .priv(priv),
@@ -334,6 +340,7 @@ module core (
     .__wb_csr_write_data(__wb_csr_write_data),
     .fwd1(__id_fwd1),
     .fwd2(__id_fwd2),
+    .fwdcsr(__id_fwdcsr),
     .__mem_ex_res(__mem_ex_res),
     .__wb_write_data(__wb_write_data),
     .xcep(__id_xcep),
@@ -528,6 +535,7 @@ module core (
     .__id_rs2(__id_rs2),
     .__ex_rs1(__ex_rs1),
     .__ex_rs2(__ex_rs2),
+    .__id_csr(__id_csr),
     .__ex_csr(__ex_csr),
     .__mem_rd(__mem_rd),
     .__mem_csr(__mem_csr),
@@ -539,6 +547,7 @@ module core (
     .__id_fwd2(__id_fwd2),
     .__ex_fwd1(__ex_fwd1),
     .__ex_fwd2(__ex_fwd2),
+    .__id_fwdcsr(__id_fwdcsr),
     .__ex_fwdcsr(__ex_fwdcsr)
   );
   /* -------------------- */
@@ -561,4 +570,11 @@ module core (
     .__wb_ctl_bus(__wb_ctl_bus)
   );
   /* ---------------------------------- */
+
+  spi_clkmux spi_clkmux_instance (
+    .clk(clk),
+    .rst(rst),
+    .slow_sel(slow_sel),
+    .ext_spi_clk(ext_spi_clk)
+  );
 endmodule
