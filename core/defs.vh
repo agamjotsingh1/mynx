@@ -2,12 +2,10 @@
 `define DEFS_VH
 
 // WARNING! comment while generating bitstream
-// `define __SIM__
+// `define __SYNTH__
 
 // Memory defs
 `define MEMBASE           64'h0000_0000_8000_0000 // memory base 
-`define NBANKS            8    // number of banks (bytes per word)
-`define BANKLEN           8    // width of each bank (8 bits <=> 1 Byte)
 `define DEPTH             16777216 // number of 64 bit doublewords = 1024*1024*64 bytes
 `define BYTE              8
 `define HALFWORD          16
@@ -38,8 +36,7 @@
 `define F7LEN             7  // funct7 width
 `define F12LEN            12  // funct12 width
 `define MLEN              8  // byte addressable mem => 8 bits = 1 byte
-`define ADDRLEN           $clog2(`DEPTH*`NBANKS)    // mem addr width
-`define BANK_ADDRLEN      $clog2(`DEPTH) // bank addr width
+`define ADDRLEN           $clog2(`DEPTH*`DLEN)  // mem addr width
 `define RLEN              5  // register index width
 
 `define RSTPC             `MEMBASE // pc when processor resets

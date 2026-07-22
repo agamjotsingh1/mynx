@@ -32,9 +32,12 @@ module submem (
   input  wire               __amc_data_out_valid,
   input  wire               __amc_data_out_last,
   input  wire               __amc_busy,
+  // TODO! add exception for memory failure
+  /* verilator lint_off UNUSEDSIGNAL */
   input  wire               __amc_err
+  /* verilator lint_on UNUSEDSIGNAL */
 );
-  reg [4:0] state /*verilator public_flat_rd*/;
+  reg [3:0] state /*verilator public_flat_rd*/;
   localparam IDLE         = 4'h0;
   localparam DIRTY        = 4'h1; // dirty block with a miss => write to amc
   localparam DIRTY_SPILL  = 4'h2; // dirty spill block with a miss => write to amc
@@ -48,12 +51,17 @@ module submem (
   reg `W(`CACHE_INDEXLEN) flush_line /*verilator public_flat_rd*/;
 
   // create a synthetic address that targets this flush_line
+  /* verilator lint_off WIDTHEXPAND */
   wire `W(`ADDRLEN) flush_addr =
     $unsigned({flush_line, {`CACHE_OFFLEN{1'b0}}});
+  /* verilator lint_on WIDTHEXPAND */
 
   wire en = (mem_read | mem_write);
 
+  /* verilator lint_off UNUSEDSIGNAL */
   reg dirty, hit, spill_hit, spill_dirty, line_spill;
+  /* verilator lint_on UNUSEDSIGNAL */
+
   reg `W(`ADDRLEN) evict_addr, spill_evict_addr;
 
   wire cache_dirty, cache_hit;
@@ -93,6 +101,8 @@ module submem (
         cache_entry = 0;
         cache_bw = bw;
       end
+      /* verilator lint_off WIDTHEXPAND */
+
       // DIRTY and DIRTY_SPILL rely upon the fact that AMC takes
       // atleast 1 cycle for the AW TXN to complete
       // note: we have to prefetch cache addresses as bram takes one extra clock cycle
@@ -140,6 +150,8 @@ module submem (
 
         cache_mem_read = !__amc_data_in_last;
       end
+      /* verilator lint_on WIDTHEXPAND */
+
       default: begin
         // AMC_WAIT and FLUSH_WAIT
         cache_addr = addr;
@@ -241,6 +253,9 @@ module submem (
         end
         AMC_WAIT: begin
           if(!__amc_busy) state <= IDLE;
+        end
+        default: begin
+          state <= IDLE;
         end
       endcase
     end

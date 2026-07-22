@@ -4,7 +4,6 @@ module core (
   input wire clk,
   input wire rst,
 
-  `ifndef __SIM__ // synth (vivado)
   // AMC exposed ports
   output wire  `W(`ADDRLEN)  __amc_addr_a,
   output wire                __amc_mem_read_a,
@@ -35,7 +34,6 @@ module core (
   input  wire               __amc_err_b,
 
   // ASDC exposed ports
-    // ASDC ports
   output wire __asdc_read_en,
   output wire __asdc_write_en,
   output wire  `W(`ASDC_ADDRLEN)  __asdc_addr,
@@ -50,10 +48,11 @@ module core (
   input  wire           tx_ready,
   output wire `W(`BYTE) tx_data,
 
+  `ifdef __SYNTH___
   output wire ext_spi_clk,
   `endif
 
-  input wire       rx_valid,
+  input wire           rx_valid,
   input wire `W(`BYTE) rx_data
 );
   reg  `W(`PRIVLEN) priv;
@@ -61,7 +60,9 @@ module core (
 
   wire hard_stall; // stall the entire pipeline
 
+  `ifdef __SYNTH__
   wire slow_sel;
+  `endif
 
   wire `W(`STLEN)        trap_stall;
   wire `W(`STLEN)        hazard_stall;
@@ -185,7 +186,9 @@ module core (
     .clk(clk),
     .rst(rst),
     .hard_stall(hard_stall),
+    `ifdef __SYNTH__
     .slow_sel(slow_sel),
+    `endif
     .tlb_flush(tlb_flush),
     .cache_flush(cache_flush),
     .priv(priv),
@@ -202,7 +205,6 @@ module core (
     .rx_valid(rx_valid),
     .rx_data(rx_data),
 
-    `ifndef __SIM__
     // AMC port A
     .__amc_addr_a(__amc_addr_a),
     .__amc_mem_read_a(__amc_mem_read_a),
@@ -246,7 +248,6 @@ module core (
     .tx_valid(tx_valid),
     .tx_ready(tx_ready),
     .tx_data(tx_data),
-    `endif
 
     // port a for instr fetch
     .addr_a(__mem_instr_addr),
@@ -571,10 +572,12 @@ module core (
   );
   /* ---------------------------------- */
 
+  `ifdef __SYNTH___
   spi_clkmux spi_clkmux_instance (
     .clk(clk),
     .rst(rst),
     .slow_sel(slow_sel),
     .ext_spi_clk(ext_spi_clk)
   );
+  `endif
 endmodule

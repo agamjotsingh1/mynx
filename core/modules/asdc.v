@@ -56,7 +56,8 @@ module asdc (
   assign m_axi_awprot  = `AXI_AWPROT;
 
   // W config
-  assign m_axi_wstrb   = `ASDC_WSTRB;
+  // only the low 32 bit lane is ever driven
+  assign m_axi_wstrb   = {4'b0, `ASDC_WSTRB};
 
   reg [2:0] state;
   localparam IDLE   = 3'b000;
@@ -156,7 +157,7 @@ module asdc (
     end
   end
 
-  assign m_axi_wdata = data_in;
+  assign m_axi_wdata = {`ASDC_DATALEN'b0, data_in};
   assign data_out = m_axi_rdata;
 
   assign data_out_valid =

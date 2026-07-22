@@ -14,7 +14,9 @@ module wb_stage (
   /* verilator lint_on UNUSEDSIGNAL */
 
   output wire `W(`DLEN)      write_data,
+  /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`CTL_BUSLEN) __mem_ctl_bus,
+  /* verilator lint_on UNUSEDSIGNAL */
   input wire                 __mem_valid,
 
   // trap handling

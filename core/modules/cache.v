@@ -59,11 +59,17 @@ module cache (
   reg `W(`BRAM_WELEN) __bram_we;
   reg `W(`BRAM_WELEN) __bram_wea, __bram_web;
 
+  /* verilator lint_off WIDTHEXPAND */
   wire `W($clog2(`BRAM_DATA_BYTELEN)) shift_off_a =
     addr[0 +: $clog2(`BRAM_DATA_BYTELEN)];
+  /* verilator lint_on WIDTHEXPAND */
 
+  /* verilator lint_off WIDTHEXPAND */
+  /* verilator lint_off WIDTHTRUNC */
   wire `W($clog2(`BRAM_DATA_BYTELEN) + 1) shift_off_b =
     (`BRAM_DATA_BYTELEN - shift_off_a);
+  /* verilator lint_on WIDTHTRUNC */
+  /* verilator lint_on WIDTHEXPAND */
 
   always @(*) begin
     __bram_we  = `BRAM_WE_NONE;
@@ -96,7 +102,9 @@ module cache (
 
   wire `W(`CACHE_TAGLEN) tag = `CACHE_TAG(addr); 
   wire `W(`CACHE_INDEXLEN) index = `CACHE_INDEX(addr); 
+  /* verilator lint_off UNUSEDSIGNAL */
   wire `W(`CACHE_OFFLEN) off = `CACHE_OFF(addr); 
+  /* verilator lint_on UNUSEDSIGNAL */
 
   wire `W(`CACHE_INDEXLEN-1) index_top = index[`CACHE_INDEXLEN-1 : 1];
   wire `W(`CACHE_METALEN) meta_primary = index[0] ? meta_odd[index_top]: meta_even[index_top];
@@ -148,14 +156,18 @@ module cache (
   wire __bram_ena = (hit | entry | actual_flush) && (mem_read | mem_write);
   wire __bram_enb = (spill_hit && __bram_spill) && (mem_read | mem_write);
 
+  /* verilator lint_off WIDTHTRUNC */
   wire `W(`BRAM_ADDRLEN) __bram_addra = $unsigned({index, `CACHE_OFF(addr)}) >> $clog2(`BRAM_DATA_BYTELEN);
+  /* verilator lint_on WIDTHTRUNC */
   wire `W(`BRAM_ADDRLEN) __bram_addrb = __bram_addra + 1;
 
+  /* verilator lint_off WIDTHEXPAND */
   wire `W(`DLEN) data_shift_off_a =
     $unsigned(shift_off_a) << $clog2(`BYTE);
 
   wire `W(`DLEN) data_shift_off_b =
     $unsigned(shift_off_b) << $clog2(`BYTE);
+  /* verilator lint_on WIDTHEXPAND */
 
   wire `W(`BRAM_DLEN) __bram_dina  = (entry | actual_flush) ? data_in: data_in << data_shift_off_a;
   wire `W(`BRAM_DLEN) __bram_dinb  = data_in >> data_shift_off_b;

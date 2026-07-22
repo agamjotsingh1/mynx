@@ -18,11 +18,11 @@ LOGGING ?= 1
 FILE    ?= deadbeef.hex
 JOBS    ?= 1
 
-# core verilator build
-CORE_TOP  = $(CORE)/core.v
-CORE_TB   = $(DV)/core_tb.cpp
-CORE_BIN  = $(OBJ)/core/Vcore
-CORE_SRCS = $(shell find $(CORE) -name '*.v')
+# verilator build
+VERILATOR_TOP  = $(DV)/soc.v
+VERILATOR_TB   = $(DV)/soc_tb.cpp
+VERILATOR_BIN  = $(OBJ)/soc/Vsoc
+VERILATOR_SRCS = $(shell find $(CORE) -name '*.v')
 
 # directories
 TEST_DIR = tests
@@ -73,10 +73,10 @@ HEXDUMPFLAGS = -v -e '/4 "%08x\n"'
 VCONF = $(CORE)/core.vc
 
 # verilator flags
-VFLAGS = -f $(VCONF) --top-module core --prefix Vcore \
-	 -Wall --cc --exe --build -I$(CORE) -O3 \
+VFLAGS = -f $(VCONF) --top-module soc --prefix Vsoc  \
+	   -Wall --cc --exe --build -I$(CORE) -y $(DV) -O3 \
          --x-assign fast --x-initial fast --noassert \
-         -CFLAGS "-O3 -march=native -flto -DNDEBUG" \
+         -CFLAGS "-O3 -march=native -flto -DNDEBUG"  \
          -LDFLAGS "-flto"
 
 # old code w/ vcd dump
@@ -126,13 +126,13 @@ NC      = \033[0m
 
 # --- builds ---
 
-# core verilator binary
-$(CORE_BIN): $(CORE_SRCS) $(CORE_TB)
+# verilator binary
+$(VERILATOR_BIN): $(VERILATOR_SRCS) $(VERILATOR_TB)
 	@mkdir -p $(OBJ) $(VCD)
-	$(VERILATOR) $(VFLAGS) $(CORE_TOP) $(CORE_TB) --Mdir $(dir $@)
+	$(VERILATOR) $(VFLAGS) $(VERILATOR_TOP) $(VERILATOR_TB) --Mdir $(dir $@)
 
-build-core: $(CORE_BIN)
-.PHONY: build-core
+build-soc: $(VERILATOR_BIN)
+.PHONY: build-soc
 
 # asm tests
 $(ASMTEST_HEX_DIR)/%.hex: $(ASMTEST_DIR)/%.s
@@ -181,67 +181,67 @@ build-riscv-test-all: $(RISCVTEST_HEX)
 .PHONY: build-riscv-test build-riscv-test-all
 
 # --- running ---
-run-asm: $(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
+run-asm: $(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running ASM test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
-run-c: $(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
+run-c: $(VERILATOR_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running C test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) $(CTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
-run-riscv: $(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
+run-riscv: $(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running RISC-V test: $(TEST)...$(NC)"
-	./$(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
 
-run: $(CORE_BIN)
+run: $(VERILATOR_BIN)
 	@echo -e "$(YELLOW)Booting core with $(FILE)...$(NC)"
 	@if [ ! -f $(FILE) ]; then \
 		echo -e "$(RED)Hex file '$(FILE)' does not exist! Compile it first.$(NC)"; \
 		exit 1; \
 	fi
-	./$(CORE_BIN) $(FILE) $(LOGGING) 1
+	./$(VERILATOR_BIN) $(FILE) $(LOGGING) 1
 
 .PHONY: run run-asm run-c run-riscv
 
 # --- verification ---
-verify-asm: $(CORE_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
+verify-asm: $(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Verifying core with ASM test $(TEST)...$(NC)"
-	$(PY) $(PY_VERIFY_SCRIPT) $(ASMTEST_HEX_DIR)/$(TEST).elf $(ASMTEST_HEX_DIR)/$(TEST).hex $(CORE_BIN) || { echo -e "$(RED)ASM Test verification failed on $(TEST)!$(NC)"; exit 1; };
+	$(PY) $(PY_VERIFY_SCRIPT) $(ASMTEST_HEX_DIR)/$(TEST).elf $(ASMTEST_HEX_DIR)/$(TEST).hex $(VERILATOR_BIN) || { echo -e "$(RED)ASM Test verification failed on $(TEST)!$(NC)"; exit 1; };
 	@echo -e "$(GREEN)ASM test $(TEST) verified against Spike!$(NC)"
 
-verify-c: $(CORE_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
+verify-c: $(VERILATOR_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Verifying core with C test $(TEST)...$(NC)"
 	@echo -e "$(YELLOW)NOTE: C test verification may fail as a result of Spike not having I/O$(NC)"
-	$(PY) $(PY_VERIFY_SCRIPT) $(CTEST_HEX_DIR)/$(TEST).elf $(CTEST_HEX_DIR)/$(TEST).hex $(CORE_BIN) || { echo -e "$(RED)C Test verification failed on $(TEST)!$(NC)"; exit 1; };
+	$(PY) $(PY_VERIFY_SCRIPT) $(CTEST_HEX_DIR)/$(TEST).elf $(CTEST_HEX_DIR)/$(TEST).hex $(VERILATOR_BIN) || { echo -e "$(RED)C Test verification failed on $(TEST)!$(NC)"; exit 1; };
 	@echo -e "$(GREEN)C test $(TEST) verified successfully against Spike!$(NC)"
 
-verify-riscv: $(CORE_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
+verify-riscv: $(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Verifying core with RISC-V test $(TEST)...$(NC)"
-	$(PY) $(PY_VERIFY_SCRIPT) $(RISCVTEST_HEX_DIR)/$(TEST).elf $(RISCVTEST_HEX_DIR)/$(TEST).hex $(CORE_BIN) || { echo -e "$(RED)RISC-V Test verification failed on $(TEST)!$(NC)"; exit 1; };
+	$(PY) $(PY_VERIFY_SCRIPT) $(RISCVTEST_HEX_DIR)/$(TEST).elf $(RISCVTEST_HEX_DIR)/$(TEST).hex $(VERILATOR_BIN) || { echo -e "$(RED)RISC-V Test verification failed on $(TEST)!$(NC)"; exit 1; };
 	@echo -e "$(GREEN)RISC-V test $(TEST) verified successfully against Spike!$(NC)"
 
-verify-asm-all: $(CORE_BIN) $(ASMTEST_HEX)
+verify-asm-all: $(VERILATOR_BIN) $(ASMTEST_HEX)
 	@echo -e "$(YELLOW)Verifying core with ASM tests...$(NC)"
 	@for file in $(ASMTEST_HEX); do \
 		prog=$$(basename $$file .hex); \
-		$(PY) $(PY_VERIFY_SCRIPT) $(ASMTEST_HEX_DIR)/$$prog.elf $$file $(CORE_BIN) || { echo -e "$(RED)ASM Verification failed on $$prog!$(NC)"; exit 1; }; \
+		$(PY) $(PY_VERIFY_SCRIPT) $(ASMTEST_HEX_DIR)/$$prog.elf $$file $(VERILATOR_BIN) || { echo -e "$(RED)ASM Verification failed on $$prog!$(NC)"; exit 1; }; \
 	done
 	@echo -e "$(GREEN)All ASM tests verified successfully against Spike!$(NC)"
 
-verify-c-all: $(CORE_BIN) $(CTEST_HEX)
+verify-c-all: $(VERILATOR_BIN) $(CTEST_HEX)
 	@echo -e "$(YELLOW)Verifying core with C tests...$(NC)"
 	@echo -e "$(YELLOW)NOTE: C test verifications may fail as a result of Spike not having I/O$(NC)"
 	@for file in $(CTEST_HEX); do \
 		prog=$$(basename $$file .hex); \
-		$(PY) $(PY_VERIFY_SCRIPT) $(CTEST_HEX_DIR)/$$prog.elf $$file $(CORE_BIN) || { echo -e "$(RED)C Verification failed on $$prog!$(NC)"; exit 1; }; \
+		$(PY) $(PY_VERIFY_SCRIPT) $(CTEST_HEX_DIR)/$$prog.elf $$file $(VERILATOR_BIN) || { echo -e "$(RED)C Verification failed on $$prog!$(NC)"; exit 1; }; \
 	done
 	@echo -e "$(GREEN)All C tests verified successfully against Spike!$(NC)"
 
-verify-riscv-all: $(CORE_BIN) $(RISCVTEST_HEX)
+verify-riscv-all: $(VERILATOR_BIN) $(RISCVTEST_HEX)
 	@echo -e "$(YELLOW)Verifying core with RISC-V tests...$(NC)"
 	@for file in $(RISCVTEST_HEX); do \
 		prog=$$(basename $$file .hex); \
-		$(PY) $(PY_VERIFY_SCRIPT) $(RISCVTEST_HEX_DIR)/$$prog.elf $$file $(CORE_BIN) || { echo -e "$(RED)RISC-V Verification failed on $$prog!$(NC)"; exit 1; }; \
+		$(PY) $(PY_VERIFY_SCRIPT) $(RISCVTEST_HEX_DIR)/$$prog.elf $$file $(VERILATOR_BIN) || { echo -e "$(RED)RISC-V Verification failed on $$prog!$(NC)"; exit 1; }; \
 	done
 	@echo -e "$(GREEN)All RISC-V tests verified successfully against Spike!$(NC)"
 
@@ -259,9 +259,9 @@ build-kernel:
 .PHONY: build-kernel
 
 # -- xv6 boot ---
-boot: $(CORE_BIN) build-kernel
+boot: $(VERILATOR_BIN) build-kernel
 	@echo -e "$(YELLOW)Booting xv6 on core...$(NC)"
-	./$(CORE_BIN) $(XV6_KERNEL_HEX) $(LOGGING) 0
+	./$(VERILATOR_BIN) $(XV6_KERNEL_HEX) $(LOGGING) 0
 
 .PHONY: boot
 

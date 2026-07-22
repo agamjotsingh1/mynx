@@ -12,6 +12,7 @@
 //..........until data_in_last is active (for the last written value)
 //
 // err returns if there was any sort of hardware txn error (of any type)
+/* verilator lint_off UNUSEDSIGNAL */
 module amc (
   input wire clk,
   input wire rst,
@@ -132,6 +133,7 @@ module amc (
       m_axi_bready  <= 0;
     end
     else begin
+      /* verilator lint_off WIDTHEXPAND */
       case(state)
         IDLE: begin
           if(mem_read) begin
@@ -227,6 +229,7 @@ module amc (
           state <= IDLE;
         end
       endcase
+      /* verilator lint_on WIDTHEXPAND */
     end
   end
 
@@ -249,3 +252,5 @@ module amc (
   assign data_in_last  = m_axi_wlast && m_axi_wready && m_axi_wvalid;
   assign data_in_valid = ((state == W_TXN) || (state == AW_TXN)) && m_axi_wready && m_axi_wvalid;
 endmodule
+/* verilator lint_on UNUSEDSIGNAL */
+
