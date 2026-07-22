@@ -42,6 +42,9 @@ module csrfile (
   input wire m_timer_irq,
   input wire s_timer_irq,
 
+  // instruction retire (minstret)
+  input wire  __wb_valid,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) trap_mode,
   output wire `W(`DLEN)        read_mip,
@@ -82,6 +85,13 @@ module csrfile (
   reg `W(`DLEN) scause;
   reg `W(`DLEN) satp;
 
+  reg `W(`DLEN) mcycle;
+  reg `W(`DLEN) minstret;
+  reg `W(`DLEN) mcountinhibit;
+  reg `W(`DLEN) mcounteren;
+  reg `W(`DLEN) scounteren;
+  reg `W(`DLEN) mhpmcounter [`HPM_COUNTER_START_IDX:`HPM_COUNTER_END_IDX];
+
   // buffers to handle negedge/posedge mismatch
   reg `W(`TRAPMODELEN) trap_mode_buf;
   reg `W(`DLEN)        mstatus_buf;
@@ -103,6 +113,7 @@ module csrfile (
     end
   end
 
+  integer i;
 	always @(posedge clk) begin
     if(rst) begin
       mstatus <= `MSTATUS_RST;
@@ -120,6 +131,12 @@ module csrfile (
       mcause <= `MCAUSE_RST;
       scause <= `SCAUSE_RST;
       satp <= `SATP_RST;
+      mcountinhibit <= 0;
+      mcounteren <= 0;
+      scounteren <= 0;
+
+      for(i = `HPM_COUNTER_START_IDX; i <= `HPM_COUNTER_END_IDX; i = i+1)
+        mhpmcounter[i] <= 0;
     end
     else if(!hard_stall) begin
       if(trap_mode_buf != `TRAPMODE_NONE) begin
@@ -159,11 +176,29 @@ module csrfile (
           `CSR_MCAUSE  : mcause   <= write_data;
           `CSR_SCAUSE  : scause   <= write_data;
           `CSR_SATP    : satp     <= (write_data & `SATP_MASK)     | (satp     & (~`SATP_MASK));
+
+          `CSR_MCOUNTINHIBIT: mcountinhibit <= write_data;
+          `CSR_MCOUNTEREN   : mcounteren    <= write_data;
+          `CSR_SCOUNTEREN   : scounteren    <= write_data;
         endcase
       /* verilator lint_on CASEINCOMPLETE */
       end
     end
 	end
+
+  wire retire =
+    __wb_valid && (!hard_stall) && !(`TRAP_XCEP(trap_mode));
+
+  always @(posedge clk) begin
+    if(rst) begin
+      mcycle <= 0;
+      minstret <= 0;
+    end
+    else begin
+      mcycle <= mcycle + (!mcountinhibit[`CSR_CYCLE_IDX]);
+      if(retire) minstret <= minstret + (!mcountinhibit[`CSR_INSTRET_IDX]);
+    end
+  end
 
   /* verilator lint_off WIDTHEXPAND */
   wire `W(`DLEN) mip_with_irq =
@@ -172,6 +207,11 @@ module csrfile (
     ((s_ext_irq) << `MIP_SEIP_POS) |
     ((m_timer_irq) << `MIP_MTIP_POS) |
     ((s_timer_irq) << `MIP_STIP_POS);
+  /* verilator lint_on WIDTHEXPAND */
+
+  /* verilator lint_off WIDTHEXPAND */
+  wire `W(`DLEN) mhpm_idx = read_csr - `CSR_MHPM_COUNTER_BASE;
+  wire `W(`DLEN) hpm_idx  = read_csr - `CSR_HPM_COUNTER_BASE;
   /* verilator lint_on WIDTHEXPAND */
 
   always @(*) begin
@@ -197,7 +237,24 @@ module csrfile (
       `CSR_SCAUSE  : read_data = scause;
       `CSR_MHARTID : read_data = mhartid;
       `CSR_SATP    : read_data = satp;
-      default      : invalid_address = 1;
+      `CSR_MCOUNTINHIBIT: read_data = mcountinhibit;
+      `CSR_MCOUNTEREN   : read_data = mcounteren;
+      `CSR_SCOUNTEREN   : read_data = scounteren;
+      `CSR_MCYCLE  : read_data = `MHPM_COUNTER_EN(mcounteren, `CSR_CYCLE_IDX, priv) ? mcycle: 0;
+      `CSR_CYCLE   : read_data = `HPM_COUNTER_EN(scounteren, `CSR_CYCLE_IDX, priv)  ? mcycle: 0;
+      `CSR_MINSTRET: read_data = `MHPM_COUNTER_EN(mcounteren, `CSR_INSTRET_IDX, priv) ? minstret: 0;
+      `CSR_INSTRET : read_data = `HPM_COUNTER_EN(scounteren, `CSR_INSTRET_IDX, priv)  ? minstret: 0;
+      default      : begin
+        /* verilator lint_off WIDTHTRUNC */
+        if(mhpm_idx >= `HPM_COUNTER_START_IDX && mhpm_idx <= `HPM_COUNTER_END_IDX) begin
+          read_data = `MHPM_COUNTER_EN(mcounteren, mhpm_idx, priv) ? mhpmcounter[mhpm_idx]: 0;
+        end
+        else if(hpm_idx >= `HPM_COUNTER_START_IDX && hpm_idx <= `HPM_COUNTER_END_IDX) begin
+          read_data = `HPM_COUNTER_EN(scounteren, hpm_idx, priv) ? mhpmcounter[hpm_idx]: 0;
+        end
+        /* verilator lint_on WIDTHTRUNC */
+        else invalid_address = 1;
+      end
     endcase
   end
 

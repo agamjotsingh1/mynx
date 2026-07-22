@@ -351,6 +351,9 @@ module core (
     .__mem_ext_irq(__mem_ext_irq),
     .__mem_timer_irq(__mem_timer_irq),
 
+    // instruction retire (minstret)
+    .__wb_valid(__wb_valid),
+
     // trap handling
     .__wb_trap_mode(__wb_trap_mode),
     .mip(__id_mip),

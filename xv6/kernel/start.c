@@ -40,7 +40,11 @@ start()
 
   // ask for clock interrupts.
   // turned off preemptive for now
-  // timerinit();
+  timerinit();
+
+  // hpm counter enables
+  csrw(mcounteren, 0xffffffffffffffffULL);
+  csrw(scounteren, 0xffffffffffffffffULL);
 
   // keep each CPU's hartid in its tp register, for cpuid().
   // int id = r_mhartid();

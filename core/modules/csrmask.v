@@ -25,6 +25,10 @@ module csrmask (
       `CSR_MCAUSE  : masked_csr_write_data = csr_write_data;
       `CSR_SCAUSE  : masked_csr_write_data = csr_write_data;
       `CSR_SATP    : masked_csr_write_data = (csr_write_data & `SATP_MASK)     | (csr_read_data & (~`SATP_MASK));
+
+      `CSR_MCOUNTINHIBIT: masked_csr_write_data = csr_write_data;
+      `CSR_MCOUNTEREN   : masked_csr_write_data = csr_write_data;
+      `CSR_SCOUNTEREN   : masked_csr_write_data = csr_write_data;
       default      : masked_csr_write_data = 0;
     endcase
   end

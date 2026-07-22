@@ -52,17 +52,21 @@ class Spinner:
         sys.stdout.write('\r\033[K')
         sys.stdout.flush()
 
-elf_file = sys.argv[1]
-hex_file = sys.argv[2]
+elf_file  = sys.argv[1]
+hex_file  = sys.argv[2]
 vcore_bin = sys.argv[3]
-max_instructions = 15000000
-timeout = 100
+
+MAX_INSTRS = 15000000
+MEM_DEPTH  = 16777216 
+TIMEOUT    = 100
 
 def get_spike_state():
-    cmds = f"r {max_instructions}\nreg 0\n"
-    MAX_DEPTH = int(16777216/4);
-    for offset in range(0, MAX_DEPTH, 8):
+    cmds = f"r {MAX_INSTRS}\nreg 0\n"
+    MEM_DEPTH_WORD = int(MEM_DEPTH/4);
+
+    for offset in range(0, MEM_DEPTH_WORD, 8):
         cmds += f"mem {0x80000000 + offset:x}\n"
+
     cmds += "q\n"
     
     with open("spike.cmd", "w") as f:
@@ -71,7 +75,7 @@ def get_spike_state():
     cmd = ['spike', '--isa=rv64i_zicclsm', '-d', '--debug-cmd=spike.cmd', '-m0x80000000:0x4000000', '--pc=0x80000000', elf_file]
     
     try:
-        res = subprocess.run(cmd, text=True, capture_output=True, timeout=timeout)
+        res = subprocess.run(cmd, text=True, capture_output=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
         print(f"\r\033[K{red('\u2717')} Spike simulator hung (timeout).")
         sys.exit(1)
@@ -117,9 +121,10 @@ def get_spike_state():
 
 def get_vcore_state():
     try:
-        res = subprocess.run([vcore_bin, hex_file, "1", "1"], text=True, capture_output=True, timeout=timeout)
+        args = [vcore_bin, '--PROGFILE', hex_file, '--LOOPBRK', '1', '--LOG', '1']
+        res = subprocess.run(args, text=True, capture_output=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
-        print(f"\r\033[K{red('\u2717')} Vcore simulation hung (timeout).")
+        print(f"\r\033[K{red('\u2717')} Vsoc simulation hung (timeout).")
         sys.exit(1)
         
     output = res.stdout
@@ -152,14 +157,14 @@ with Spinner(f"verifying {hex_file}..."):
     for i in range(32):
         s_val, v_val = spike_regs.get(i, 0), vcore_regs.get(i, 0)
         if s_val != v_val:
-            error_logs.append(f"  Reg x{i}: Spike=0x{s_val:016x}, Vcore=0x{v_val:016x}")
+            error_logs.append(f"  Reg x{i}: Spike=0x{s_val:016x}, Vsoc=0x{v_val:016x}")
             passed = False
 
     all_addrs = set(spike_mem.keys()).union(set(vcore_mem.keys()))
     for addr in sorted(list(all_addrs)):
         s_val, v_val = spike_mem.get(addr, 0), vcore_mem.get(addr, 0)
         if s_val != v_val:
-            error_logs.append(f"  Mem 0x{addr:04x}: Spike=0x{s_val:02x}, Vcore=0x{v_val:02x}")
+            error_logs.append(f"  Mem 0x{addr:04x}: Spike=0x{s_val:02x}, Vsoc=0x{v_val:02x}")
             mismatches += 1
             passed = False
         if mismatches > 15:

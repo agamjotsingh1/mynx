@@ -58,6 +58,9 @@ module id_stage (
   input wire __mem_ext_irq,
   input wire __mem_timer_irq,
 
+  // instruction retire (minstret)
+  input wire  __wb_valid,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) __wb_trap_mode,
   output wire `W(`DLEN)        mip,
@@ -186,6 +189,9 @@ module id_stage (
     // timer irq
     .m_timer_irq(__mem_timer_irq),
     .s_timer_irq(0),
+
+    // instruction retire (minstret)
+    .__wb_valid(__wb_valid),
 
     // trap handling ports
     .trap_mode(__wb_trap_mode),

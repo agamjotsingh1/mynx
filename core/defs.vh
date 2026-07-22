@@ -355,16 +355,39 @@
 `define CSR_MTVEC             12'h305
 `define CSR_MSCRATCH          12'h340
 `define CSR_MCAUSE            12'h342
-// `define CSR_MTVAL             12'h343
 `define CSR_SSTATUS           12'h100
 `define CSR_SEPC              12'h141
 `define CSR_SATP              12'h180
 `define CSR_STVEC             12'h105
 `define CSR_SSCRATCH          12'h140
 `define CSR_SCAUSE            12'h142
-// `define CSR_STVAL             12'h143
 `define CSR_SIE               12'h104
 `define CSR_SIP               12'h144
+
+`define CSR_MCYCLE            12'hb00
+`define CSR_MINSTRET          12'hb02
+`define CSR_MCOUNTINHIBIT     12'h320
+`define CSR_MCOUNTEREN        12'h306
+`define CSR_SCOUNTEREN        12'h106
+
+`define CSR_CYCLE             12'hc00
+`define CSR_TIME              12'hc01
+`define CSR_INSTRET           12'hc02
+
+`define HPM_COUNTER_START_IDX 3
+`define HPM_COUNTER_END_IDX   31
+
+`define CSR_MHPM_COUNTER_BASE  12'hb00
+`define CSR_HPM_COUNTER_BASE   12'hc00
+
+`define CSR_CYCLE_IDX         0
+`define CSR_INSTRET_IDX       1
+
+`define MHPM_COUNTER_EN(mcounteren, idx, priv) \
+  (priv == `PRIVM ? 1: (priv == `PRIVS ? mcounteren[idx]: 0))
+
+`define HPM_COUNTER_EN(scounteren, idx, priv) \
+  (priv == `PRIVU ? scounteren[idx] && mcounteren[idx]: 1)
 
 // MSTATUS/SSTATUS fields
 // SSTATUS is just restrictively masked MSTATUS

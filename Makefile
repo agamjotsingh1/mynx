@@ -14,7 +14,7 @@ DV      = dv
 OBJ     = obj_dir
 VCD     = vcd
 TEST    ?= deadbeef
-LOGGING ?= 1
+LOG     ?= 1
 FILE    ?= deadbeef.hex
 JOBS    ?= 1
 
@@ -181,17 +181,19 @@ build-riscv-test-all: $(RISCVTEST_HEX)
 .PHONY: build-riscv-test build-riscv-test-all
 
 # --- running ---
+RUN_VFLAGS = --LOG $(LOG) --LOOPBRK 1
+
 run-asm: $(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running ASM test: $(TEST)...$(NC)"
-	./$(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) --PROGFILE $(ASMTEST_HEX_DIR)/$(TEST).hex $(RUN_VFLAGS)
 
 run-c: $(VERILATOR_BIN) $(CTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running C test: $(TEST)...$(NC)"
-	./$(VERILATOR_BIN) $(CTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) --PROGFILE $(CTEST_HEX_DIR)/$(TEST).hex $(RUN_VFLAGS)
 
 run-riscv: $(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running RISC-V test: $(TEST)...$(NC)"
-	./$(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex $(LOGGING) 1
+	./$(VERILATOR_BIN) --PROGFILE $(RISCVTEST_HEX_DIR)/$(TEST).hex $(RUN_VFLAGS)
 
 run: $(VERILATOR_BIN)
 	@echo -e "$(YELLOW)Booting core with $(FILE)...$(NC)"
@@ -199,7 +201,7 @@ run: $(VERILATOR_BIN)
 		echo -e "$(RED)Hex file '$(FILE)' does not exist! Compile it first.$(NC)"; \
 		exit 1; \
 	fi
-	./$(VERILATOR_BIN) $(FILE) $(LOGGING) 1
+	./$(VERILATOR_BIN) --PROGFILE $(FILE) $(RUN_VFLAGS)
 
 .PHONY: run run-asm run-c run-riscv
 
@@ -259,9 +261,11 @@ build-kernel:
 .PHONY: build-kernel
 
 # -- xv6 boot ---
+BOOT_VFLAGS = --PROGFILE $(XV6_KERNEL_HEX) --LOG $(LOG) --LOOPBRK 0
+
 boot: $(VERILATOR_BIN) build-kernel
 	@echo -e "$(YELLOW)Booting xv6 on core...$(NC)"
-	./$(VERILATOR_BIN) $(XV6_KERNEL_HEX) $(LOGGING) 0
+	./$(VERILATOR_BIN) $(BOOT_VFLAGS)
 
 .PHONY: boot
 
