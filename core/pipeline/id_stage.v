@@ -61,6 +61,12 @@ module id_stage (
   // instruction retire (minstret)
   input wire  __wb_valid,
 
+  // perf counters
+  input wire `W(`DLEN)   perf_cache_hits_instr,
+  input wire `W(`DLEN)   perf_mem_acc_instr,
+  input wire `W(`DLEN)   perf_cache_hits_data,
+  input wire `W(`DLEN)   perf_mem_acc_data,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) __wb_trap_mode,
   output wire `W(`DLEN)        mip,
@@ -192,6 +198,12 @@ module id_stage (
 
     // instruction retire (minstret)
     .__wb_valid(__wb_valid),
+
+    // perf counters
+    .perf_cache_hits_instr(perf_cache_hits_instr),
+    .perf_mem_acc_instr(perf_mem_acc_instr),
+    .perf_cache_hits_data(perf_cache_hits_data),
+    .perf_mem_acc_data(perf_mem_acc_data),
 
     // trap handling ports
     .trap_mode(__wb_trap_mode),

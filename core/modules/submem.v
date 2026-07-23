@@ -6,6 +6,7 @@
 module submem (
   input wire clk,
   input wire rst,
+  input wire stall,
 
   // Mem Port
   input wire  `W(`ADDRLEN)  addr,
@@ -18,6 +19,10 @@ module submem (
   output reg                busy,
   input wire                flush,
   output reg                flush_done,
+
+  // perf counter
+  output reg `W(`DLEN)      perf_cache_hits,
+  output reg `W(`DLEN)      perf_mem_acc,
 
   // AMC ports
   output wire  `W(`ADDRLEN)  __amc_addr,
@@ -166,12 +171,27 @@ module submem (
 
   wire `W(`DLEN) cache_data_out;
 
+  // perf counter logic
+  reg pending_miss;
+
+  always @(posedge clk) begin
+    if(rst) begin
+      perf_cache_hits <= 0;
+      perf_mem_acc    <= 0;
+    end
+    else if(state == IDLE && en && busy && !cache_miss && !stall) begin
+      perf_mem_acc <= perf_mem_acc + 1;
+      if(!pending_miss) perf_cache_hits <= perf_cache_hits + 1;
+    end
+  end
+
   always @(posedge clk) begin
     if(rst) begin
       state <= IDLE;
       busy <= 1;
       flush_line <= 0;
       flush_done <= 0;
+      pending_miss <= 0;
     end
     else begin
       case(state)
@@ -190,13 +210,17 @@ module submem (
               line_spill <= cache_line_spill;
               evict_addr <= cache_evict_addr;
               spill_evict_addr <= cache_spill_evict_addr;
+              pending_miss <= 1;
 
               if(cache_dirty && !cache_hit) state <= DIRTY;
               else if(cache_line_spill && cache_spill_dirty && !cache_spill_hit) state <= DIRTY_SPILL;
               else if(!cache_hit) state <= LOAD;
               else if(cache_line_spill && !cache_spill_hit) state <= LOAD_SPILL;
             end
-            else busy <= 0;
+            else begin
+              pending_miss <= 0;
+              busy <= 0;
+            end
           end
           else busy <= 1;
         end

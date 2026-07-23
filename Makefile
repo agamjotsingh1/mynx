@@ -165,6 +165,32 @@ build-c-test-all: $(CTEST_HEX)
 
 .PHONY: build-c-test build-c-test-all
 
+# benchmarks (riscv-tests style: multi-file, bare-metal, UART + perf counters)
+BENCH_DIR     = $(TEST_DIR)/bench
+BENCH_HEX_DIR = $(BENCH_DIR)/hex
+BENCH_ENV     = $(BENCH_DIR)/env.c
+BENCH        ?= dhrystone
+BENCH_SRCS    = $(wildcard $(BENCH_DIR)/$(BENCH)/*.c)
+BENCH_INC     = -I$(BENCH_DIR)/shim -I$(BENCH_DIR)/common -I$(BENCH_DIR)/$(BENCH)
+CORE_MHZ     ?= 30
+BENCH_CFLAGS  = $(CFLAGS) -O2 -std=gnu89 -fno-common -Wno-implicit-int -Wno-implicit-function-declaration \
+                -DCORE_MHZ=$(CORE_MHZ) -DHZ=$(CORE_MHZ)000000
+
+$(BENCH_HEX_DIR)/$(BENCH).hex: $(BENCH_SRCS) $(BENCH_ENV) $(CRUNTIME) $(CSOFTMATH)
+	@mkdir -p $(BENCH_HEX_DIR)
+	$(CC) $(CFLAGS) -O2 -fno-builtin -fno-tree-loop-distribute-patterns -c $(BENCH_ENV) -o $(BENCH_HEX_DIR)/env.o
+	$(CC) $(CFLAGS) -O2 -c $(CSOFTMATH) -o $(BENCH_HEX_DIR)/softmath.o
+	$(CC) $(BENCH_CFLAGS) $(BENCH_INC) -T $(CLINKER) \
+		$(CRUNTIME) $(BENCH_HEX_DIR)/softmath.o $(BENCH_HEX_DIR)/env.o $(BENCH_SRCS) \
+		-o $(BENCH_HEX_DIR)/$(BENCH).elf
+	$(OBJCOPY) $(OBJCOPYFLAGS) $(BENCH_HEX_DIR)/$(BENCH).elf $(BENCH_HEX_DIR)/$(BENCH).bin
+	$(HEXDUMP) $(HEXDUMPFLAGS) $(BENCH_HEX_DIR)/$(BENCH).bin > $@
+
+build-bench: $(BENCH_HEX_DIR)/$(BENCH).hex
+	@echo -e "$(GREEN)Compiled benchmark $(BENCH) successfully!$(NC)"
+
+.PHONY: build-bench
+
 # riscv tests
 $(RISCVTEST_HEX_DIR)/%.hex: $(RISCVTEST_ASM_DIR)/%.S
 	@mkdir -p $(RISCVTEST_HEX_DIR)
@@ -195,6 +221,10 @@ run-riscv: $(VERILATOR_BIN) $(RISCVTEST_HEX_DIR)/$(TEST).hex
 	@echo -e "$(YELLOW)Running RISC-V test: $(TEST)...$(NC)"
 	./$(VERILATOR_BIN) --PROGFILE $(RISCVTEST_HEX_DIR)/$(TEST).hex $(RUN_VFLAGS)
 
+run-bench: $(VERILATOR_BIN) $(BENCH_HEX_DIR)/$(BENCH).hex
+	@echo -e "$(YELLOW)Running benchmark: $(BENCH)...$(NC)"
+	./$(VERILATOR_BIN) --PROGFILE $(BENCH_HEX_DIR)/$(BENCH).hex --LOG 0 --LOOPBRK 1
+
 run: $(VERILATOR_BIN)
 	@echo -e "$(YELLOW)Booting core with $(FILE)...$(NC)"
 	@if [ ! -f $(FILE) ]; then \
@@ -203,7 +233,7 @@ run: $(VERILATOR_BIN)
 	fi
 	./$(VERILATOR_BIN) --PROGFILE $(FILE) $(RUN_VFLAGS)
 
-.PHONY: run run-asm run-c run-riscv
+.PHONY: run run-asm run-c run-riscv run-bench
 
 # --- verification ---
 verify-asm: $(VERILATOR_BIN) $(ASMTEST_HEX_DIR)/$(TEST).hex

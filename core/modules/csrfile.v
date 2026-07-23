@@ -45,6 +45,12 @@ module csrfile (
   // instruction retire (minstret)
   input wire  __wb_valid,
 
+  // perf counters
+  input wire `W(`DLEN)   perf_cache_hits_instr,
+  input wire `W(`DLEN)   perf_mem_acc_instr,
+  input wire `W(`DLEN)   perf_cache_hits_data,
+  input wire `W(`DLEN)   perf_mem_acc_data,
+
   // trap handling ports
   input wire  `W(`TRAPMODELEN) trap_mode,
   output wire `W(`DLEN)        read_mip,
@@ -134,9 +140,6 @@ module csrfile (
       mcountinhibit <= 0;
       mcounteren <= 0;
       scounteren <= 0;
-
-      for(i = `HPM_COUNTER_START_IDX; i <= `HPM_COUNTER_END_IDX; i = i+1)
-        mhpmcounter[i] <= 0;
     end
     else if(!hard_stall) begin
       if(trap_mode_buf != `TRAPMODE_NONE) begin
@@ -193,10 +196,19 @@ module csrfile (
     if(rst) begin
       mcycle <= 0;
       minstret <= 0;
+
+      for(i = `HPM_COUNTER_START_IDX; i <= `HPM_COUNTER_END_IDX; i = i+1)
+        mhpmcounter[i] <= 0;
     end
     else begin
-      mcycle <= mcycle + (!mcountinhibit[`CSR_CYCLE_IDX]);
-      if(retire) minstret <= minstret + (!mcountinhibit[`CSR_INSTRET_IDX]);
+      mcycle <= mcycle + (!mcountinhibit[`HPM_CYCLE_IDX]);
+      if(retire) minstret <= minstret + (!mcountinhibit[`HPM_INSTRET_IDX]);
+
+      mhpmcounter[`HPM_CACHE_HITS_I_IDX] <= !mcountinhibit[`HPM_CACHE_HITS_I_IDX] ? perf_cache_hits_instr: 0;
+      mhpmcounter[`HPM_MEM_ACC_I_IDX] <= !mcountinhibit[`HPM_MEM_ACC_I_IDX] ? perf_mem_acc_instr: 0;
+
+      mhpmcounter[`HPM_CACHE_HITS_D_IDX] <= !mcountinhibit[`HPM_CACHE_HITS_D_IDX] ? perf_cache_hits_data: 0;
+      mhpmcounter[`HPM_MEM_ACC_D_IDX] <= !mcountinhibit[`HPM_MEM_ACC_D_IDX] ? perf_mem_acc_data: 0;
     end
   end
 
@@ -240,10 +252,10 @@ module csrfile (
       `CSR_MCOUNTINHIBIT: read_data = mcountinhibit;
       `CSR_MCOUNTEREN   : read_data = mcounteren;
       `CSR_SCOUNTEREN   : read_data = scounteren;
-      `CSR_MCYCLE  : read_data = `MHPM_COUNTER_EN(mcounteren, `CSR_CYCLE_IDX, priv) ? mcycle: 0;
-      `CSR_CYCLE   : read_data = `HPM_COUNTER_EN(scounteren, `CSR_CYCLE_IDX, priv)  ? mcycle: 0;
-      `CSR_MINSTRET: read_data = `MHPM_COUNTER_EN(mcounteren, `CSR_INSTRET_IDX, priv) ? minstret: 0;
-      `CSR_INSTRET : read_data = `HPM_COUNTER_EN(scounteren, `CSR_INSTRET_IDX, priv)  ? minstret: 0;
+      `CSR_MCYCLE  : read_data = `MHPM_COUNTER_EN(mcounteren, `HPM_CYCLE_IDX, priv) ? mcycle: 0;
+      `CSR_CYCLE   : read_data = `HPM_COUNTER_EN(scounteren, `HPM_CYCLE_IDX, priv)  ? mcycle: 0;
+      `CSR_MINSTRET: read_data = `MHPM_COUNTER_EN(mcounteren, `HPM_INSTRET_IDX, priv) ? minstret: 0;
+      `CSR_INSTRET : read_data = `HPM_COUNTER_EN(scounteren, `HPM_INSTRET_IDX, priv)  ? minstret: 0;
       default      : begin
         /* verilator lint_off WIDTHTRUNC */
         if(mhpm_idx >= `HPM_COUNTER_START_IDX && mhpm_idx <= `HPM_COUNTER_END_IDX) begin

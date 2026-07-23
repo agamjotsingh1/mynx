@@ -42,7 +42,7 @@
 #define DISK_WORD_BYTES     8
 
 #define NUM_REGS            32
-#define LOOP_THRESHOLD      20
+#define LOOP_THRESHOLD      200
 #define INPUT_POLL_CYCLES   100000
 #define KEY_CTRL_C          3
 

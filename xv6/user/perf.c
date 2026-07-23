@@ -27,20 +27,37 @@ void printf_ratio(uint64 num, uint64 den) {
   printf("%d", frac);
 }
 
-
-
 int
 main(void)
 {
-
   uint64 cycles, instructions;
+  uint64 cache_hits_instr, mem_acc_instr;
+  uint64 cache_hits_data, mem_acc_data;
+
   csrr(cycle, cycles);
   csrr(instret, instructions);
+  csrr(hpmcounter3, cache_hits_instr);
+  csrr(hpmcounter4, mem_acc_instr);
+  csrr(hpmcounter5, cache_hits_data);
+  csrr(hpmcounter6, mem_acc_data);
 
   printf("CPI:");
   printf_ratio(cycles, instructions);
   printf("\n");
 
+  printf("IPC:");
+  printf_ratio(instructions, cycles);
+  printf("\n");
+
+  printf("I-Cache hit rate:");
+  printf_ratio(cache_hits_instr, mem_acc_instr);
+  printf("\n");
+
+  printf("D-Cache hit rate:");
+  printf_ratio(cache_hits_data, mem_acc_data);
+  printf("\n");
+
+  printf("instructions: %d, mem_acc_instr: %d\n", instructions, mem_acc_instr);
   exit(0);
 }
 

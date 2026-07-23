@@ -113,7 +113,7 @@ UPROGS=\
 	$U/_stressfs\
 	$U/_usertests\
 	$U/_zombie\
-	$U/_cpi\
+	$U/_perf\
 
 fs.img: mkfs/mkfs README $(UEXTRA) $(UPROGS)
 	mkfs/mkfs fs.img README $(UEXTRA) $(UPROGS)

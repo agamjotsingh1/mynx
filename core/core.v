@@ -168,6 +168,12 @@ module core (
   wire `W(`DLEN)        __wb_write_cause;
   wire `W(`DLEN)        __wb_write_epc;
 
+  wire `W(`DLEN)   perf_cache_hits_instr;
+  wire `W(`DLEN)   perf_mem_acc_instr;
+  wire `W(`DLEN)   perf_cache_hits_data;
+  wire `W(`DLEN)   perf_mem_acc_data;
+
+
   wire tlb_flush = `SFENCEVMA(__id_ctl_bus);
   wire cache_flush = `FENCE(__id_ctl_bus) &&
     !(__ex_valid || __mem_valid || __wb_valid);
@@ -185,6 +191,7 @@ module core (
   mmu mmu_instance (
     .clk(clk),
     .rst(rst),
+    .stall(stall),
     .hard_stall(hard_stall),
     `ifdef __SYNTH__
     .slow_sel(slow_sel),
@@ -261,6 +268,9 @@ module core (
     .data_out_a(__if_instr),
     /* verilator lint_on WIDTHEXPAND */
 
+    .perf_cache_hits_a(perf_cache_hits_instr),
+    .perf_mem_acc_a(perf_mem_acc_instr),
+
     // port b for mem stage access
     .addr_b(__mem_data_addr),
     .mem_read_b(`MEM_READ(__mem_ctl_bus)),
@@ -268,7 +278,10 @@ module core (
     .sign_extend_b(`SIGN_EXTEND(__mem_ctl_bus)),
     .bw_b(`BW(__mem_ctl_bus)),
     .data_in_b(__mem_mem_data),
-    .data_out_b(__mem_mem_res)
+    .data_out_b(__mem_mem_res),
+
+    .perf_cache_hits_b(perf_cache_hits_data),
+    .perf_mem_acc_b(perf_mem_acc_data)
   );
 
   /* ----- IF STAGE ------ */
@@ -353,6 +366,12 @@ module core (
 
     // instruction retire (minstret)
     .__wb_valid(__wb_valid),
+
+    // perf counters
+    .perf_cache_hits_instr(perf_cache_hits_instr),
+    .perf_mem_acc_instr(perf_mem_acc_instr),
+    .perf_cache_hits_data(perf_cache_hits_data),
+    .perf_mem_acc_data(perf_mem_acc_data),
 
     // trap handling
     .__wb_trap_mode(__wb_trap_mode),

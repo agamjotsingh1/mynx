@@ -380,8 +380,12 @@
 `define CSR_MHPM_COUNTER_BASE  12'hb00
 `define CSR_HPM_COUNTER_BASE   12'hc00
 
-`define CSR_CYCLE_IDX         0
-`define CSR_INSTRET_IDX       1
+`define HPM_CYCLE_IDX         0
+`define HPM_INSTRET_IDX       1
+`define HPM_CACHE_HITS_I_IDX  3
+`define HPM_MEM_ACC_I_IDX     4
+`define HPM_CACHE_HITS_D_IDX  5
+`define HPM_MEM_ACC_D_IDX     6
 
 `define MHPM_COUNTER_EN(mcounteren, idx, priv) \
   (priv == `PRIVM ? 1: (priv == `PRIVS ? mcounteren[idx]: 0))

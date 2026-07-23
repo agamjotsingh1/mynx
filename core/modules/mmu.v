@@ -11,6 +11,7 @@
 module mmu (
   input wire  clk,
   input wire  rst,
+  input wire `W(`STLEN)   stall,
   output wire hard_stall,
   /* verilator lint_off UNUSEDSIGNAL */
   input wire `W(`TRAPMODELEN) __wb_trap_mode,
@@ -94,7 +95,9 @@ module mmu (
   input wire                sign_extend_a,
   input wire  `W(`BWLEN)    bw_a,
   input wire  `W(`DLEN)     data_in_a,
-  output wire  `W(`DLEN)    data_out_a,
+  output wire `W(`DLEN)     data_out_a,
+  output wire `W(`DLEN)     perf_cache_hits_a,
+  output wire `W(`DLEN)     perf_mem_acc_a,
 
   // Port B
   input wire  `W(`DLEN)     addr_b,
@@ -103,7 +106,9 @@ module mmu (
   input wire                sign_extend_b,
   input wire  `W(`BWLEN)    bw_b,
   input wire  `W(`DLEN)     data_in_b,
-  output reg  `W(`DLEN)     data_out_b
+  output reg  `W(`DLEN)     data_out_b,
+  output wire `W(`DLEN)     perf_cache_hits_b,
+  output wire `W(`DLEN)     perf_mem_acc_b
 );
   wire busy_a, busy_b;
 
@@ -423,6 +428,7 @@ module mmu (
   submem submem_a_instance (
     .clk(clk),
     .rst(rst),
+    .stall(stall & `STALL_PC),
     .addr(phymem_addr_a - `MEMBASE),
     .mem_read(phymem_read_a),
     .mem_write(phymem_write_a),
@@ -433,6 +439,8 @@ module mmu (
     .busy(busy_a),
     .flush(flush_a),
     .flush_done(flush_done_a),
+    .perf_cache_hits(perf_cache_hits_a),
+    .perf_mem_acc(perf_mem_acc_a),
     .__amc_addr(__amc_addr_a),
     .__amc_mem_read(__amc_mem_read_a),
     .__amc_mem_write(__amc_mem_write_a),
@@ -451,6 +459,7 @@ module mmu (
   submem submem_b_instance (
     .clk(clk),
     .rst(rst),
+    .stall(0),
     .addr(phymem_addr_b - `MEMBASE),
     .mem_read(phymem_read_b & is_mem_b),
     .mem_write(phymem_write_b & is_mem_b),
@@ -461,6 +470,8 @@ module mmu (
     .busy(busy_b),
     .flush(flush_b),
     .flush_done(flush_done_b),
+    .perf_cache_hits(perf_cache_hits_b),
+    .perf_mem_acc(perf_mem_acc_b),
     .__amc_addr(__amc_addr_b),
     .__amc_mem_read(__amc_mem_read_b),
     .__amc_mem_write(__amc_mem_write_b),
